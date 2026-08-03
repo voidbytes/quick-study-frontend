@@ -109,7 +109,7 @@ const tagOptions = ref<{ label: string; value: number }[]>([])
 const form = reactive({
   count: 10,
   bankIds: [] as number[],
-  types: [] as number[],
+  types: [] as string[],
   tagIds: [] as number[],
   correctRateMin: undefined as number | undefined,
   correctRateMax: undefined as number | undefined,
@@ -118,9 +118,9 @@ const form = reactive({
 })
 
 const typeOptions = [
-  { label: '单选题', value: 0 },
-  { label: '多选题', value: 1 },
-  { label: '判断题', value: 2 }
+  { label: '单选题', value: 'SINGLE' },
+  { label: '多选题', value: 'MULTIPLE' },
+  { label: '判断题', value: 'TRUE_FALSE' }
 ]
 
 async function loadOptions() {
@@ -150,8 +150,8 @@ async function handleCreate() {
       priorWrong: form.priorWrong || undefined
     })
     message.success('创建成功')
-    emit('created', res.data.id)
-    router.push(`/practice/${res.data.id}`)
+    emit('created', res.data.sessionId)
+    router.push(`/practice/sessions/${res.data.sessionId}`)
   } catch (err: any) {
     const code = err?.response?.data?.code
     if (code === 70501) {

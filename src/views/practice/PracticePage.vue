@@ -26,7 +26,7 @@
           <n-collapse>
             <n-collapse-item
               v-for="(q, index) in questions"
-              :key="q.questionIndex"
+              :key="q.index"
               :title="`第 ${index + 1} 题`"
               :name="String(index)"
             >
@@ -38,7 +38,7 @@
                   </span>
                 </n-descriptions-item>
                 <n-descriptions-item label="正确答案">
-                  <span>{{ q.correctAnswer }}</span>
+                  <span>{{ formatAnswer(q.answer, q.type) }}</span>
                 </n-descriptions-item>
                 <n-descriptions-item label="是否正确">
                   <n-tag :type="q.isCorrect ? 'success' : 'error'" size="small">
@@ -76,15 +76,16 @@
           <div class="mb-6" v-html="currentQuestion?.content" />
 
           <div class="space-y-3">
-            <template v-if="currentQuestion?.type === 0">
+            <!-- 单选题 -->
+            <template v-if="currentQuestion?.type === 'SINGLE'">
               <div
-                v-for="(opt, idx) in currentQuestion.options"
+                v-for="(opt, idx) in parsedOptions"
                 :key="idx"
                 class="p-3 border rounded cursor-pointer hover:border-primary"
                 :class="{
                   'border-primary bg-primary bg-opacity-5': selectedAnswer === String.fromCharCode(65 + idx),
-                  'border-success bg-success bg-opacity-5': answered && correctAnswer === String.fromCharCode(65 + idx),
-                  'border-error bg-error bg-opacity-5': answered && selectedAnswer === String.fromCharCode(65 + idx) && !isCurrentCorrect
+                  'border-success bg-success bg-opacity-5': answered && currentQuestion.answer === String.fromCharCode(65 + idx),
+                  'border-error bg-error bg-opacity-5': answered && selectedAnswer === String.fromCharCode(65 + idx) && selectedAnswer !== currentQuestion.answer
                 }"
                 @click="selectAnswer(String.fromCharCode(65 + idx))"
               >
@@ -95,15 +96,16 @@
               </div>
             </template>
 
-            <template v-if="currentQuestion?.type === 1">
+            <!-- 多选题 -->
+            <template v-if="currentQuestion?.type === 'MULTIPLE'">
               <div
-                v-for="(opt, idx) in currentQuestion.options"
+                v-for="(opt, idx) in parsedOptions"
                 :key="idx"
                 class="p-3 border rounded cursor-pointer hover:border-primary"
                 :class="{
                   'border-primary bg-primary bg-opacity-5': multipleSelected.includes(String.fromCharCode(65 + idx)),
-                  'border-success': answered && correctAnswer.includes(String.fromCharCode(65 + idx)),
-                  'border-error': answered && multipleSelected.includes(String.fromCharCode(65 + idx)) && !correctAnswer.includes(String.fromCharCode(65 + idx))
+                  'border-success': answered && currentQuestion.answer.includes(String.fromCharCode(65 + idx)),
+                  'border-error': answered && multipleSelected.includes(String.fromCharCode(65 + idx)) && !currentQuestion.answer.includes(String.fromCharCode(65 + idx))
                 }"
                 @click="toggleMultiple(String.fromCharCode(65 + idx))"
               >
@@ -114,30 +116,23 @@
               </div>
             </template>
 
-            <template v-if="currentQuestion?.type === 2">
-              <div class="flex gap-4">
-                <div
-                  class="flex-1 p-3 border rounded text-center cursor-pointer"
-                  :class="{
-                    'border-primary bg-primary bg-opacity-5': selectedAnswer === 'true',
-                    'border-success bg-success bg-opacity-5': answered && correctAnswer === 'true',
-                    'border-error': answered && selectedAnswer === 'true' && !isCurrentCorrect
-                  }"
-                  @click="selectAnswer('true')"
-                >
-                  <n-radio :checked="selectedAnswer === 'true'" :disabled="answered">正确</n-radio>
-                </div>
-                <div
-                  class="flex-1 p-3 border rounded text-center cursor-pointer"
-                  :class="{
-                    'border-primary bg-primary bg-opacity-5': selectedAnswer === 'false',
-                    'border-success bg-success bg-opacity-5': answered && correctAnswer === 'false',
-                    'border-error': answered && selectedAnswer === 'false' && !isCurrentCorrect
-                  }"
-                  @click="selectAnswer('false')"
-                >
-                  <n-radio :checked="selectedAnswer === 'false'" :disabled="answered">错误</n-radio>
-                </div>
+            <!-- 判断题 -->
+            <template v-if="currentQuestion?.type === 'TRUE_FALSE'">
+              <div
+                v-for="(opt, idx) in parsedOptions"
+                :key="idx"
+                class="p-3 border rounded cursor-pointer hover:border-primary"
+                :class="{
+                  'border-primary bg-primary bg-opacity-5': selectedAnswer === String.fromCharCode(65 + idx),
+                  'border-success bg-success bg-opacity-5': answered && currentQuestion.answer === String.fromCharCode(65 + idx),
+                  'border-error bg-error bg-opacity-5': answered && selectedAnswer === String.fromCharCode(65 + idx) && selectedAnswer !== currentQuestion.answer
+                }"
+                @click="selectAnswer(String.fromCharCode(65 + idx))"
+              >
+                <n-radio :checked="selectedAnswer === String.fromCharCode(65 + idx)" :disabled="answered">
+                  <span class="font-mono mr-2">{{ String.fromCharCode(65 + idx) }}.</span>
+                  {{ opt }}
+                </n-radio>
               </div>
             </template>
           </div>
@@ -183,16 +178,33 @@ const selectedAnswer = ref('')
 const multipleSelected = ref<string[]>([])
 const answered = ref(false)
 const submitting = ref(false)
-const correctAnswer = ref('')
-const isCurrentCorrect = ref(false)
 const result = ref<any>(null)
 
 const difficultyLabels: Record<string, string> = { EASY: '简单', MEDIUM: '中等', HARD: '困难' }
 
 const currentQuestion = computed(() => questions.value[currentIndex.value] || null)
 
+/** 解析 options JSON 字符串为数组 */
+const parsedOptions = computed(() => {
+  const q = currentQuestion.value
+  if (!q || !q.options) return []
+  try {
+    return JSON.parse(q.options)
+  } catch {
+    return []
+  }
+})
+
 function difficultyTagType(d: string) {
   return d === 'HARD' ? 'error' : d === 'MEDIUM' ? 'warning' : 'success'
+}
+
+function formatAnswer(answer: string, type: string) {
+  if (!answer) return '-'
+  if (type === 'TRUE_FALSE') {
+    return answer === 'A' ? '正确' : '错误'
+  }
+  return answer
 }
 
 function selectAnswer(value: string) {
@@ -210,7 +222,9 @@ function toggleMultiple(value: string) {
 
 async function submitAnswer() {
   if (!currentQuestion.value) return
-  const answer = currentQuestion.value.type === 1 ? multipleSelected.value.join(',') : selectedAnswer.value
+  const answer = currentQuestion.value.type === 'MULTIPLE'
+    ? multipleSelected.value.join(',')
+    : selectedAnswer.value
   if (!answer) {
     message.warning('请先选择答案')
     return
@@ -218,13 +232,17 @@ async function submitAnswer() {
 
   submitting.value = true
   try {
-    const res = await submitPracticeAnswer(sessionId, {
+    await submitPracticeAnswer(sessionId, {
       index: currentIndex.value,
       answer
     })
     answered.value = true
-    correctAnswer.value = res.correctAnswer || ''
-    isCurrentCorrect.value = res.isCorrect
+    // 从题目数据中获取正确答案和解析
+    const q = questions.value[currentIndex.value]
+    if (q) {
+      q.userAnswer = answer
+      q.isCorrect = q.answer === answer
+    }
   } catch {
     message.error('提交答案失败')
   } finally {
@@ -250,14 +268,18 @@ function resetAnswer() {
   selectedAnswer.value = ''
   multipleSelected.value = []
   answered.value = false
-  correctAnswer.value = ''
-  isCurrentCorrect.value = false
+  // 恢复已答题目的状态
+  const q = questions.value[currentIndex.value]
+  if (q && q.userAnswer) {
+    selectedAnswer.value = q.userAnswer
+    answered.value = true
+  }
 }
 
 async function finishPractice() {
   try {
     const res = await completePractice(sessionId)
-    result.value = res
+    result.value = res.data
     message.success('练习完成')
   } catch {
     message.error('完成练习失败')
@@ -267,24 +289,28 @@ async function finishPractice() {
 async function loadSession() {
   try {
     const res = await getPracticeSession(sessionId)
-    questions.value = res.questions || []
-    if (res.answers?.length) {
-      // 恢复已答题目的状态
+    const session = res.data
+    questions.value = session.questions || []
+    // 合并答案信息到题目中
+    if (session.answers?.length) {
       questions.value.forEach((q: any) => {
-        const ans = res.answers.find((a: any) => a.questionIndex === q.questionIndex)
+        const ans = session.answers.find((a: any) => a.questionIndex === q.index)
         if (ans) {
           q.userAnswer = ans.userAnswer
           q.isCorrect = ans.isCorrect
-          q.correctAnswer = ans.correctAnswer
         }
       })
     }
-    if (res.status === 'COMPLETED') {
-      result.value = res.stats || { accuracy: res.accuracy, correctCount: res.correctCount, totalCount: res.totalCount, duration: res.duration }
+    // 如果已完成，直接显示结果
+    if (session.status === 'COMPLETED') {
+      result.value = session.stats
+      return
     }
-    if (res.currentIndex !== undefined) {
-      currentIndex.value = res.currentIndex
+    if (session.currentIndex !== undefined) {
+      currentIndex.value = session.currentIndex
     }
+    // 恢复当前题目的状态
+    resetAnswer()
   } catch {
     message.error('加载练习会话失败')
     router.push('/practice')

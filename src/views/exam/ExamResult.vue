@@ -25,7 +25,7 @@
           :title="`第 ${index + 1} 题`"
           :name="q.paperQuestionId"
         >
-          <div class="prose max-w-none mb-4" v-html="q.content" />
+          <div class="prose max-w-none mb-4" v-html="parseQuestionContent(q.content)" />
           <n-descriptions bordered :column="1" size="small">
             <n-descriptions-item label="你的答案">
               <span :class="q.isCorrect === true ? 'text-green-600' : q.isCorrect === false ? 'text-red-600' : ''">
@@ -84,6 +84,16 @@ const statusTagType = computed(() => {
   }
   return map[result.value.status] || 'default'
 })
+
+function parseQuestionContent(content: string): string {
+  if (!content) return ''
+  try {
+    const parsed = JSON.parse(content)
+    return parsed.content || content
+  } catch {
+    return content
+  }
+}
 
 async function loadResult() {
   try {

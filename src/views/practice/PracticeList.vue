@@ -102,10 +102,10 @@ const columns: DataTableColumn<any>[] = [
     render(row) {
       const actions = []
       if (row.status === 'IN_PROGRESS') {
-        actions.push(h('a', { class: 'text-primary cursor-pointer', onClick: () => router.push(`/practice/${row.id}`) }, '继续'))
+        actions.push(h('a', { class: 'text-primary cursor-pointer', onClick: () => router.push(`/practice/sessions/${row.sessionId}`) }, '继续'))
         actions.push(h('a', { class: 'text-error cursor-pointer ml-2', onClick: () => handleAbandon(row) }, '放弃'))
       } else if (row.status === 'COMPLETED') {
-        actions.push(h('a', { class: 'text-primary cursor-pointer', onClick: () => router.push(`/practice/${row.id}`) }, '查看详情'))
+        actions.push(h('a', { class: 'text-primary cursor-pointer', onClick: () => router.push(`/practice/sessions/${row.sessionId}`) }, '查看详情'))
       }
       return h('div', {}, actions)
     }

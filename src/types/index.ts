@@ -137,17 +137,37 @@ export interface Answer {
 
 // 练习会话
 export interface PracticeSession {
-  id: number
-  bankId: number
-  bankName: string
-  questionCount: number
-  answeredCount: number
+  sessionId: number
+  status: string
+  currentIndex: number
+  totalCount: number
+  questions: PracticeQuestion[]
+  answers: PracticeAnswer[]
+  stats: PracticeStats
+}
+
+export interface PracticeQuestion {
+  index: number
+  type: string
+  content: string
+  options: string
+  answer: string
+  analysis: string
+  difficulty: string
+}
+
+export interface PracticeAnswer {
+  questionIndex: number
+  questionId: number
+  userAnswer: string | null
+  isCorrect: boolean | null
+}
+
+export interface PracticeStats {
   correctCount: number
-  status: SessionStatus
-  questions: Question[]
-  answers: Answer[]
-  createdAt: string
-  updatedAt: string
+  totalCount: number
+  accuracy: number
+  duration: number
 }
 
 // 错题

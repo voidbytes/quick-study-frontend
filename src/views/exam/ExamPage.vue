@@ -71,14 +71,14 @@
           </div>
 
           <!-- 题目内容 -->
-          <div class="prose max-w-none mb-6" v-html="currentQuestion?.content" />
+          <div class="prose max-w-none mb-6" v-html="parsedContent" />
 
           <!-- 选项 -->
           <div class="space-y-3">
             <!-- 单选题 -->
-            <template v-if="currentQuestion?.type === 0">
+            <template v-if="currentQuestion?.type === 'SINGLE'">
               <div
-                v-for="(opt, idx) in currentQuestion.options"
+                v-for="(opt, idx) in parsedOptions"
                 :key="idx"
                 class="p-3 border rounded cursor-pointer hover:border-primary transition-colors"
                 :class="{ 'border-primary bg-primary bg-opacity-5': currentAnswers[currentQuestion.id] === String.fromCharCode(65 + idx) }"
@@ -92,9 +92,9 @@
             </template>
 
             <!-- 多选题 -->
-            <template v-if="currentQuestion?.type === 1">
+            <template v-if="currentQuestion?.type === 'MULTIPLE'">
               <div
-                v-for="(opt, idx) in currentQuestion.options"
+                v-for="(opt, idx) in parsedOptions"
                 :key="idx"
                 class="p-3 border rounded cursor-pointer hover:border-primary transition-colors"
                 :class="{ 'border-primary bg-primary bg-opacity-5': isMultipleSelected(String.fromCharCode(65 + idx)) }"
@@ -108,27 +108,27 @@
             </template>
 
             <!-- 判断题 -->
-            <template v-if="currentQuestion?.type === 2">
+            <template v-if="currentQuestion?.type === 'TRUE_FALSE'">
               <div class="flex gap-4">
                 <div
                   class="flex-1 p-3 border rounded text-center cursor-pointer hover:border-primary"
-                  :class="{ 'border-primary bg-primary bg-opacity-5': currentAnswers[currentQuestion.id] === 'true' }"
-                  @click="selectAnswer('true')"
+                  :class="{ 'border-primary bg-primary bg-opacity-5': currentAnswers[currentQuestion.id] === 'A' }"
+                  @click="selectAnswer('A')"
                 >
-                  <n-radio :checked="currentAnswers[currentQuestion.id] === 'true'">正确</n-radio>
+                  <n-radio :checked="currentAnswers[currentQuestion.id] === 'A'">正确</n-radio>
                 </div>
                 <div
                   class="flex-1 p-3 border rounded text-center cursor-pointer hover:border-primary"
-                  :class="{ 'border-primary bg-primary bg-opacity-5': currentAnswers[currentQuestion.id] === 'false' }"
-                  @click="selectAnswer('false')"
+                  :class="{ 'border-primary bg-primary bg-opacity-5': currentAnswers[currentQuestion.id] === 'B' }"
+                  @click="selectAnswer('B')"
                 >
-                  <n-radio :checked="currentAnswers[currentQuestion.id] === 'false'">错误</n-radio>
+                  <n-radio :checked="currentAnswers[currentQuestion.id] === 'B'">错误</n-radio>
                 </div>
               </div>
             </template>
 
             <!-- 填空题 -->
-            <template v-if="currentQuestion?.type === 3">
+            <template v-if="currentQuestion?.type === 'FILL_BLANK'">
               <n-input
                 v-model:value="fillAnswers[currentQuestion.id]"
                 type="textarea"
@@ -139,7 +139,7 @@
             </template>
 
             <!-- 简答题 -->
-            <template v-if="currentQuestion?.type === 4">
+            <template v-if="currentQuestion?.type === 'SHORT_ANSWER'">
               <n-input
                 v-model:value="fillAnswers[currentQuestion.id]"
                 type="textarea"
@@ -195,7 +195,7 @@ const route = useRoute()
 const router = useRouter()
 const message = useMessage()
 
-const paperId = Number(route.params.paperId)
+const paperId = Number(route.params.id)
 const sessionId = ref<number | null>(null)
 const paperTitle = ref('')
 const questions = ref<any[]>([])
@@ -209,17 +209,41 @@ const showSubmitConfirm = ref(false)
 const submitting = ref(false)
 const cheatCount = ref(0)
 
-const typeLabels: Record<number, string> = { 0: '单选题', 1: '多选题', 2: '判断题', 3: '填空题', 4: '简答题' }
+const typeLabels: Record<string, string> = { SINGLE: '单选题', MULTIPLE: '多选题', TRUE_FALSE: '判断题', FILL_BLANK: '填空题', SHORT_ANSWER: '简答题' }
 const difficultyLabels: Record<string, string> = { EASY: '简单', MEDIUM: '中等', HARD: '困难' }
 
 const currentQuestion = computed(() => questions.value[currentIndex.value] || null)
 
+/** 解析 options JSON 字符串为数组 */
+const parsedOptions = computed(() => {
+  const q = currentQuestion.value
+  if (!q || !q.options) return []
+  if (Array.isArray(q.options)) return q.options
+  try {
+    return JSON.parse(q.options)
+  } catch {
+    return []
+  }
+})
+
+/** 解析 content JSON 字符串，提取 content 字段 */
+const parsedContent = computed(() => {
+  const q = currentQuestion.value
+  if (!q || !q.content) return ''
+  try {
+    const parsed = JSON.parse(q.content)
+    return parsed.content || ''
+  } catch {
+    return q.content
+  }
+})
+
 const answeredCount = computed(() => {
   let count = 0
   questions.value.forEach((q: any) => {
-    if (q.type === 1) {
+    if (q.type === 'MULTIPLE') {
       if (currentAnswers[q.id]?.length) count++
-    } else if (q.type === 3 || q.type === 4) {
+    } else if (q.type === 'FILL_BLANK' || q.type === 'SHORT_ANSWER') {
       if (fillAnswers[q.id]?.trim()) count++
     } else {
       if (currentAnswers[q.id]) count++
@@ -246,9 +270,9 @@ function getQuestionStatusClass(index: number) {
   if (!q) return 'bg-gray-200 text-gray-500'
   if (currentIndex.value === index) return 'bg-primary text-white'
   if (markedForReview.value.has(index)) return 'bg-warning text-white'
-  const hasAnswer = q.type === 1
+  const hasAnswer = q.type === 'MULTIPLE'
     ? currentAnswers[q.id]?.length
-    : (q.type === 3 || q.type === 4)
+    : (q.type === 'FILL_BLANK' || q.type === 'SHORT_ANSWER')
       ? fillAnswers[q.id]?.trim()
       : currentAnswers[q.id]
   return hasAnswer ? 'bg-success text-white' : 'bg-gray-200 text-gray-500'
@@ -313,9 +337,9 @@ async function autoSave() {
 
 function buildAnswerPayload() {
   return questions.value.map((q: any) => {
-    const answer = q.type === 1
+    const answer = q.type === 'MULTIPLE'
       ? currentAnswers[q.id] || ''
-      : (q.type === 3 || q.type === 4)
+      : (q.type === 'FILL_BLANK' || q.type === 'SHORT_ANSWER')
         ? fillAnswers[q.id] || ''
         : currentAnswers[q.id] || ''
     return { paperQuestionId: q.id, answer }
@@ -425,7 +449,7 @@ async function restoreSession() {
       data.currentAnswers.forEach((a: any) => {
         const q = questions.value.find((q: any) => q.id === a.paperQuestionId)
         if (q) {
-          if (q.type === 3 || q.type === 4) {
+          if (q.type === 'FILL_BLANK' || q.type === 'SHORT_ANSWER') {
             fillAnswers[q.id] = a.userAnswer
           } else {
             currentAnswers[q.id] = a.userAnswer

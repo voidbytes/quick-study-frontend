@@ -4,7 +4,7 @@ import type { ApiResponse, PageResult, PracticeSession } from '@/types'
 export interface CreateSessionParams {
   count: number
   bankIds?: number[]
-  types?: number[]
+  types?: string[]
   tagIds?: number[]
   correctRateMin?: number
   correctRateMax?: number
@@ -19,7 +19,7 @@ export interface PracticeListParams {
 }
 
 export interface SaveAnswerParams {
-  questionId: number
+  index: number
   answer: string
 }
 
@@ -36,7 +36,7 @@ export function getPracticeSession(id: number) {
 }
 
 export function submitPracticeAnswer(sessionId: number, data: SaveAnswerParams) {
-  return request.put<ApiResponse<null>>(`/practice/sessions/${sessionId}/answers`, data)
+  return request.post<ApiResponse<null>>(`/practice/sessions/${sessionId}/answers`, data)
 }
 
 export function completePractice(sessionId: number) {
@@ -60,7 +60,7 @@ export function getSession(id: number) {
 }
 
 export function saveAnswer(sessionId: number, data: SaveAnswerParams) {
-  return request.put<ApiResponse<null>>(`/practice/sessions/${sessionId}/answers`, data)
+  return request.post<ApiResponse<null>>(`/practice/sessions/${sessionId}/answers`, data)
 }
 
 export function complete(sessionId: number) {
