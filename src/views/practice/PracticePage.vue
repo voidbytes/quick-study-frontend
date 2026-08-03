@@ -171,7 +171,7 @@ const route = useRoute()
 const router = useRouter()
 const message = useMessage()
 
-const sessionId = Number(route.params.sessionId)
+const sessionId = Number(route.params.id)
 const questions = ref<any[]>([])
 const currentIndex = ref(0)
 const selectedAnswer = ref('')
