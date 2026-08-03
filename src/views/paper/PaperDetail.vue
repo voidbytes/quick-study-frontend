@@ -90,7 +90,7 @@ const route = useRoute()
 const router = useRouter()
 const message = useMessage()
 
-const paperId = Number(route.params.paperId)
+const paperId = Number(route.params.id)
 const loading = ref(false)
 const paper = ref<any>(null)
 const paperQuestions = ref<any[]>([])

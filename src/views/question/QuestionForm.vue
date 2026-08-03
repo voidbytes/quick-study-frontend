@@ -163,8 +163,8 @@ const route = useRoute()
 const router = useRouter()
 const message = useMessage()
 
-const bankId = Number(route.params.bankId)
-const questionId = route.params.questionId ? Number(route.params.questionId) : null
+const bankId = Number(route.params.id)
+const questionId = route.params.qid ? Number(route.params.qid) : null
 const isEdit = computed(() => !!questionId)
 
 const formRef = ref<FormInst | null>(null)

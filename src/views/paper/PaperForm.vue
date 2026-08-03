@@ -186,7 +186,7 @@ const route = useRoute()
 const router = useRouter()
 const message = useMessage()
 
-const paperId = route.params.paperId ? Number(route.params.paperId) : null
+const paperId = route.params.id ? Number(route.params.id) : null
 const isEdit = computed(() => !!paperId)
 
 const currentStep = ref(0)

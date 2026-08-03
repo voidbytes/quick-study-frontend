@@ -14,6 +14,7 @@ export interface CreateSessionParams {
 
 export interface PracticeListParams {
   page?: number
+  size?: number
   pageSize?: number
   status?: string
 }
