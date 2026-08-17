@@ -137,10 +137,11 @@ export interface Answer {
 
 // 练习会话
 export interface PracticeSession {
-  sessionId: number
+  sessionId: string
   status: string
   currentIndex: number
   totalCount: number
+  filterParams?: string
   questions: PracticeQuestion[]
   answers: PracticeAnswer[]
   stats: PracticeStats

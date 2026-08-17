@@ -43,12 +43,14 @@
 
 <script setup lang="ts">
 import { ref, reactive, h, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { useMessage } from 'naive-ui'
 import type { DataTableColumn } from 'naive-ui'
 import { getRecordList } from '@/api/record'
 import { getBankList } from '@/api/bank'
 import dayjs from 'dayjs'
 
+const router = useRouter()
 const message = useMessage()
 
 const loading = ref(false)
@@ -59,9 +61,28 @@ const recordList = ref<any[]>([])
 const bankOptions = ref<{ label: string; value: number }[]>([])
 
 const sourceTypeOptions = [
-  { label: '练习', value: 'PRACTICE' },
+  { label: '练习', value: 'PRACTICE_SESSION' },
   { label: '考试', value: 'EXAM' }
 ]
+
+/** 从 questionSnapshot JSON 中提取内容 */
+function parseContent(row: any): string {
+  if (!row.questionSnapshot) return ''
+  try {
+    const snapshot = JSON.parse(row.questionSnapshot)
+    return snapshot.content?.replace(/<[^>]+>/g, '').substring(0, 80) || ''
+  } catch {
+    return ''
+  }
+}
+
+function handleViewOriginal(row: any) {
+  const bankId = row.bankId
+  const questionId = row.questionId
+  if (bankId && questionId) {
+    router.push(`/banks/${bankId}/questions/${questionId}`)
+  }
+}
 
 const pagination = reactive({
   page: 1,
@@ -75,7 +96,11 @@ const columns: DataTableColumn<any>[] = [
     key: 'content',
     ellipsis: { tooltip: true },
     render(row) {
-      return h('span', { class: 'truncate block max-w-xs' }, row.content?.replace(/<[^>]+>/g, '').substring(0, 80) || '')
+      const text = parseContent(row)
+      return h('a', {
+        class: 'text-primary cursor-pointer hover:underline truncate block max-w-xs',
+        onClick: () => handleViewOriginal(row)
+      }, text)
     }
   },
   { title: '你的答案', key: 'userAnswer', width: 120, ellipsis: { tooltip: true } },
@@ -98,7 +123,7 @@ const columns: DataTableColumn<any>[] = [
     width: 80,
     align: 'center',
     render(row) {
-      return row.sourceType === 'PRACTICE' ? '练习' : row.sourceType === 'EXAM' ? '考试' : row.sourceType
+      return row.sourceType === 'PRACTICE_SESSION' ? '练习' : row.sourceType === 'EXAM' ? '考试' : row.sourceType
     }
   },
   {

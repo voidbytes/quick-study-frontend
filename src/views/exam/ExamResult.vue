@@ -62,7 +62,7 @@ const route = useRoute()
 const router = useRouter()
 const message = useMessage()
 
-const sessionId = Number(route.params.id)
+const sessionId = route.params.id as string
 const result = ref<any>({})
 
 const statusLabel = computed(() => {

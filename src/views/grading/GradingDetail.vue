@@ -69,7 +69,7 @@ const route = useRoute()
 const router = useRouter()
 const message = useMessage()
 
-const sessionId = Number(route.params.id)
+const sessionId = route.params.id as string
 const loading = ref(false)
 const completing = ref(false)
 const session = ref<any>(null)

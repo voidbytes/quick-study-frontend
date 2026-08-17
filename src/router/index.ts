@@ -137,6 +137,11 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/views/wrongquestion/WrongQuestionList.vue')
       },
       {
+        path: 'wrong-questions/snapshot/:id',
+        name: 'WrongQuestionSnapshot',
+        component: () => import('@/views/wrongquestion/WrongQuestionSnapshot.vue')
+      },
+      {
         path: 'records',
         name: 'RecordList',
         component: () => import('@/views/record/RecordList.vue')

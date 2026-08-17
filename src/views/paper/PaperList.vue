@@ -89,6 +89,7 @@ const shareTypeLabels: Record<string, string> = {
 
 const columns: DataTableColumn<any>[] = [
   { title: '标题', key: 'title', ellipsis: { tooltip: true } },
+  { title: '发布者', key: 'creatorName', width: 100, align: 'center', ellipsis: { tooltip: true } },
   { title: '题目数', key: 'questionCount', width: 80, align: 'center' },
   { title: '总分', key: 'totalScore', width: 70, align: 'center' },
   {
@@ -123,6 +124,12 @@ const columns: DataTableColumn<any>[] = [
       const actions = [
         h('a', { class: 'text-primary cursor-pointer', onClick: () => router.push(`/papers/${row.id}`) }, '详情')
       ]
+      // 已发布的试卷，所有登录用户可作答
+      if (row.status === 'PUBLISHED' && authStore.isAuthenticated) {
+        actions.push(
+          h('a', { class: 'text-success cursor-pointer', onClick: () => router.push(`/papers/${row.id}/exam`) }, '开始考试')
+        )
+      }
       if (authStore.isAdmin) {
         actions.push(
           h('a', { class: 'text-primary cursor-pointer', onClick: () => router.push(`/papers/${row.id}/edit`) }, '编辑')

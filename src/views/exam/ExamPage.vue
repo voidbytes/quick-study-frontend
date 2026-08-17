@@ -195,8 +195,8 @@ const route = useRoute()
 const router = useRouter()
 const message = useMessage()
 
-const paperId = Number(route.params.id)
-const sessionId = ref<number | null>(null)
+const paperId = route.params.id as string
+const sessionId = ref<string | null>(null)
 const paperTitle = ref('')
 const questions = ref<any[]>([])
 const currentIndex = ref(0)
@@ -372,7 +372,7 @@ function loadFromLocal() {
 async function initSession() {
   try {
     const res = await startSession(paperId)
-    const data = res.data.data
+    const data = res.data
     sessionId.value = data.sessionId
     paperTitle.value = route.params.title as string || '考试'
     questions.value = data.questions || []
@@ -381,8 +381,9 @@ async function initSession() {
     }
     loadFromLocal()
     startTimer()
-  } catch {
-    message.error('无法开始作答')
+  } catch (err: any) {
+    const msg = err?.response?.data?.message || err?.message || '无法开始作答'
+    message.error(msg)
     router.push('/papers')
   }
 }

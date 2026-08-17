@@ -16,3 +16,7 @@ export function list(params?: WrongQuestionListParams) {
 export function deleteWrongQuestion(id: number) {
   return request.delete<ApiResponse<null>>(`/wrong-questions/${id}`)
 }
+
+export function getWrongQuestionById(id: string) {
+  return request.get<ApiResponse<WrongQuestion>>(`/wrong-questions/${id}`)
+}

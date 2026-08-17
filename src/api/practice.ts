@@ -32,19 +32,19 @@ export function getPracticeSessions(params?: PracticeListParams) {
   return request.get<ApiResponse<PageResult<PracticeSession>>>('/practice/sessions', { params })
 }
 
-export function getPracticeSession(id: number) {
+export function getPracticeSession(id: string) {
   return request.get<ApiResponse<PracticeSession>>(`/practice/sessions/${id}`)
 }
 
-export function submitPracticeAnswer(sessionId: number, data: SaveAnswerParams) {
+export function submitPracticeAnswer(sessionId: string, data: SaveAnswerParams) {
   return request.post<ApiResponse<null>>(`/practice/sessions/${sessionId}/answers`, data)
 }
 
-export function completePractice(sessionId: number) {
+export function completePractice(sessionId: string) {
   return request.post<ApiResponse<PracticeSession>>(`/practice/sessions/${sessionId}/complete`)
 }
 
-export function abandonPractice(sessionId: number) {
+export function abandonPractice(sessionId: string) {
   return request.post<ApiResponse<null>>(`/practice/sessions/${sessionId}/abandon`)
 }
 

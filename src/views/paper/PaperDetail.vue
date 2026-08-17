@@ -8,8 +8,13 @@
         <template #header>
           <div class="flex items-center justify-between">
             <span class="text-xl font-bold">{{ paper?.title }}</span>
-            <n-tag v-if="paper?.status === 'PUBLISHED'" type="success">已发布</n-tag>
-            <n-tag v-else>草稿</n-tag>
+            <div class="flex items-center gap-2">
+              <n-button v-if="paper?.status === 'PUBLISHED' && authStore.isAuthenticated" type="primary" size="small" @click="router.push(`/papers/${paperId}/exam`)">>
+                开始考试
+              </n-button>
+              <n-tag v-if="paper?.status === 'PUBLISHED'" type="success">已发布</n-tag>
+              <n-tag v-else>草稿</n-tag>
+            </div>
           </div>
         </template>
         <n-descriptions :column="2" bordered>
@@ -17,8 +22,12 @@
           <n-descriptions-item label="总分">{{ paper?.totalScore }}</n-descriptions-item>
           <n-descriptions-item label="题目数">{{ paper?.questionCount }}</n-descriptions-item>
           <n-descriptions-item label="时间限制">{{ paper?.timeLimit ? paper.timeLimit + '分钟' : '不限' }}</n-descriptions-item>
+          <n-descriptions-item label="发布者">{{ paper?.creatorName || '-' }}</n-descriptions-item>
           <n-descriptions-item label="分享类型">{{ shareTypeLabels[paper?.shareType] || paper?.shareType }}</n-descriptions-item>
-          <n-descriptions-item label="防作弊">{{ paper?.cheatEnabled ? '开启' : '关闭' }}</n-descriptions-item>
+          <n-descriptions-item label="作答次数">
+            {{ attemptLimitLabel(paper?.attemptType, paper?.attemptLimit) }}
+            <n-tag v-if="paper?.cheatEnabled" size="tiny" type="warning" class="ml-2">防作弊开启</n-tag>
+          </n-descriptions-item>
         </n-descriptions>
       </n-card>
 
@@ -85,12 +94,14 @@ import { useMessage } from 'naive-ui'
 import type { DataTableColumn } from 'naive-ui'
 import { getPaperDetail, getPaperSessions, getSessionsSummary, updateGrader } from '@/api/paper'
 import dayjs from 'dayjs'
+import { useAuthStore } from '@/stores/auth'
 
 const route = useRoute()
 const router = useRouter()
 const message = useMessage()
+const authStore = useAuthStore()
 
-const paperId = Number(route.params.id)
+const paperId = route.params.id as string
 const loading = ref(false)
 const paper = ref<any>(null)
 const paperQuestions = ref<any[]>([])
@@ -101,6 +112,12 @@ const newGraderId = ref('')
 
 const shareTypeLabels: Record<string, string> = {
   PRIVATE: '私有', LINK: '链接', PASSWORD: '密码', PUBLIC: '公开'
+}
+
+function attemptLimitLabel(attemptType?: string, attemptLimit?: number): string {
+  if (attemptType === 'UNLIMITED') return '不限次数'
+  if (attemptLimit && attemptLimit > 0) return attemptLimit + '次'
+  return '1次'
 }
 
 const typeLabels: Record<number, string> = {
@@ -138,8 +155,8 @@ async function fetchDetail() {
   loading.value = true
   try {
     const res = await getPaperDetail(paperId)
-    paper.value = res
-    paperQuestions.value = res.questions || []
+    paper.value = res.data
+    paperQuestions.value = res.data.questions || []
   } catch {
     message.error('加载试卷详情失败')
   } finally {
@@ -166,7 +183,7 @@ async function fetchSessions() {
 async function fetchStats() {
   try {
     const res = await getSessionsSummary(paperId)
-    sessionStats.value = res
+    sessionStats.value = res.data
   } catch {
     // ignore
   }
@@ -178,7 +195,7 @@ async function handleUpdateGrader() {
     return
   }
   try {
-    await updateGrader(paperId, { graderId: Number(newGraderId.value) })
+    await updateGrader(paperId, Number(newGraderId.value))
     message.success('批改人已更新')
   } catch {
     message.error('更新失败')

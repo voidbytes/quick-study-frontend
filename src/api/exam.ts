@@ -2,7 +2,7 @@ import request from './request'
 import type { ApiResponse } from '@/types'
 
 export interface StartSessionResponse {
-  sessionId: number
+  sessionId: string
   deadline: string | null
   questions: QuestionItem[]
 }
@@ -17,7 +17,7 @@ export interface QuestionItem {
 }
 
 export interface SessionResponse {
-  sessionId: number
+  sessionId: string
   status: string
   deadline: string | null
   cheatCount: number
@@ -40,7 +40,7 @@ export interface SaveAnswersPayload {
 }
 
 export interface SessionResultResponse {
-  sessionId: number
+  sessionId: string
   totalScore: number
   objectiveScore: number
   subjectiveScore: number
@@ -60,27 +60,27 @@ export interface QuestionResultItem {
   isCorrect: boolean | null
 }
 
-export function startSession(paperId: number, password?: string) {
+export function startSession(paperId: string | number, password?: string) {
   const params = password ? `?password=${encodeURIComponent(password)}` : ''
   return request.post<ApiResponse<StartSessionResponse>>(`/papers/${paperId}/sessions${params}`)
 }
 
-export function getSession(sessionId: number) {
+export function getSession(sessionId: string) {
   return request.get<ApiResponse<SessionResponse>>(`/sessions/${sessionId}`)
 }
 
-export function saveAnswers(sessionId: number, data: SaveAnswersPayload) {
+export function saveAnswers(sessionId: string, data: SaveAnswersPayload) {
   return request.post<ApiResponse<null>>(`/sessions/${sessionId}/answers`, data)
 }
 
-export function submitSession(sessionId: number) {
+export function submitSession(sessionId: string) {
   return request.post<ApiResponse<any>>(`/sessions/${sessionId}/submit`)
 }
 
-export function reportCheat(sessionId: number) {
+export function reportCheat(sessionId: string) {
   return request.post<ApiResponse<any>>(`/sessions/${sessionId}/cheat`)
 }
 
-export function getResult(sessionId: number) {
+export function getResult(sessionId: string) {
   return request.get<ApiResponse<SessionResultResponse>>(`/sessions/${sessionId}/result`)
 }

@@ -68,7 +68,6 @@ const statusColors: Record<string, string> = {
 }
 
 const columns: DataTableColumn<any>[] = [
-  { title: '条件', key: 'conditions', ellipsis: { tooltip: true } },
   { title: '题目数', key: 'totalCount', width: 80, align: 'center' },
   {
     title: '正确率',
@@ -152,7 +151,7 @@ function handleAbandon(row: any) {
     negativeText: '取消',
     onPositiveClick: async () => {
       try {
-        await abandonPractice(row.id)
+        await abandonPractice(row.sessionId)
         message.success('已放弃')
         fetchList()
       } catch {

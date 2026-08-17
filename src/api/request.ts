@@ -41,7 +41,14 @@ request.interceptors.request.use(
 // 响应拦截器
 request.interceptors.response.use(
   (response: AxiosResponse) => {
-    return response.data
+    const data = response.data
+    // 检查业务状态码，非0表示业务错误，转为reject以便统一处理
+    if (data && data.code !== undefined && data.code !== 0) {
+      const error = new Error(data.message || '业务错误')
+      ;(error as any).response = response
+      return Promise.reject(error)
+    }
+    return data
   },
   async error => {
     const { response, config } = error

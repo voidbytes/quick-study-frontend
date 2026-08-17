@@ -55,11 +55,23 @@ const wrongList = ref<any[]>([])
 const bankOptions = ref<{ label: string; value: number }[]>([])
 const tagOptions = ref<{ label: string; value: number }[]>([])
 
+const typeLabels: Record<string, string> = { SINGLE: '单选', MULTIPLE: '多选', TRUE_FALSE: '判断', FILL_BLANK: '填空', SHORT_ANSWER: '简答' }
+
 const pagination = reactive({
   page: 1,
   pageSize: 20,
   total: 0
 })
+
+/** 从 questionSnapshot JSON 中提取内容 */
+function parseSnapshot(row: any) {
+  if (!row.questionSnapshot) return { content: '', type: '' }
+  try {
+    return JSON.parse(row.questionSnapshot)
+  } catch {
+    return { content: '', type: '' }
+  }
+}
 
 const columns: DataTableColumn<any>[] = [
   {
@@ -67,7 +79,12 @@ const columns: DataTableColumn<any>[] = [
     key: 'content',
     ellipsis: { tooltip: true },
     render(row) {
-      return h('span', { class: 'truncate block max-w-sm' }, row.content?.replace(/<[^>]+>/g, '').substring(0, 100) || '')
+      const snapshot = parseSnapshot(row)
+      const text = snapshot.content?.replace(/<[^>]+>/g, '').substring(0, 100) || ''
+      return h('a', {
+        class: 'text-primary cursor-pointer hover:underline truncate block max-w-sm',
+        onClick: () => handleViewOriginal(row)
+      }, text)
     }
   },
   {
@@ -76,31 +93,52 @@ const columns: DataTableColumn<any>[] = [
     width: 70,
     align: 'center',
     render(row) {
-      const labels: Record<number, string> = { 0: '单选', 1: '多选', 2: '判断', 3: '填空', 4: '简答' }
-      return labels[row.type] || '-'
+      const snapshot = parseSnapshot(row)
+      return typeLabels[snapshot.type] || '-'
     }
   },
-  { title: '错误次数', key: 'wrongCount', width: 80, align: 'center' },
+  { title: '错误次数', key: 'errorCount', width: 80, align: 'center' },
   {
     title: '最近做错',
-    key: 'lastWrongAt',
+    key: 'lastWrongTime',
     width: 160,
-    render(row) { return row.lastWrongAt ? dayjs(row.lastWrongAt).format('YYYY-MM-DD HH:mm') : '-' }
+    render(row) { return row.lastWrongTime ? dayjs(row.lastWrongTime).format('YYYY-MM-DD HH:mm') : '-' }
   },
   {
     title: '操作',
     key: 'actions',
-    width: 160,
+    width: 200,
     render(row) {
       const actions = []
-      if (row.type === 0 || row.type === 1 || row.type === 2) {
+      const snapshot = parseSnapshot(row)
+      if (['SINGLE', 'MULTIPLE', 'TRUE_FALSE'].includes(snapshot.type)) {
         actions.push(h('a', { class: 'text-primary cursor-pointer', onClick: () => handleRedo(row) }, '错题重做'))
       }
+      actions.push(h('a', { class: 'text-primary cursor-pointer ml-2', onClick: () => handleViewSnapshot(row) }, '查看详情'))
       actions.push(h('a', { class: 'text-error cursor-pointer ml-2', onClick: () => handleRemove(row) }, '移除'))
       return h('div', {}, actions)
     }
   }
 ]
+
+function handleViewOriginal(row: any) {
+  const bankId = row.bankId
+  const questionId = row.questionId
+  if (bankId && questionId) {
+    router.push(`/banks/${bankId}/questions/${questionId}`)
+  } else {
+    message.warning('无法跳转原题')
+  }
+}
+
+function handleViewSnapshot(row: any) {
+  const id = row.id
+  if (id) {
+    router.push(`/wrong-questions/snapshot/${id}`)
+  } else {
+    message.warning('无法查看快照')
+  }
+}
 
 async function fetchList() {
   loading.value = true

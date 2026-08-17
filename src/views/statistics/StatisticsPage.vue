@@ -15,7 +15,7 @@
           <n-grid-item>
             <n-statistic label="正确率">
               <template #default>
-                {{ overview?.correctRate ? (overview.correctRate * 100).toFixed(1) + '%' : '-' }}
+                {{ overview?.correctRate ? overview.correctRate.toFixed(1) + '%' : '-' }}
               </template>
             </n-statistic>
           </n-grid-item>
@@ -76,7 +76,7 @@ const bankStatColumns: DataTableColumn<any>[] = [
     width: 80,
     align: 'center',
     render(row) {
-      return row.correctRate != null ? (row.correctRate * 100).toFixed(1) + '%' : '-'
+      return row.correctRate != null ? row.correctRate.toFixed(1) + '%' : '-'
     }
   }
 ]
@@ -84,7 +84,8 @@ const bankStatColumns: DataTableColumn<any>[] = [
 async function fetchData() {
   loading.value = true
   try {
-    overview.value = await getStatisticsOverview()
+    const res = await getStatisticsOverview()
+    overview.value = res.data
   } catch {
     message.error('加载统计数据失败')
   } finally {
@@ -99,7 +100,7 @@ function renderCharts() {
     // 正确率图表
     if (accuracyChartRef.value) {
       const names = overview.value.bankStats.map((s: any) => s.bankName)
-      const rates = overview.value.bankStats.map((s: any) => (s.correctRate || 0) * 100)
+      const rates = overview.value.bankStats.map((s: any) => (s.correctRate || 0))
 
       const accuracyOption: EChartsOption = {
         tooltip: { trigger: 'axis' },

@@ -186,7 +186,7 @@ const route = useRoute()
 const router = useRouter()
 const message = useMessage()
 
-const paperId = route.params.id ? Number(route.params.id) : null
+const paperId = route.params.id ? (route.params.id as string) : null
 const isEdit = computed(() => !!paperId)
 
 const currentStep = ref(0)
@@ -276,16 +276,17 @@ async function loadPaper() {
   loading.value = true
   try {
     const res = await getPaperDetail(paperId)
-    basicForm.title = res.title
-    basicForm.description = res.description || ''
-    basicForm.timeLimit = res.timeLimit
-    basicForm.startTime = res.startTime ? new Date(res.startTime).getTime() : null
-    basicForm.endTime = res.endTime ? new Date(res.endTime).getTime() : null
-    basicForm.attemptLimit = res.attemptLimit
-    basicForm.shareType = res.shareType || 'PRIVATE'
-    basicForm.cheatEnabled = res.cheatEnabled || false
-    if (res.questions) {
-      scoredQuestions.value = res.questions.map((q: any) => ({ ...q, score: q.score || 0 }))
+    const data = res.data
+    basicForm.title = data.title
+    basicForm.description = data.description || ''
+    basicForm.timeLimit = data.timeLimit
+    basicForm.startTime = data.startTime ? new Date(data.startTime).getTime() : null
+    basicForm.endTime = data.endTime ? new Date(data.endTime).getTime() : null
+    basicForm.attemptLimit = data.attemptLimit
+    basicForm.shareType = data.shareType || 'PRIVATE'
+    basicForm.cheatEnabled = data.cheatEnabled || false
+    if (data.questions) {
+      scoredQuestions.value = data.questions.map((q: any) => ({ ...q, score: q.score || 0 }))
     }
   } catch {
     message.error('加载试卷失败')

@@ -7,6 +7,11 @@
           <template #header>
             <span class="text-xl font-bold">练习结果</span>
           </template>
+          <n-descriptions v-if="conditionText" :column="1" bordered size="small" class="mb-4">
+            <n-descriptions-item label="练习条件">
+              <span class="text-sm">{{ conditionText }}</span>
+            </n-descriptions-item>
+          </n-descriptions>
           <n-grid :cols="3" :x-gap="16" class="mb-6">
             <n-grid-item>
               <n-statistic label="正确率">
@@ -67,9 +72,14 @@
               <span class="text-lg font-bold">
                 第 {{ currentIndex + 1 }} 题 / 共 {{ questions.length }} 题
               </span>
-              <n-tag :type="difficultyTagType(currentQuestion?.difficulty)" size="small">
-                {{ difficultyLabels[currentQuestion?.difficulty] || '未知' }}
-              </n-tag>
+              <div class="flex items-center gap-2">
+                <n-tag v-if="conditionText" size="small" type="info" style="max-width: 300px" ellipsis>
+                  {{ conditionText }}
+                </n-tag>
+                <n-tag :type="difficultyTagType(currentQuestion?.difficulty)" size="small">
+                  {{ difficultyLabels[currentQuestion?.difficulty] || '未知' }}
+                </n-tag>
+              </div>
             </div>
           </template>
 
@@ -150,9 +160,7 @@
                 提交答案
               </n-button>
               <n-button v-if="currentIndex < questions.length - 1" @click="nextQuestion">下一题</n-button>
-              <n-button v-else-if="answered" type="success" @click="finishPractice">
-                完成练习
-              </n-button>
+              <n-button type="success" @click="handleComplete">提交</n-button>
             </div>
           </div>
         </n-card>
@@ -164,14 +172,15 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useMessage } from 'naive-ui'
+import { useMessage, useDialog } from 'naive-ui'
 import { getPracticeSession, submitPracticeAnswer, completePractice } from '@/api/practice'
 
 const route = useRoute()
 const router = useRouter()
 const message = useMessage()
+const dialog = useDialog()
 
-const sessionId = Number(route.params.id)
+const sessionId = route.params.id as string
 const questions = ref<any[]>([])
 const currentIndex = ref(0)
 const selectedAnswer = ref('')
@@ -179,6 +188,7 @@ const multipleSelected = ref<string[]>([])
 const answered = ref(false)
 const submitting = ref(false)
 const result = ref<any>(null)
+const filterParams = ref<any>(null)
 
 const difficultyLabels: Record<string, string> = { EASY: '简单', MEDIUM: '中等', HARD: '困难' }
 
@@ -193,6 +203,42 @@ const parsedOptions = computed(() => {
   } catch {
     return []
   }
+})
+
+/** 解析条件描述 */
+const conditionText = computed(() => {
+  if (!filterParams.value) return ''
+  const fp = filterParams.value
+  const parts: string[] = []
+  if (fp.sourceType === 'WRONG_REDO') {
+    parts.push('来源：错题重做')
+  } else {
+    parts.push('来源：随机练习')
+  }
+  if (fp.bankIds && fp.bankIds.length > 0) {
+    parts.push(`题库：${fp.bankIds.length}个`)
+  }
+  if (fp.types && fp.types.length > 0) {
+    const typeMap: Record<string, string> = { SINGLE: '单选', MULTIPLE: '多选', TRUE_FALSE: '判断' }
+    const typeNames = fp.types.map((t: string) => typeMap[t] || t)
+    parts.push(`题型：${typeNames.join('、')}`)
+  }
+  if (fp.tagIds && fp.tagIds.length > 0) {
+    parts.push(`标签：${fp.tagIds.length}个`)
+  }
+  if (fp.correctRateMin != null || fp.correctRateMax != null) {
+    const min = fp.correctRateMin != null ? Math.round(fp.correctRateMin * 100) : 0
+    const max = fp.correctRateMax != null ? Math.round(fp.correctRateMax * 100) : 100
+    parts.push(`正确率：${min}%-${max}%`)
+  }
+  if (fp.priorUnanswered) parts.push('优先未做')
+  if (fp.priorWrong) parts.push('优先易错')
+  return parts.join(' | ')
+})
+
+/** 未答题数 */
+const unansweredCount = computed(() => {
+  return questions.value.filter((q: any) => !q.userAnswer).length
 })
 
 function difficultyTagType(d: string) {
@@ -286,11 +332,44 @@ async function finishPractice() {
   }
 }
 
+function handleComplete() {
+  const unanswered = unansweredCount.value
+  if (unanswered > 0) {
+    dialog.warning({
+      title: '确认提交',
+      content: `还有 ${unanswered} 道题未作答，确定提交吗？`,
+      positiveText: '确定提交',
+      negativeText: '继续作答',
+      onPositiveClick: async () => {
+        await finishPractice()
+      }
+    })
+  } else {
+    dialog.info({
+      title: '确认提交',
+      content: '已完成所有题目，确定提交吗？',
+      positiveText: '确定',
+      negativeText: '取消',
+      onPositiveClick: async () => {
+        await finishPractice()
+      }
+    })
+  }
+}
+
 async function loadSession() {
   try {
     const res = await getPracticeSession(sessionId)
     const session = res.data
     questions.value = session.questions || []
+    // 解析条件
+    if (session.filterParams) {
+      try {
+        filterParams.value = JSON.parse(session.filterParams)
+      } catch {
+        filterParams.value = null
+      }
+    }
     // 合并答案信息到题目中
     if (session.answers?.length) {
       questions.value.forEach((q: any) => {
