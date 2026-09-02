@@ -4,7 +4,7 @@
       ← 返回
     </n-button>
 
-    <n-spin :show="loading">
+    <n-spin v-if="!loadError" :show="loading">
       <!-- 题库基本信息 -->
       <n-card class="mb-6">
         <template #header>
@@ -54,6 +54,7 @@
         <QuestionList :bank-id="bankId" />
       </n-card>
     </n-spin>
+    <LoadError v-else :description="loadError" :retrying="loading" @retry="fetchDetail" />
 
     <!-- 转让题库弹窗 -->
     <n-modal v-model:show="showTransfer" title="转让题库" preset="card" style="width: 400px">
@@ -113,6 +114,7 @@ import { useMessage, type FormRules, type FormInst } from 'naive-ui'
 import { getBankDetail, getCollaborators, addCollaborator, removeCollaborator, transferBank, updateBank } from '@/api/bank'
 import { useAuthStore } from '@/stores/auth'
 import QuestionList from '@/views/question/QuestionList.vue'
+import LoadError from '@/components/LoadError.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -121,6 +123,7 @@ const authStore = useAuthStore()
 
 const bankId = route.params.id as string
 const loading = ref(false)
+const loadError = ref('')
 const bank = ref<any>(null)
 const collaborators = ref<any[]>([])
 
@@ -153,11 +156,12 @@ const editRules: FormRules = {
 
 async function fetchDetail() {
   loading.value = true
+  loadError.value = ''
   try {
     const res = await getBankDetail(bankId)
     bank.value = res.data
-  } catch {
-    message.error('加载题库详情失败')
+  } catch (err: any) {
+    loadError.value = err?.response?.data?.message || err?.message || '加载题库详情失败'
   } finally {
     loading.value = false
   }

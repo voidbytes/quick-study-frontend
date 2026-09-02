@@ -73,18 +73,19 @@ const authStore = useAuthStore()
 
 const loading = ref(false)
 const searchKeyword = ref('')
-const filterType = ref<number | null>(null)
+const filterType = ref<string | null>(null)
 const filterDifficulty = ref<string | null>(null)
 const filterStatus = ref<string | null>(null)
 const questionList = ref<any[]>([])
 const dragIndex = ref<number | null>(null)
 
+// 与后端 QuestionType 枚举名保持一致
 const typeOptions = [
-  { label: '单选题', value: 0 },
-  { label: '多选题', value: 1 },
-  { label: '判断题', value: 2 },
-  { label: '填空题', value: 3 },
-  { label: '简答题', value: 4 }
+  { label: '单选题', value: 'SINGLE' },
+  { label: '多选题', value: 'MULTIPLE' },
+  { label: '判断题', value: 'TRUE_FALSE' },
+  { label: '填空题', value: 'FILL_BLANK' },
+  { label: '简答题', value: 'SHORT_ANSWER' }
 ]
 
 const difficultyOptions = [
@@ -105,7 +106,9 @@ const pagination = reactive({
   total: 0
 })
 
-const typeLabels: Record<number, string> = { 0: '单选题', 1: '多选题', 2: '判断题', 3: '填空题', 4: '简答题' }
+const typeLabels: Record<string, string> = {
+  SINGLE: '单选题', MULTIPLE: '多选题', TRUE_FALSE: '判断题', FILL_BLANK: '填空题', SHORT_ANSWER: '简答题'
+}
 const difficultyLabels: Record<string, string> = { EASY: '简单', MEDIUM: '中等', HARD: '困难' }
 const difficultyColors: Record<string, string> = { EASY: 'success', MEDIUM: 'warning', HARD: 'error' }
 

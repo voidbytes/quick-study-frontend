@@ -30,9 +30,10 @@ const routes: RouteRecordRaw[] = [
     meta: { requiresAuth: false }
   },
   {
+    // 注意：父路由不能声明 requiresAuth: false，否则 vue-router 会把父 meta
+    // 合并进所有未显式声明 meta 的子路由，导致 /statistics 等页面游客可访问
     path: '/',
     component: () => import('@/layout/MainLayout.vue'),
-    meta: { requiresAuth: false },
     children: [
       {
         path: '',
@@ -55,7 +56,8 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'banks/:id/questions',
         name: 'QuestionList',
-        component: () => import('@/views/question/QuestionList.vue')
+        component: () => import('@/views/question/QuestionList.vue'),
+        meta: { requiresAuth: false }
       },
       {
         path: 'questions',

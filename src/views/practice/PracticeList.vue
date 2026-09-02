@@ -75,10 +75,18 @@ const columns: DataTableColumn<any>[] = [
     width: 80,
     align: 'center',
     render(row) {
-      return row.accuracy != null ? (row.accuracy * 100).toFixed(1) + '%' : '-'
+      return row.stats?.accuracy != null ? (row.stats.accuracy * 100).toFixed(1) + '%' : '-'
     }
   },
-  { title: '耗时(秒)', key: 'duration', width: 80, align: 'center' },
+  {
+    title: '耗时(秒)',
+    key: 'duration',
+    width: 80,
+    align: 'center',
+    render(row) {
+      return row.stats?.duration != null ? String(row.stats.duration) : '—'
+    }
+  },
   {
     title: '状态',
     key: 'status',

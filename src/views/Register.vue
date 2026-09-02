@@ -11,7 +11,7 @@
         <n-form-item label="用户名" path="username">
           <n-input
             v-model:value="form.username"
-            placeholder="4-50 字符"
+            placeholder="3-50 字符"
             :maxlength="50"
             @blur="handleCheckUsername"
           />
@@ -140,7 +140,7 @@ function validateUsername(_rule: any, value: string) {
 const rules: FormRules = {
   username: [
     { required: true, message: '请输入用户名', trigger: 'blur' },
-    { min: 4, max: 50, message: '用户名长度在 4-50 字符之间', trigger: 'blur' },
+    { min: 3, max: 50, message: '用户名长度在 3-50 字符之间', trigger: 'blur' },
     { validator: validateUsername, trigger: 'blur' }
   ],
   password: [
@@ -164,7 +164,7 @@ const rules: FormRules = {
 }
 
 async function handleCheckUsername() {
-  if (!form.username || form.username.length < 4) return
+  if (!form.username || form.username.length < 3) return
   try {
     const res = await checkUsername(form.username)
     usernameAvailable.value = res.data.available

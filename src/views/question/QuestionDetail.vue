@@ -4,7 +4,7 @@
       ← 返回
     </n-button>
 
-    <n-spin :show="loading">
+    <n-spin v-if="!loadError" :show="loading">
       <n-card>
         <template #header>
           <div class="flex items-center justify-between">
@@ -24,7 +24,13 @@
         <div class="space-y-6">
           <!-- 所属题库 -->
           <div class="text-sm text-gray-500">
-            所属题库：{{ question?.bankName || '未知' }}
+            所属题库：
+            <a
+              v-if="question?.bankName"
+              class="text-primary cursor-pointer hover:underline"
+              @click="router.push(`/banks/${bankId}`)"
+            >{{ question.bankName }}</a>
+            <span v-else>未知</span>
           </div>
 
           <!-- 题干 -->
@@ -104,6 +110,7 @@
         </div>
       </n-card>
     </n-spin>
+    <LoadError v-else :description="loadError" :retrying="loading" @retry="fetchDetail" />
   </div>
 </template>
 
@@ -115,6 +122,7 @@ import { getQuestionDetail } from '@/api/question'
 import { useAuthStore } from '@/stores/auth'
 import { CheckmarkOutline } from '@vicons/ionicons5'
 import dayjs from 'dayjs'
+import LoadError from '@/components/LoadError.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -125,6 +133,7 @@ const bankId = route.params.bankId as string
 const questionId = route.params.questionId as string
 
 const loading = ref(false)
+const loadError = ref('')
 const question = ref<any>(null)
 
 const typeLabels: Record<string, string> = {
@@ -208,11 +217,12 @@ function formatTime(time: string) {
 
 async function fetchDetail() {
   loading.value = true
+  loadError.value = ''
   try {
     const res = await getQuestionDetail(questionId)
     question.value = res.data
-  } catch {
-    message.error('加载题目详情失败')
+  } catch (err: any) {
+    loadError.value = err?.response?.data?.message || err?.message || '加载题目详情失败'
   } finally {
     loading.value = false
   }

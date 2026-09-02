@@ -2,7 +2,8 @@
   <div class="p-6 max-w-6xl mx-auto">
     <div class="flex items-center justify-between mb-6">
       <h1 class="text-2xl font-bold text-gray-800">题库管理</h1>
-      <n-button v-if="authStore.isAdmin" type="primary" @click="showCreateDialog = true">
+      <!-- 后端允许所有登录用户创建题库（含私有），按钮不再限管理员 -->
+      <n-button v-if="authStore.isAuthenticated" type="primary" @click="showCreateDialog = true">
         创建题库
       </n-button>
     </div>

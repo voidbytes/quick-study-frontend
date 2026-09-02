@@ -33,14 +33,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, h, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, reactive, h, onMounted, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useMessage } from 'naive-ui'
 import type { DataTableColumn } from 'naive-ui'
 import { search } from '@/api/search'
 import dayjs from 'dayjs'
 
 const router = useRouter()
+const route = useRoute()
 const message = useMessage()
 
 const keyword = ref('')
@@ -102,6 +103,10 @@ async function handleSearch() {
     })
     searchResults.value = res.data.records || []
     pagination.total = res.data.total || 0
+    // 同步 URL 参数，保证刷新/分享后结果可复现
+    if (route.query.keyword !== keyword.value) {
+      router.replace({ query: { ...route.query, keyword: keyword.value } })
+    }
   } catch {
     message.error('搜索失败')
   } finally {
@@ -115,11 +120,19 @@ function handlePageChange(page: number) {
 }
 
 onMounted(() => {
-  // 从 URL 参数中读取 keyword
-  const params = new URLSearchParams(window.location.search)
-  const q = params.get('q')
+  // 从 URL 参数读取关键词（支持 keyword / q），有值则自动执行搜索
+  const q = route.query.keyword ?? route.query.q
   if (q) {
-    keyword.value = q
+    keyword.value = String(q)
+    handleSearch()
+  }
+})
+
+// 监听路由参数变化（如其他页面跳转携带新关键词时自动重新搜索）
+watch(() => route.query.keyword, (val) => {
+  const kw = val != null ? String(val) : ''
+  if (kw && kw !== keyword.value) {
+    keyword.value = kw
     handleSearch()
   }
 })

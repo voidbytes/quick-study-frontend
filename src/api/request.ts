@@ -1,14 +1,31 @@
 import axios from 'axios'
-import type { AxiosInstance, InternalAxiosRequestConfig, AxiosResponse } from 'axios'
+import type { AxiosInstance, AxiosRequestConfig, InternalAxiosRequestConfig, AxiosResponse } from 'axios'
 import { TOKEN_KEY, REFRESH_TOKEN_KEY } from '@/utils/constants'
 
-const request: AxiosInstance = axios.create({
+/**
+ * 响应拦截器将 AxiosResponse 解包为 response.data（即 ApiResponse<T>），
+ * 但 AxiosInstance 泛型签名仍返回 Promise<AxiosResponse<T>>，导致类型与运行时不一致。
+ * 此处用 Omit 抹去原方法签名后以正确返回类型重载，as 断言绕过编译期兼容性检查。
+ */
+type RequestInstance = Omit<AxiosInstance, 'get' | 'post' | 'put' | 'delete' | 'patch' | 'head' | 'options'> & {
+  <T = any>(config: AxiosRequestConfig): Promise<T>
+  <T = any>(url: string, config?: AxiosRequestConfig): Promise<T>
+  get<T = any>(url: string, config?: AxiosRequestConfig): Promise<T>
+  delete<T = any>(url: string, config?: AxiosRequestConfig): Promise<T>
+  head<T = any>(url: string, config?: AxiosRequestConfig): Promise<T>
+  options<T = any>(url: string, config?: AxiosRequestConfig): Promise<T>
+  post<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T>
+  put<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T>
+  patch<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T>
+}
+
+const request = axios.create({
   baseURL: '/api/v1',
   timeout: 30000,
   headers: {
     'Content-Type': 'application/json'
   }
-})
+}) as unknown as RequestInstance
 
 // 是否正在刷新 token
 let isRefreshing = false
@@ -37,6 +54,12 @@ request.interceptors.request.use(
     return Promise.reject(error)
   }
 )
+
+// 401 且无法刷新时跳登录页，携带当前位置以便登录后跳回
+function redirectToLogin() {
+  const current = window.location.pathname + window.location.search
+  window.location.href = '/login?redirect=' + encodeURIComponent(current)
+}
 
 // 响应拦截器
 request.interceptors.response.use(
@@ -76,7 +99,7 @@ request.interceptors.response.use(
         localStorage.removeItem(TOKEN_KEY)
         localStorage.removeItem(REFRESH_TOKEN_KEY)
         localStorage.removeItem('quick-study-user-info')
-        window.location.href = '/login'
+        redirectToLogin()
         return Promise.reject(error)
       }
 
@@ -95,7 +118,7 @@ request.interceptors.response.use(
         localStorage.removeItem(TOKEN_KEY)
         localStorage.removeItem(REFRESH_TOKEN_KEY)
         localStorage.removeItem('quick-study-user-info')
-        window.location.href = '/login'
+        redirectToLogin()
         return Promise.reject(error)
       }
     }

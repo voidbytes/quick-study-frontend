@@ -26,7 +26,7 @@
         </n-form-item>
 
         <!-- 选项（单选/多选） -->
-        <template v-if="form.type === 0 || form.type === 1">
+        <template v-if="form.type === 'SINGLE' || form.type === 'MULTIPLE'">
           <n-form-item label="选项">
             <div class="w-full space-y-2">
               <div
@@ -64,14 +64,14 @@
 
         <!-- 正确答案 -->
         <n-form-item label="正确答案" path="answer">
-          <template v-if="form.type === 0">
+          <template v-if="form.type === 'SINGLE'">
             <n-select
               v-model:value="form.answer"
               :options="answerOptions"
               placeholder="选择正确答案"
             />
           </template>
-          <template v-else-if="form.type === 1">
+          <template v-else-if="form.type === 'MULTIPLE'">
             <n-select
               v-model:value="form.answer"
               :options="answerOptions"
@@ -79,7 +79,7 @@
               placeholder="选择正确答案（可多选）"
             />
           </template>
-          <template v-else-if="form.type === 2">
+          <template v-else-if="form.type === 'TRUE_FALSE'">
             <n-radio-group v-model:value="form.answer">
               <n-radio value="true">正确</n-radio>
               <n-radio value="false">错误</n-radio>
@@ -175,7 +175,7 @@ const tagOptions = ref<{ label: string; value: number }[]>([])
 const dragItemIndex = ref<number | null>(null)
 
 const form = reactive({
-  type: 0,
+  type: 'SINGLE' as string,
   content: '',
   options: ['', ''],
   answer: '',
@@ -186,12 +186,13 @@ const form = reactive({
   status: 'DRAFT'
 })
 
+// 与后端 QuestionType 枚举名保持一致
 const typeOptions = [
-  { label: '单选题', value: 0 },
-  { label: '多选题', value: 1 },
-  { label: '判断题', value: 2 },
-  { label: '填空题', value: 3 },
-  { label: '简答题', value: 4 }
+  { label: '单选题', value: 'SINGLE' },
+  { label: '多选题', value: 'MULTIPLE' },
+  { label: '判断题', value: 'TRUE_FALSE' },
+  { label: '填空题', value: 'FILL_BLANK' },
+  { label: '简答题', value: 'SHORT_ANSWER' }
 ]
 
 const answerOptions = computed(() =>
@@ -209,15 +210,11 @@ const rules: FormRules = {
   status: [{ required: true, message: '请选择状态' }]
 }
 
-function handleTypeChange() {
-  if (form.type === 0 || form.type === 1) {
+function handleTypeChange(_value: string) {
+  if (form.type === 'SINGLE' || form.type === 'MULTIPLE') {
     if (form.options.length < 2) form.options = ['', '']
-    form.answer = ''
-  } else if (form.type === 2) {
-    form.answer = ''
-  } else {
-    form.answer = ''
   }
+  form.answer = ''
 }
 
 function addOption() {
@@ -240,14 +237,15 @@ function onDragOver(index: number) {
   dragItemIndex.value = index
 }
 
-function onDrop() {
+function onDrop(_index?: number) {
   dragItemIndex.value = null
 }
 
 async function loadTags() {
   try {
-    const res = await getTagList()
-    tagOptions.value = (res || []).map((t: any) => ({ label: t.name, value: t.id }))
+    // 拦截器实际返回 ApiResponse，泛型声明与运行时不一致，用 any 规避误报
+    const res: any = await getTagList()
+    tagOptions.value = (res.data || []).map((t: any) => ({ label: t.name, value: t.id }))
   } catch {
     // ignore
   }
@@ -257,17 +255,24 @@ async function loadQuestion() {
   if (!questionId) return
   loading.value = true
   try {
-    const res = await getQuestionDetail(questionId)
-    form.type = res.type
-    form.content = res.content
-    form.options = res.options || ['', '']
-    form.answer = res.answer
-    form.referenceAnswer = res.referenceAnswer || ''
-    form.analysis = res.analysis || ''
-    form.difficulty = res.difficulty || 'MEDIUM'
-    form.tagIds = res.tagIds || []
-    form.status = res.status || 'DRAFT'
-    paperRefCount.value = res.paperRefCount || 0
+    const res: any = await getQuestionDetail(questionId)
+    const q = res.data
+    form.type = q.type
+    form.content = q.content
+    // 后端 options 是 JSON 字符串，需解析为数组供表单编辑
+    try {
+      const parsed = q.options ? JSON.parse(q.options) : null
+      form.options = Array.isArray(parsed) ? parsed : ['', '']
+    } catch {
+      form.options = ['', '']
+    }
+    form.answer = q.answer
+    form.referenceAnswer = q.referenceAnswer || ''
+    form.analysis = q.analysis || ''
+    form.difficulty = q.difficulty || 'MEDIUM'
+    form.tagIds = q.tagIds || []
+    form.status = q.status || 'DRAFT'
+    paperRefCount.value = q.paperRefCount || 0
   } catch {
     message.error('加载题目详情失败')
   } finally {
@@ -287,7 +292,7 @@ async function handleSave() {
     const payload = {
       type: form.type,
       content: form.content,
-      options: (form.type === 0 || form.type === 1) ? JSON.stringify(form.options) : undefined,
+      options: (form.type === 'SINGLE' || form.type === 'MULTIPLE') ? JSON.stringify(form.options) : undefined,
       answer: form.answer,
       referenceAnswer: form.referenceAnswer || undefined,
       analysis: form.analysis || undefined,

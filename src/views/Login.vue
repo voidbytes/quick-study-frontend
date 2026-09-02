@@ -69,13 +69,14 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useMessage } from 'naive-ui'
 import type { FormInst, FormRules } from 'naive-ui'
 import { getCaptcha } from '@/api/auth'
 
 const router = useRouter()
+const route = useRoute()
 const authStore = useAuthStore()
 const message = useMessage()
 
@@ -95,7 +96,7 @@ const form = reactive({
 const rules: FormRules = {
   username: [
     { required: true, message: '请输入用户名', trigger: 'blur' },
-    { min: 4, max: 50, message: '用户名长度在 4-50 字符之间', trigger: 'blur' }
+    { min: 3, max: 50, message: '用户名长度在 3-50 字符之间', trigger: 'blur' }
   ],
   password: [
     { required: true, message: '请输入密码', trigger: 'blur' },
@@ -133,7 +134,9 @@ async function handleLogin() {
       captchaCode: form.captchaCode
     })
     message.success('登录成功')
-    router.push('/')
+    // 优先跳回登录前想访问的页面（redirect 参数），否则回首页
+    const redirect = route.query.redirect
+    router.push(typeof redirect === 'string' && redirect.startsWith('/') ? redirect : '/')
   } catch (err: any) {
     const code = err?.response?.data?.code
     const msg = err?.response?.data?.message || '登录失败'

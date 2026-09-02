@@ -2,7 +2,7 @@
   <div class="p-6 max-w-6xl mx-auto">
     <n-button quaternary @click="router.back()" class="mb-4">← 返回待批改列表</n-button>
 
-    <n-spin :show="loading">
+    <n-spin v-if="!loadError" :show="loading">
       <!-- 作答者信息 -->
       <n-card class="mb-6">
         <template #header>
@@ -56,6 +56,7 @@
         </n-button>
       </div>
     </n-spin>
+    <LoadError v-else :description="loadError" :retrying="loading" @retry="fetchDetail" />
   </div>
 </template>
 
@@ -64,6 +65,7 @@ import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useMessage } from 'naive-ui'
 import { getGradingSession, saveScore, completeGrading, aiSuggest, keywordSuggest } from '@/api/grading'
+import LoadError from '@/components/LoadError.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -71,16 +73,18 @@ const message = useMessage()
 
 const sessionId = route.params.id as string
 const loading = ref(false)
+const loadError = ref('')
 const completing = ref(false)
 const session = ref<any>(null)
 
 async function fetchDetail() {
   loading.value = true
+  loadError.value = ''
   try {
     const res = await getGradingSession(sessionId)
     session.value = res
-  } catch {
-    message.error('加载批改详情失败')
+  } catch (err: any) {
+    loadError.value = err?.response?.data?.message || err?.message || '加载批改详情失败'
   } finally {
     loading.value = false
   }

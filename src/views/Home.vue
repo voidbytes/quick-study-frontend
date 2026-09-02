@@ -3,7 +3,7 @@
     <!-- 欢迎信息 -->
     <div class="mb-8">
       <h1 class="text-2xl font-bold text-gray-800">
-        {{ authStore.isAuthenticated ? `欢迎回来，${authStore.userInfo?.nickname || '用户'}` : '欢迎光临' }}
+        {{ authStore.isAuthenticated ? `欢迎回来，${authStore.userInfo?.nickname || authStore.userInfo?.username || '用户'}` : '欢迎光临' }}
       </h1>
       <p class="text-gray-500 mt-1">{{ authStore.isAuthenticated ? '今天也要加油学习哦！' : '登录后即可开始练习和考试' }}</p>
     </div>
@@ -58,7 +58,7 @@
     <n-card title="统计概览" class="mb-8" v-if="authStore.isAuthenticated">
       <n-grid :cols="4" :x-gap="16" :y-gap="16">
         <n-grid-item>
-          <n-statistic label="总练习次数" :value="overview?.totalPractices || 0" />
+          <n-statistic label="练习场次" :value="overview?.totalPractices || 0" />
         </n-grid-item>
         <n-grid-item>
           <n-statistic label="总题数" :value="overview?.totalQuestions || 0" />
@@ -94,13 +94,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, h, onMounted } from 'vue'
+import { ref, h, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { getStatisticsOverview } from '@/api/statistics'
 import { getBankList } from '@/api/bank'
 import { getPaperList } from '@/api/paper'
-import { Library, DocumentText, GameController, CloseCircle, Time } from '@vicons/ionicons5'
+import { Library, DocumentText, GameController, CloseCircle, Time, Search } from '@vicons/ionicons5'
 import type { OverviewResponse } from '@/api/statistics'
 import type { DataTableColumn } from 'naive-ui'
 import dayjs from 'dayjs'
@@ -148,13 +148,23 @@ const publicPaperColumns: DataTableColumn<any>[] = [
   }
 ]
 
-const quickEntries: QuickEntry[] = [
-  { title: '题库管理', path: '/banks', icon: Library, color: '#1890ff' },
-  { title: '试卷管理', path: '/papers', icon: DocumentText, color: '#52c41a' },
-  { title: '随机练习', path: '/practice', icon: GameController, color: '#faad14' },
-  { title: '错题本', path: '/wrong-questions', icon: CloseCircle, color: '#ff4d4f' },
-  { title: '做题记录', path: '/records', icon: Time, color: '#722ed1' }
-]
+// 游客只能看到可匿名使用的入口；需登录的功能（练习/错题本/记录）仅登录后展示
+const quickEntries = computed<QuickEntry[]>(() => {
+  if (!authStore.isAuthenticated) {
+    return [
+      { title: '题库浏览', path: '/banks', icon: Library, color: '#1890ff' },
+      { title: '试卷浏览', path: '/papers', icon: DocumentText, color: '#52c41a' },
+      { title: '搜索', path: '/search', icon: Search, color: '#13c2c2' }
+    ]
+  }
+  return [
+    { title: '题库管理', path: '/banks', icon: Library, color: '#1890ff' },
+    { title: '试卷管理', path: '/papers', icon: DocumentText, color: '#52c41a' },
+    { title: '随机练习', path: '/practice', icon: GameController, color: '#faad14' },
+    { title: '错题本', path: '/wrong-questions', icon: CloseCircle, color: '#ff4d4f' },
+    { title: '做题记录', path: '/records', icon: Time, color: '#722ed1' }
+  ]
+})
 
 async function fetchPublicBanks() {
   loadingBanks.value = true

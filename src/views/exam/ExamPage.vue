@@ -107,22 +107,22 @@
               </div>
             </template>
 
-            <!-- 判断题 -->
+            <!-- 判断题：答案值与题目标准答案(true/false)对齐 -->
             <template v-if="currentQuestion?.type === 'TRUE_FALSE'">
               <div class="flex gap-4">
                 <div
                   class="flex-1 p-3 border rounded text-center cursor-pointer hover:border-primary"
-                  :class="{ 'border-primary bg-primary bg-opacity-5': currentAnswers[currentQuestion.id] === 'A' }"
-                  @click="selectAnswer('A')"
+                  :class="{ 'border-primary bg-primary bg-opacity-5': currentAnswers[currentQuestion.id] === 'true' }"
+                  @click="selectAnswer('true')"
                 >
-                  <n-radio :checked="currentAnswers[currentQuestion.id] === 'A'">正确</n-radio>
+                  <n-radio :checked="currentAnswers[currentQuestion.id] === 'true'">正确</n-radio>
                 </div>
                 <div
                   class="flex-1 p-3 border rounded text-center cursor-pointer hover:border-primary"
-                  :class="{ 'border-primary bg-primary bg-opacity-5': currentAnswers[currentQuestion.id] === 'B' }"
-                  @click="selectAnswer('B')"
+                  :class="{ 'border-primary bg-primary bg-opacity-5': currentAnswers[currentQuestion.id] === 'false' }"
+                  @click="selectAnswer('false')"
                 >
-                  <n-radio :checked="currentAnswers[currentQuestion.id] === 'B'">错误</n-radio>
+                  <n-radio :checked="currentAnswers[currentQuestion.id] === 'false'">错误</n-radio>
                 </div>
               </div>
             </template>
@@ -430,7 +430,7 @@ async function confirmSubmit() {
 function handleVisibilityChange() {
   if (document.hidden && sessionId.value) {
     reportCheat(sessionId.value).then(res => {
-      const data = res.data.data
+      const data = res.data
       cheatCount.value = data.cheatCount
       if (data.forceSubmit) {
         message.warning('切屏次数超限，已强制交卷')
@@ -445,7 +445,7 @@ async function restoreSession() {
   if (!sessionId.value) return
   try {
     const res = await getSession(sessionId.value)
-    const data = res.data.data
+    const data = res.data
     if (data.currentAnswers) {
       data.currentAnswers.forEach((a: any) => {
         const q = questions.value.find((q: any) => q.id === a.paperQuestionId)

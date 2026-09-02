@@ -76,6 +76,16 @@ const dialog = useDialog()
 const authStore = useAuthStore()
 
 const isSuperAdmin = authStore.userInfo?.role === 'SUPER_ADMIN'
+const currentUserId = authStore.userInfo?.id
+const currentRole = authStore.userInfo?.role
+
+/** 与后端规则一致：不能操作自己；普通管理员只能操作 USER；超管不能操作同级超管 */
+function canOperate(row: any): boolean {
+  if (String(row.id) === String(currentUserId)) return false
+  if (currentRole === 'ADMIN' && row.role !== 'USER') return false
+  if (currentRole === 'SUPER_ADMIN' && row.role === 'SUPER_ADMIN') return false
+  return true
+}
 
 const loading = ref(false)
 const searchKeyword = ref('')
@@ -143,6 +153,7 @@ const columns: DataTableColumn<any>[] = [
     key: 'actions',
     width: 200,
     render(row) {
+      if (!canOperate(row)) return h('span', { class: 'text-gray-300' }, '—')
       const actions = []
       actions.push(h('a', {
         class: 'text-primary cursor-pointer',

@@ -338,6 +338,10 @@ async function handleSave() {
       startTime: basicForm.startTime ? new Date(basicForm.startTime).toISOString() : undefined,
       endTime: basicForm.endTime ? new Date(basicForm.endTime).toISOString() : undefined,
       attemptLimit: basicForm.attemptLimit || undefined,
+      // 由次数推导类型，避免后端默认值与"留空=不限次数"的表单语义冲突
+      attemptType: !basicForm.attemptLimit || basicForm.attemptLimit <= 0
+        ? 'UNLIMITED'
+        : basicForm.attemptLimit === 1 ? 'ONCE' : 'MULTIPLE',
       shareType: basicForm.shareType,
       password: basicForm.password || undefined,
       cheatEnabled: basicForm.cheatEnabled,

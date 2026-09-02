@@ -37,7 +37,7 @@ export function getPracticeSession(id: string) {
 }
 
 export function submitPracticeAnswer(sessionId: string, data: SaveAnswerParams) {
-  return request.post<ApiResponse<null>>(`/practice/sessions/${sessionId}/answers`, data)
+  return request.post<ApiResponse<boolean>>(`/practice/sessions/${sessionId}/answers`, data)
 }
 
 export function completePractice(sessionId: string) {

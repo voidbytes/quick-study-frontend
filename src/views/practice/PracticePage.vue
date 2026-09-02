@@ -28,35 +28,42 @@
             </n-grid-item>
           </n-grid>
 
-          <n-collapse>
-            <n-collapse-item
-              v-for="(q, index) in questions"
-              :key="q.index"
-              :title="`第 ${index + 1} 题`"
-              :name="String(index)"
-            >
-              <div class="mb-4" v-html="q.content" />
-              <n-descriptions :column="2" bordered size="small">
-                <n-descriptions-item label="你的答案">
-                  <span :class="q.isCorrect ? 'text-success' : 'text-error'">
-                    {{ q.userAnswer || '未作答' }}
-                  </span>
-                </n-descriptions-item>
-                <n-descriptions-item label="正确答案">
-                  <span>{{ formatAnswer(q.answer, q.type) }}</span>
-                </n-descriptions-item>
-                <n-descriptions-item label="是否正确">
-                  <n-tag :type="q.isCorrect ? 'success' : 'error'" size="small">
-                    {{ q.isCorrect ? '正确' : '错误' }}
-                  </n-tag>
-                </n-descriptions-item>
-              </n-descriptions>
-              <div v-if="q.analysis" class="mt-3">
-                <span class="font-bold">解析：</span>
-                <span v-html="q.analysis" />
+          <!-- 每题详情直接平铺展示（原 n-collapse 点击无反应，见 bug-037） -->
+          <n-card v-for="(q, index) in questions" :key="q.index" size="small" class="mb-3">
+            <template #header>
+              <div class="flex items-center gap-2">
+                <span>第 {{ index + 1 }} 题</span>
+                <!-- 题型标签（bug-044：原来只有题号无法区分题型） -->
+                <n-tag :type="typeTagType(q.type)" size="small">
+                  {{ typeLabels[q.type] || q.type }}
+                </n-tag>
+                <n-tag :type="difficultyTagType(q.difficulty)" size="small">
+                  {{ difficultyLabels[q.difficulty] || '未知' }}
+                </n-tag>
+                <n-tag v-if="!q.userAnswer" type="default" size="small">未作答</n-tag>
               </div>
-            </n-collapse-item>
-          </n-collapse>
+            </template>
+            <div class="mb-4" v-html="q.content" />
+            <n-descriptions :column="2" bordered size="small">
+              <n-descriptions-item label="你的答案">
+                <span :class="q.isCorrect ? 'text-success' : 'text-error'">
+                  {{ q.userAnswer || '未作答' }}
+                </span>
+              </n-descriptions-item>
+              <n-descriptions-item label="正确答案">
+                <span>{{ formatAnswer(q.answer, q.type) }}</span>
+              </n-descriptions-item>
+              <n-descriptions-item label="是否正确">
+                <n-tag :type="q.isCorrect ? 'success' : 'error'" size="small">
+                  {{ q.isCorrect ? '正确' : '错误' }}
+                </n-tag>
+              </n-descriptions-item>
+            </n-descriptions>
+            <div v-if="q.analysis" class="mt-3">
+              <span class="font-bold">解析：</span>
+              <span v-html="q.analysis" />
+            </div>
+          </n-card>
 
           <div class="flex justify-center mt-6">
             <n-button @click="router.push('/practice')">返回列表</n-button>
@@ -75,6 +82,9 @@
               <div class="flex items-center gap-2">
                 <n-tag v-if="conditionText" size="small" type="info" style="max-width: 300px" ellipsis>
                   {{ conditionText }}
+                </n-tag>
+                <n-tag :type="typeTagType(currentQuestion?.type)" size="small">
+                  {{ typeLabels[currentQuestion?.type] || currentQuestion?.type }}
                 </n-tag>
                 <n-tag :type="difficultyTagType(currentQuestion?.difficulty)" size="small">
                   {{ difficultyLabels[currentQuestion?.difficulty] || '未知' }}
@@ -147,6 +157,24 @@
             </template>
           </div>
 
+          <!-- 提交后显示判定结果 -->
+          <div
+            v-if="answered"
+            class="mt-4 p-3 rounded flex items-center gap-3"
+            :class="currentQuestion?.isCorrect ? 'bg-success bg-opacity-5' : 'bg-error bg-opacity-5'"
+          >
+            <n-tag :type="currentQuestion?.isCorrect ? 'success' : 'error'" size="small">
+              {{ currentQuestion?.isCorrect ? '回答正确' : '回答错误' }}
+            </n-tag>
+            <span class="text-sm">
+              你的答案：<b>{{ formatAnswer(currentQuestion?.userAnswer, currentQuestion?.type) || '未作答' }}</b>
+              <template v-if="!currentQuestion?.isCorrect">
+                <span class="mx-2">|</span>
+                正确答案：<b class="text-success">{{ formatAnswer(currentQuestion?.answer, currentQuestion?.type) }}</b>
+              </template>
+            </span>
+          </div>
+
           <!-- 提交后显示解析 -->
           <div v-if="answered && currentQuestion?.analysis" class="mt-4 p-3 bg-gray-50 rounded">
             <span class="font-bold">解析：</span>
@@ -191,15 +219,26 @@ const result = ref<any>(null)
 const filterParams = ref<any>(null)
 
 const difficultyLabels: Record<string, string> = { EASY: '简单', MEDIUM: '中等', HARD: '困难' }
+const typeLabels: Record<string, string> = {
+  SINGLE: '单选',
+  MULTIPLE: '多选',
+  TRUE_FALSE: '判断',
+  FILL_BLANK: '填空',
+  SHORT_ANSWER: '简答'
+}
 
 const currentQuestion = computed(() => questions.value[currentIndex.value] || null)
 
-/** 解析 options JSON 字符串为数组 */
+/** 解析 options JSON 字符串为数组（去除数据自带的 "A. " 前缀，前缀统一由模板渲染） */
 const parsedOptions = computed(() => {
   const q = currentQuestion.value
-  if (!q || !q.options) return []
+  if (!q) return []
+  // 判断题老数据可能没有 options，兜底给出 正确/错误 两项（对应 A/B）
+  if (q.type === 'TRUE_FALSE' && !q.options) return ['正确', '错误']
+  if (!q.options) return []
   try {
-    return JSON.parse(q.options)
+    const opts: string[] = JSON.parse(q.options)
+    return opts.map((o) => String(o).replace(/^[A-Za-z][.、．]\s*/, ''))
   } catch {
     return []
   }
@@ -245,10 +284,15 @@ function difficultyTagType(d: string) {
   return d === 'HARD' ? 'error' : d === 'MEDIUM' ? 'warning' : 'success'
 }
 
+function typeTagType(t: string) {
+  return t === 'SINGLE' ? 'info' : t === 'MULTIPLE' ? 'warning' : t === 'TRUE_FALSE' ? 'success' : 'default'
+}
+
 function formatAnswer(answer: string, type: string) {
   if (!answer) return '-'
   if (type === 'TRUE_FALSE') {
-    return answer === 'A' ? '正确' : '错误'
+    // 兼容历史数据混用的 A/B 与 true/false 两种格式
+    return answer === 'A' || answer === 'true' ? '正确' : '错误'
   }
   return answer
 }
@@ -278,16 +322,16 @@ async function submitAnswer() {
 
   submitting.value = true
   try {
-    await submitPracticeAnswer(sessionId, {
+    const res = await submitPracticeAnswer(sessionId, {
       index: currentIndex.value,
       answer
     })
     answered.value = true
-    // 从题目数据中获取正确答案和解析
+    // 以后端判分结果为准（多选题选项顺序、判断题 A/B 与 true/false 归一都在后端处理）
     const q = questions.value[currentIndex.value]
     if (q) {
       q.userAnswer = answer
-      q.isCorrect = q.answer === answer
+      q.isCorrect = typeof res.data === 'boolean' ? res.data : q.answer === answer
     }
   } catch {
     message.error('提交答案失败')
@@ -386,7 +430,8 @@ async function loadSession() {
       return
     }
     if (session.currentIndex !== undefined) {
-      currentIndex.value = session.currentIndex
+      // 答完最后一题时后端 currentIndex 会越界（=题数），回到最后一题，避免首屏空白
+      currentIndex.value = Math.min(session.currentIndex, Math.max(questions.value.length - 1, 0))
     }
     // 恢复当前题目的状态
     resetAnswer()

@@ -92,10 +92,13 @@
             <n-dropdown :options="userMenuOptions" @select="handleUserMenuSelect">
               <div class="flex items-center gap-2 cursor-pointer">
                 <n-avatar
-                  :src="authStore.userInfo?.avatar"
+                  :src="authStore.userInfo?.avatar || undefined"
                   round
                   size="small"
-                />
+                  :style="{ background: avatarBgColor }"
+                >
+                  {{ avatarText }}
+                </n-avatar>
                 <span class="hidden sm:inline text-sm">{{ authStore.userInfo?.nickname || authStore.userInfo?.username }}</span>
               </div>
             </n-dropdown>
@@ -135,6 +138,19 @@ const message = useMessage()
 const collapsed = ref(false)
 const mobileMenuVisible = ref(false)
 const unreadCount = ref(0)
+
+// 默认头像：无自定义头像时用昵称首字生成
+const AVATAR_COLORS = ['#1890ff', '#52c41a', '#faad14', '#722ed1', '#eb2f96', '#13c2c2', '#fa541c', '#2f54eb']
+const avatarText = computed(() => {
+  const name = authStore.userInfo?.nickname || authStore.userInfo?.username || '?'
+  return name.charAt(0).toUpperCase()
+})
+const avatarBgColor = computed(() => {
+  const name = authStore.userInfo?.nickname || authStore.userInfo?.username || ''
+  let hash = 0
+  for (let i = 0; i < name.length; i++) hash = (hash * 31 + name.charCodeAt(i)) >>> 0
+  return AVATAR_COLORS[hash % AVATAR_COLORS.length]
+})
 
 const menuOptions = computed<MenuOption[]>(() => {
   const items: MenuOption[] = [
@@ -186,6 +202,7 @@ const activeMenu = computed(() => {
   if (path.startsWith('/search')) return '/search'
   if (path.startsWith('/statistics')) return '/statistics'
   if (path.startsWith('/notifications')) return '/notifications'
+  if (path.startsWith('/admin/reviews')) return '/admin/reviews'
   if (path.startsWith('/admin')) return '/admin/users'
   return '/'
 })

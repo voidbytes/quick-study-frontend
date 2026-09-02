@@ -7,7 +7,7 @@
       <n-card title="概览" class="mb-6">
         <n-grid :cols="4" :x-gap="16" :y-gap="16">
           <n-grid-item>
-            <n-statistic label="总练习次数" :value="overview?.totalPractices || 0" />
+            <n-statistic label="练习场次" :value="overview?.totalPractices || 0" />
           </n-grid-item>
           <n-grid-item>
             <n-statistic label="总题数" :value="overview?.totalQuestions || 0" />
