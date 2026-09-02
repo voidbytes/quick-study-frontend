@@ -56,11 +56,11 @@
       </n-list-item>
     </n-list>
 
-    <div v-if="pagination.total > pagination.pageSize" class="flex justify-center mt-4">
+    <div v-if="pagination.itemCount > pagination.pageSize" class="flex justify-center mt-4">
       <n-pagination
         :page="pagination.page"
         :page-size="pagination.pageSize"
-        :total="pagination.total"
+        :item-count="pagination.itemCount"
         @update:page="handlePageChange"
       />
     </div>
@@ -87,7 +87,7 @@ const readFilterOptions = [
 const pagination = reactive({
   page: 1,
   pageSize: 20,
-  total: 0
+  itemCount: 0
 })
 
 function getTypeColor(type: string) {
@@ -108,7 +108,7 @@ async function fetchList() {
       isRead: filterIsRead.value ?? undefined
     })
     notifications.value = res.data.records || []
-    pagination.total = res.data.total || 0
+    pagination.itemCount = res.data.total || 0
   } catch {
     message.error('加载通知失败')
   }

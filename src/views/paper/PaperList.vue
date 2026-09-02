@@ -35,6 +35,7 @@
     </div>
 
     <n-data-table
+      remote
       :columns="columns"
       :data="paperList"
       :loading="loading"
@@ -80,7 +81,7 @@ const statusOptions = [
 const pagination = reactive({
   page: 1,
   pageSize: 20,
-  total: 0
+  itemCount: 0
 })
 
 const shareTypeLabels: Record<string, string> = {
@@ -155,7 +156,7 @@ async function fetchList() {
       status: filterStatus.value || undefined
     })
     paperList.value = res.data.records || []
-    pagination.total = res.data.total || 0
+    pagination.itemCount = res.data.total || 0
   } catch {
     message.error('加载试卷列表失败')
   } finally {

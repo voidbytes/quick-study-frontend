@@ -34,6 +34,7 @@
     </div>
 
     <n-data-table
+      remote
       :columns="columns"
       :data="userList"
       :loading="loading"
@@ -113,7 +114,7 @@ const roleOptions = [
 const pagination = reactive({
   page: 1,
   pageSize: 20,
-  total: 0
+  itemCount: 0
 })
 
 const roleLabels: Record<string, string> = { USER: '用户', ADMIN: '管理员', SUPER_ADMIN: '超级管理员' }
@@ -191,7 +192,7 @@ async function fetchList() {
       role: filterRole.value || undefined
     })
     userList.value = res.data.records || []
-    pagination.total = res.data.total || 0
+    pagination.itemCount = res.data.total || 0
   } catch {
     message.error('加载用户列表失败')
   } finally {

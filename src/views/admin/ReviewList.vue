@@ -3,6 +3,7 @@
     <h1 class="text-2xl font-bold mb-6">审核管理</h1>
 
     <n-data-table
+      remote
       :columns="columns"
       :data="reviewList"
       :loading="loading"
@@ -74,7 +75,7 @@ const reviewComment = ref('')
 const pagination = reactive({
   page: 1,
   pageSize: 20,
-  total: 0
+  itemCount: 0
 })
 
 const columns: DataTableColumn<any>[] = [
@@ -117,7 +118,7 @@ async function fetchList() {
       status: 'PENDING'
     })
     reviewList.value = res.data.records || []
-    pagination.total = res.data.total || 0
+    pagination.itemCount = res.data.total || 0
   } catch {
     message.error('加载审核列表失败')
   } finally {

@@ -28,6 +28,7 @@
 
     <!-- 题库列表 -->
     <n-data-table
+      remote
       :columns="columns"
       :data="bankList"
       :loading="loading"
@@ -88,7 +89,7 @@ const bankList = ref<BankItem[]>([])
 const pagination = reactive({
   page: 1,
   pageSize: 20,
-  total: 0,
+  itemCount: 0,
   showSizePicker: false,
   pageSizes: [10, 20, 50]
 })
@@ -143,7 +144,7 @@ async function fetchList() {
       isOfficial: filterVisibility.value === 2 ? true : undefined
     })
     bankList.value = res.data.records || []
-    pagination.total = res.data.total || 0
+    pagination.itemCount = res.data.total || 0
   } catch {
     message.error('加载题库列表失败')
   } finally {

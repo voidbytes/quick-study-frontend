@@ -22,6 +22,7 @@
     </div>
 
     <n-data-table
+      remote
       :columns="columns"
       :data="searchResults"
       :loading="loading"
@@ -59,7 +60,7 @@ const typeOptions = [
 const pagination = reactive({
   page: 1,
   pageSize: 20,
-  total: 0
+  itemCount: 0
 })
 
 const typeLabels: Record<string, string> = { bank: '题库', question: '题目', paper: '试卷' }
@@ -102,7 +103,7 @@ async function handleSearch() {
       size: pagination.pageSize
     })
     searchResults.value = res.data.records || []
-    pagination.total = res.data.total || 0
+    pagination.itemCount = res.data.total || 0
     // 同步 URL 参数，保证刷新/分享后结果可复现
     if (route.query.keyword !== keyword.value) {
       router.replace({ query: { ...route.query, keyword: keyword.value } })

@@ -61,6 +61,7 @@
 
     <!-- 题目表格 -->
     <n-data-table
+      remote
       :columns="columns"
       :data="questionList"
       :loading="loading"
@@ -134,7 +135,7 @@ const statusLabels: Record<string, string> = { DRAFT: '草稿', PENDING_REVIEW: 
 const pagination = reactive({
   page: 1,
   pageSize: 20,
-  total: 0,
+  itemCount: 0,
   pageSizes: [10, 20, 50, 100],
   showSizePicker: true
 })
@@ -257,7 +258,7 @@ async function fetchList() {
 
     const res = await getAllQuestions(params)
     questionList.value = res.data.records || []
-    pagination.total = res.data.total || 0
+    pagination.itemCount = res.data.total || 0
   } catch {
     message.error('加载题目列表失败')
   } finally {

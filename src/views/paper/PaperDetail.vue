@@ -77,10 +77,12 @@
       <!-- 作答记录列表（仅出卷人可见） -->
       <n-card v-if="canManage" title="作答记录">
         <n-data-table
+          remote
           :columns="sessionColumns"
           :data="sessions"
           :loading="sessionsLoading"
           :pagination="sessionPagination"
+          @update:page="handleSessionPageChange"
         />
       </n-card>
     </n-spin>
@@ -136,7 +138,7 @@ const typeLabels: Record<string, string> = {
 const sessionPagination = reactive({
   page: 1,
   pageSize: 20,
-  total: 0
+  itemCount: 0
 })
 
 const sessionColumns: DataTableColumn<any>[] = [
@@ -182,12 +184,17 @@ async function fetchSessions() {
       size: sessionPagination.pageSize
     })
     sessions.value = res.data.records || []
-    sessionPagination.total = res.data.total || 0
+    sessionPagination.itemCount = res.data.total || 0
   } catch {
     // ignore
   } finally {
     sessionsLoading.value = false
   }
+}
+
+function handleSessionPageChange(page: number) {
+  sessionPagination.page = page
+  fetchSessions()
 }
 
 async function fetchStats() {

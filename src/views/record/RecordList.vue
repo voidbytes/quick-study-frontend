@@ -31,6 +31,7 @@
     </div>
 
     <n-data-table
+      remote
       :columns="columns"
       :data="recordList"
       :loading="loading"
@@ -87,7 +88,7 @@ function handleViewOriginal(row: any) {
 const pagination = reactive({
   page: 1,
   pageSize: 20,
-  total: 0
+  itemCount: 0
 })
 
 const columns: DataTableColumn<any>[] = [
@@ -146,7 +147,7 @@ async function fetchList() {
       endDate: dateRange.value ? dayjs(dateRange.value[1]).format('YYYY-MM-DD') : undefined
     })
     recordList.value = res.data.records || []
-    pagination.total = res.data.total || 0
+    pagination.itemCount = res.data.total || 0
   } catch {
     message.error('加载做题记录失败')
   } finally {

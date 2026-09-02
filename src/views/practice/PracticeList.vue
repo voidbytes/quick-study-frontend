@@ -18,6 +18,7 @@
     </div>
 
     <n-data-table
+      remote
       :columns="columns"
       :data="sessionList"
       :loading="loading"
@@ -57,7 +58,7 @@ const statusOptions = [
 const pagination = reactive({
   page: 1,
   pageSize: 20,
-  total: 0
+  itemCount: 0
 })
 
 const statusLabels: Record<string, string> = {
@@ -128,7 +129,7 @@ async function fetchList() {
       status: filterStatus.value || undefined
     })
     sessionList.value = res.data.records || []
-    pagination.total = res.data.total || 0
+    pagination.itemCount = res.data.total || 0
   } catch {
     message.error('加载练习记录失败')
   } finally {

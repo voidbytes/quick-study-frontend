@@ -24,6 +24,7 @@
     </div>
 
     <n-data-table
+      remote
       :columns="columns"
       :data="wrongList"
       :loading="loading"
@@ -60,7 +61,7 @@ const typeLabels: Record<string, string> = { SINGLE: '单选', MULTIPLE: '多选
 const pagination = reactive({
   page: 1,
   pageSize: 20,
-  total: 0
+  itemCount: 0
 })
 
 /** 从 questionSnapshot JSON 中提取内容 */
@@ -150,7 +151,7 @@ async function fetchList() {
       tagId: filterTagId.value ?? undefined
     })
     wrongList.value = res.data.records || []
-    pagination.total = res.data.total || 0
+    pagination.itemCount = res.data.total || 0
   } catch {
     message.error('加载错题失败')
   } finally {

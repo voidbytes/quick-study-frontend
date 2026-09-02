@@ -3,6 +3,7 @@
     <h1 class="text-2xl font-bold mb-6">待批改列表</h1>
 
     <n-data-table
+      remote
       :columns="columns"
       :data="pendingList"
       :loading="loading"
@@ -30,7 +31,7 @@ const pendingList = ref<any[]>([])
 const pagination = reactive({
   page: 1,
   pageSize: 20,
-  total: 0
+  itemCount: 0
 })
 
 const columns: DataTableColumn<any>[] = [
@@ -63,7 +64,7 @@ async function fetchList() {
       size: pagination.pageSize
     })
     pendingList.value = res.data.records || []
-    pagination.total = res.data.total || 0
+    pagination.itemCount = res.data.total || 0
   } catch {
     message.error('加载待批改列表失败')
   } finally {
