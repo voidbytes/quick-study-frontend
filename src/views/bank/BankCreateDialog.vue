@@ -1,9 +1,9 @@
 <template>
   <n-modal
     :show="show"
-    title="创建题库"
     preset="card"
-    style="width: 480px"
+    style="width: 480px; max-width: 92vw; border-radius: var(--radius-xl)"
+    title="创建题库"
     @update:show="$emit('update:show', $event)"
   >
     <n-form
@@ -35,7 +35,7 @@
         <n-switch v-model:value="form.isPublic" />
       </n-form-item>
 
-      <div class="flex justify-end gap-2">
+      <div class="flex justify-end gap-2 pt-2">
         <n-button @click="$emit('update:show', false)">取消</n-button>
         <n-button type="primary" attr-type="submit" :loading="loading">
           创建
@@ -50,7 +50,13 @@ import { ref, reactive, watch } from 'vue'
 import { useMessage } from 'naive-ui'
 import type { FormInst, FormRules } from 'naive-ui'
 import { createBank } from '@/api/bank'
+import type { CreateBankParams } from '@/api/bank'
 import FileUpload from '@/components/FileUpload.vue'
+
+/** 后端创建接口实际接收 coverUrl 字段（frontend 的 CreateBankParams 声明为 cover，保留运行时字段在此补齐） */
+interface CreateBankPayload extends CreateBankParams {
+  coverUrl?: string
+}
 
 const props = defineProps<{
   show: boolean
@@ -97,12 +103,13 @@ async function handleCreate() {
 
   loading.value = true
   try {
-    await createBank({
+    const payload: CreateBankPayload = {
       name: form.name,
       description: form.description || undefined,
       coverUrl: form.coverUrl || undefined,
       isPublic: form.isPublic
-    })
+    }
+    await createBank(payload)
     message.success('创建成功')
     emit('created')
   } catch {

@@ -1,15 +1,20 @@
+/* 设计系统 CSS 变量（单一事实来源：frontend/design/tokens/design-tokens.css）。
+   必须置于所有其它语句之前（Vite/PostCSS 要求 @import 在最前）。 */
+@import '../design/tokens/design-tokens.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* --- 全局基础样式 --- */
 body {
   margin: 0;
   padding: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
-    'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
-    'Noto Color Emoji';
-  background-color: #f5f7fa;
-  color: #333;
+  font-family: var(--font-sans);
+  font-size: var(--text-base);        /* 14px — Web 端紧凑排版 */
+  line-height: var(--leading-normal); /* 1.5 */
+  color: var(--text-primary);         /* #242428 非纯黑 */
+  background-color: var(--bg-page);   /* #F4F4F6 */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -18,6 +23,7 @@ body {
   height: 100vh;
 }
 
+/* --- 滚动条 --- */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -28,10 +34,99 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #c0c4cc;
+  background: var(--color-neutral-300); /* #D5D5DC */
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #909399;
+  background: var(--color-neutral-400); /* #B0B0BC */
+}
+
+/* --- 链接 --- */
+a {
+  color: var(--text-brand);
+  text-decoration: none;
+  transition: color var(--transition-base);
+}
+
+a:hover {
+  color: var(--color-primary-600);
+}
+
+/* --- Naive UI 主按钮品牌阴影（设计系统：主按钮使用 shadow-brand） --- */
+.n-button--primary-type:not(.n-button--disabled):not(.n-button--ghost):not(.n-button--dashed) {
+  box-shadow: var(--shadow-brand);
+}
+.n-button--primary-type:not(.n-button--disabled):not(.n-button--ghost):not(.n-button--dashed):active {
+  box-shadow: none;
+}
+
+/* --- Markdown 渲染容器（题干/解析/选项的富文本展示） --- */
+.markdown-body {
+  font-size: var(--text-base);
+  line-height: var(--leading-normal);
+  color: var(--text-primary);
+  word-break: break-word;
+}
+
+.markdown-body img {
+  max-width: 100%;
+  border-radius: var(--radius-md);
+}
+
+.markdown-body p {
+  margin: 0 0 8px;
+}
+
+.markdown-body p:last-child {
+  margin-bottom: 0;
+}
+
+.markdown-body pre {
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  padding: 12px;
+  overflow-x: auto;
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+}
+
+.markdown-body code {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  background: var(--bg-subtle);
+  border-radius: var(--radius-sm);
+  padding: 2px 6px;
+}
+
+.markdown-body pre code {
+  background: transparent;
+  padding: 0;
+}
+
+.markdown-body blockquote {
+  border-left: 3px solid var(--color-primary-300);
+  margin: 8px 0;
+  padding: 4px 12px;
+  color: var(--text-secondary);
+  background: var(--bg-subtle);
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+}
+
+.markdown-body table {
+  border-collapse: collapse;
+  margin: 8px 0;
+}
+
+.markdown-body th,
+.markdown-body td {
+  border: 1px solid var(--border-default);
+  padding: 6px 12px;
+  font-size: var(--text-sm);
+}
+
+.markdown-body th {
+  background: var(--bg-subtle);
+  font-weight: var(--font-semibold);
 }

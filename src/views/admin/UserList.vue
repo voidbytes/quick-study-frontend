@@ -1,25 +1,35 @@
 <template>
-  <div class="p-6 max-w-6xl mx-auto">
-    <div class="flex items-center justify-between mb-6">
-      <h1 class="text-2xl font-bold text-gray-800">用户管理</h1>
-      <n-button v-if="isSuperAdmin" type="primary" @click="showCreateAdmin = true">
-        新建管理员
-      </n-button>
-    </div>
+  <div>
+    <!-- 页头 -->
+    <PageHeader title="用户管理" subtitle="管理用户账号、角色与状态">
+      <template #actions>
+        <n-button v-if="isSuperAdmin" type="primary" @click="showCreateAdmin = true">
+          <template #icon>
+            <n-icon :component="PersonAddOutline" />
+          </template>
+          新建管理员
+        </n-button>
+      </template>
+    </PageHeader>
 
-    <div class="flex gap-4 mb-4 flex-wrap">
+    <!-- 筛选 -->
+    <div class="flex flex-wrap items-center gap-3 mb-4">
       <n-input
         v-model:value="searchKeyword"
         placeholder="搜索用户名/昵称"
         clearable
-        style="width: 240px"
+        style="width: 260px"
         @keyup.enter="handleSearch"
-      />
+      >
+        <template #prefix>
+          <n-icon :component="SearchOutline" />
+        </template>
+      </n-input>
       <n-select
         v-model:value="filterStatus"
         :options="statusOptions"
         placeholder="状态"
-        style="width: 120px"
+        style="width: 140px"
         clearable
         @update:value="handleSearch"
       />
@@ -27,28 +37,33 @@
         v-model:value="filterRole"
         :options="roleOptions"
         placeholder="角色"
-        style="width: 120px"
+        style="width: 160px"
         clearable
         @update:value="handleSearch"
       />
     </div>
 
-    <n-data-table
-      remote
-      :columns="columns"
-      :data="userList"
-      :loading="loading"
-      :pagination="pagination"
-      :bordered="true"
-      @update:page="handlePageChange"
-    />
+    <!-- 用户表格 -->
+    <div class="bg-white border border-neutral-200 rounded-lg overflow-hidden">
+      <n-data-table
+        remote
+        :columns="columns"
+        :data="userList"
+        :loading="loading"
+        :pagination="pagination"
+        :bordered="false"
+        @update:page="handlePageChange"
+      />
+    </div>
 
     <!-- 新建管理员弹窗 -->
-    <n-modal v-model:show="showCreateAdmin" title="新建管理员" preset="card" style="width: 450px">
+    <n-modal v-model:show="showCreateAdmin" title="新建管理员" preset="card" style="width: 480px">
       <n-form>
         <n-form-item label="搜索用户">
-          <n-input v-model:value="searchUserKeyword" placeholder="输入用户名搜索" @keyup.enter="handleSearchUser" />
-          <n-button size="small" class="ml-2" @click="handleSearchUser">搜索</n-button>
+          <div class="flex gap-2 w-full">
+            <n-input v-model:value="searchUserKeyword" placeholder="输入用户名搜索" @keyup.enter="handleSearchUser" />
+            <n-button @click="handleSearchUser">搜索</n-button>
+          </div>
         </n-form-item>
         <n-form-item v-if="searchUserResults.length > 0" label="选择用户">
           <n-select v-model:value="selectedUserId" :options="searchUserResults" placeholder="选择用户" filterable />
@@ -66,14 +81,18 @@
 
 <script setup lang="ts">
 import { ref, reactive, h, onMounted } from 'vue'
-import { useMessage, useDialog } from 'naive-ui'
+import { useMessage, useDialog, NTag } from 'naive-ui'
 import type { DataTableColumn } from 'naive-ui'
 import { getUserList, updateUserStatus, deleteUser, resetPassword, createAdmin, removeAdmin, listUsers } from '@/api/admin'
 import { useAuthStore } from '@/stores/auth'
+import { useConfirm } from '@/composables/useConfirm'
+import PageHeader from '@/components/common/PageHeader.vue'
+import { SearchOutline, PersonAddOutline } from '@vicons/ionicons5'
 import dayjs from 'dayjs'
 
 const message = useMessage()
 const dialog = useDialog()
+const { confirmDanger } = useConfirm()
 const authStore = useAuthStore()
 
 const isSuperAdmin = authStore.userInfo?.role === 'SUPER_ADMIN'
@@ -120,29 +139,48 @@ const pagination = reactive({
 const roleLabels: Record<string, string> = { USER: '用户', ADMIN: '管理员', SUPER_ADMIN: '超级管理员' }
 const statusLabels: Record<string, string> = { ACTIVE: '正常', DISABLED: '禁用' }
 
+type TagType = 'default' | 'primary' | 'info' | 'success' | 'warning' | 'error'
+
+const ROLE_TAG: Record<string, TagType> = { USER: 'primary', ADMIN: 'error', SUPER_ADMIN: 'warning' }
+const STATUS_TAG: Record<string, TagType> = { ACTIVE: 'success', DISABLED: 'default' }
+
+function renderRole(row: any) {
+  return h(
+    NTag,
+    { size: 'small', round: true, bordered: false, type: ROLE_TAG[row.role] || 'default' },
+    { default: () => roleLabels[row.role] || row.role }
+  )
+}
+
+function renderStatus(row: any) {
+  return h(
+    NTag,
+    { size: 'small', round: true, bordered: false, type: STATUS_TAG[row.status] || 'default' },
+    { default: () => statusLabels[row.status] || row.status }
+  )
+}
+
 const columns: DataTableColumn<any>[] = [
-  { title: 'ID', key: 'id', width: 70 },
-  { title: '用户名', key: 'username', width: 120 },
-  { title: '昵称', key: 'nickname', width: 120 },
-  { title: '邮箱', key: 'email', width: 150, ellipsis: { tooltip: true } },
+  { title: 'ID', key: 'id', width: 80 },
   {
-    title: '角色',
-    key: 'role',
-    width: 100,
+    title: '用户',
+    key: 'username',
+    width: 180,
     render(row) {
-      const type = row.role === 'SUPER_ADMIN' ? 'warning' : row.role === 'ADMIN' ? 'info' : 'default'
-      return h('n-tag', { size: 'small', type: type as any }, () => roleLabels[row.role] || row.role)
+      const ch = (row.nickname || row.username || '?').charAt(0).toUpperCase()
+      return h('div', { class: 'flex items-center gap-3' }, [
+        h('div', { class: 'w-8 h-8 rounded-full bg-brand-gradient text-white flex items-center justify-center text-xs font-semibold flex-shrink-0' }, ch),
+        h('div', { class: 'flex flex-col min-w-0' }, [
+          h('span', { class: 'text-sm font-semibold text-neutral-900 truncate' }, row.username),
+          h('span', { class: 'text-xs text-neutral-500 truncate' }, `@${row.username}`)
+        ])
+      ])
     }
   },
-  {
-    title: '状态',
-    key: 'status',
-    width: 70,
-    align: 'center',
-    render(row) {
-      return h('span', { class: row.status === 'ACTIVE' ? 'text-success' : 'text-error' }, statusLabels[row.status] || row.status)
-    }
-  },
+  { title: '昵称', key: 'nickname', width: 120, ellipsis: { tooltip: true } },
+  { title: '邮箱', key: 'email', ellipsis: { tooltip: true } },
+  { title: '角色', key: 'role', width: 110, render: renderRole },
+  { title: '状态', key: 'status', width: 90, align: 'center', render: renderStatus },
   {
     title: '注册时间',
     key: 'createdAt',
@@ -152,27 +190,27 @@ const columns: DataTableColumn<any>[] = [
   {
     title: '操作',
     key: 'actions',
-    width: 200,
+    width: 250,
     render(row) {
-      if (!canOperate(row)) return h('span', { class: 'text-gray-300' }, '—')
+      if (!canOperate(row)) return h('span', { class: 'text-neutral-300' }, '—')
       const actions = []
       actions.push(h('a', {
-        class: 'text-primary cursor-pointer',
+        class: 'text-primary-500 cursor-pointer',
         onClick: () => handleResetPassword(row)
       }, '重置密码'))
       actions.push(h('a', {
-        class: row.status === 'ACTIVE' ? 'text-warning cursor-pointer ml-2' : 'text-success cursor-pointer ml-2',
+        class: row.status === 'ACTIVE' ? 'text-warning-600 cursor-pointer ml-3' : 'text-success-600 cursor-pointer ml-3',
         onClick: () => handleToggleStatus(row)
       }, row.status === 'ACTIVE' ? '禁用' : '启用'))
       if (isSuperAdmin && row.role === 'ADMIN') {
         actions.push(h('a', {
-          class: 'text-error cursor-pointer ml-2',
+          class: 'text-error-600 cursor-pointer ml-3',
           onClick: () => handleRemoveAdmin(row)
         }, '移除管理员'))
       }
       if (isSuperAdmin) {
         actions.push(h('a', {
-          class: 'text-error cursor-pointer ml-2',
+          class: 'text-error-600 cursor-pointer ml-3',
           onClick: () => handleDeleteUser(row)
         }, '删除'))
       }
@@ -235,11 +273,10 @@ async function handleResetPassword(row: any) {
 }
 
 function handleDeleteUser(row: any) {
-  dialog.warning({
+  confirmDanger({
     title: '确认删除',
     content: `确定要删除用户「${row.username}」吗？`,
-    positiveText: '确定',
-    negativeText: '取消',
+    positiveText: '确定删除',
     onPositiveClick: async () => {
       try {
         await deleteUser(row.id)

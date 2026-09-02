@@ -12,9 +12,11 @@
   },
   "dependencies": {
     "@kangc/v-md-editor": "^2.3.18",
+    "@types/dompurify": "^3.0.5",
     "@vicons/ionicons5": "^0.13.0",
     "axios": "^1.6.0",
     "dayjs": "^1.11.0",
+    "dompurify": "^3.4.14",
     "echarts": "^5.5.0",
     "markdown-it": "^13.0.0",
     "naive-ui": "^2.38.0",

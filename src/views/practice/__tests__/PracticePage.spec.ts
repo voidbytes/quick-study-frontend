@@ -94,7 +94,7 @@ describe('PracticePage 自由练习页', () => {
 
     // 选择第一项（正确 对应 A，标准答案 B → 答错）
     submitMock.mockResolvedValue({ code: 0, message: 'success', data: false })
-    await wrapper.findAll('.cursor-pointer')[0].trigger('click')
+    await wrapper.findAll('.q-option')[0].trigger('click')
     await wrapper.vm.$nextTick()
     const submitBtn = wrapper.findAll('button').find(b => b.text() === '提交答案')
     await submitBtn!.trigger('click')
@@ -112,7 +112,7 @@ describe('PracticePage 自由练习页', () => {
     await flushPromises()
 
     submitMock.mockResolvedValue({ code: 0, message: 'success', data: true })
-    await wrapper.findAll('.cursor-pointer')[0].trigger('click')
+    await wrapper.findAll('.q-option')[0].trigger('click')
     await wrapper.vm.$nextTick()
     const submitBtn = wrapper.findAll('button').find(b => b.text() === '提交答案')
     await submitBtn!.trigger('click')

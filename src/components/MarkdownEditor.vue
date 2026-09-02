@@ -19,6 +19,7 @@ import vuepressTheme from '@kangc/v-md-editor/lib/theme/vuepress.js'
 import '@kangc/v-md-editor/lib/theme/style/vuepress.css'
 import createKatexPlugin from '@kangc/v-md-editor/lib/plugins/katex/cdn'
 import createLineNumbertPlugin from '@kangc/v-md-editor/lib/plugins/line-number/index'
+import { TOKEN_KEY } from '@/utils/constants'
 
 VMdEditor.use(vuepressTheme)
 VMdEditor.use(createKatexPlugin())
@@ -52,7 +53,7 @@ async function handleUploadImage(event: any, insertImage: (url: string, alt: str
     const response = await fetch('/api/v1/files/upload', {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${localStorage.getItem('accessToken') || ''}`
+        Authorization: `Bearer ${localStorage.getItem(TOKEN_KEY) || ''}`
       },
       body: formData
     })

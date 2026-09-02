@@ -1,63 +1,108 @@
 <template>
-  <div class="p-6 max-w-6xl mx-auto">
-    <n-button quaternary @click="router.back()" class="mb-4">
-      ← 返回
-    </n-button>
+  <div>
+    <!-- 页头：返回 + 题库名称 + 管理员操作 -->
+    <PageHeader :title="bank?.name || '题库详情'" :subtitle="bank?.description || undefined" showBack>
+      <template #actions>
+        <n-button v-if="authStore.isAdmin && bank" size="small" @click="handleEdit">编辑</n-button>
+        <n-button v-if="authStore.isAdmin && bank" size="small" @click="showTransfer = true">转让</n-button>
+      </template>
+    </PageHeader>
 
     <n-spin v-if="!loadError" :show="loading">
-      <!-- 题库基本信息 -->
-      <n-card class="mb-6">
-        <template #header>
-          <div class="flex items-center justify-between">
-            <div>
-              <span class="text-xl font-bold">{{ bank?.name }}</span>
-              <n-tag v-if="bank?.isOfficial" type="warning" size="small" class="ml-2">官方</n-tag>
-              <n-tag v-else :type="bank?.isPublic ? 'success' : 'default'" size="small" class="ml-2">
-                {{ bank?.isPublic ? '公开' : '私有' }}
-              </n-tag>
-            </div>
-            <div class="flex gap-2">
-              <n-button v-if="authStore.isAdmin" size="small" @click="handleEdit">编辑</n-button>
-              <n-button v-if="authStore.isAdmin" size="small" @click="showTransfer = true">转让</n-button>
-            </div>
+      <template v-if="bank">
+        <!-- 可见性 / 协作标签 + 元信息卡 -->
+        <div class="bg-white border border-neutral-200 rounded-lg p-5 mb-6">
+          <div class="flex flex-wrap gap-2 mb-3">
+            <n-tag v-if="bank.isOfficial" type="warning" size="small" round>官方</n-tag>
+            <n-tag :type="bank.isPublic ? 'success' : 'default'" size="small" round>
+              {{ bank.isPublic ? '公开' : '私有' }}
+            </n-tag>
           </div>
-        </template>
-        <p class="text-gray-500">{{ bank?.description || '暂无描述' }}</p>
-        <div class="flex gap-6 mt-4 text-sm text-gray-500">
-          <span>题目数：{{ bank?.questionCount || 0 }}</span>
-          <span>练习次数：{{ bank?.practiceCount || 0 }}</span>
-          <span>创建者：{{ bank?.creatorName }}</span>
+          <p class="text-sm text-neutral-500 leading-relaxed mb-4">
+            {{ bank.description || '暂无描述' }}
+          </p>
+          <div class="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-neutral-500">
+            <span class="inline-flex items-center gap-1.5">
+              <n-icon :size="15" :component="PersonOutline" />
+              创建者：{{ bank.creatorName || '未知用户' }}
+            </span>
+            <span class="inline-flex items-center gap-1.5">
+              <n-icon :size="15" :component="TimeOutline" />
+              更新于 {{ formatTime(bank.updatedAt) }}
+            </span>
+          </div>
         </div>
-      </n-card>
 
-      <!-- 协作人管理 -->
-      <n-card title="协作人" class="mb-6">
-        <template #header-extra>
-          <n-button v-if="authStore.isAdmin" size="small" @click="showAddCollaborator = true">添加协作人</n-button>
-        </template>
-        <n-empty v-if="collaborators.length === 0" description="暂无协作人" />
-        <n-list v-else>
-          <n-list-item v-for="col in collaborators" :key="col.userId">
-            <span>{{ col.nickname }}</span>
-            <n-tag size="small" class="ml-2">{{ col.role }}</n-tag>
-            <template #suffix>
-              <n-button v-if="authStore.isAdmin" size="tiny" quaternary type="error" @click="handleRemoveCollaborator(col.userId)">
+        <!-- 统计卡片 -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <StatCard label="题目数" :value="bank.questionCount ?? 0" tone="brand" />
+          <StatCard label="练习次数" :value="bank.practiceCount ?? 0" />
+          <StatCard label="协作人" :value="collaborators.length" />
+          <StatCard label="创建时间" :value="formatDate(bank.createdAt)" />
+        </div>
+
+        <!-- 协作人列表 -->
+        <div class="bg-white border border-neutral-200 rounded-lg mb-6 overflow-hidden">
+          <div class="flex items-center justify-between px-5 py-4 border-b border-neutral-200">
+            <span class="text-base font-semibold text-neutral-900">协作人</span>
+            <n-button v-if="authStore.isAdmin" size="small" type="primary" secondary @click="showAddCollaborator = true">
+              添加协作人
+            </n-button>
+          </div>
+          <EmptyState
+            v-if="collaborators.length === 0"
+            title="暂无协作人"
+            description="添加协作人后可共同维护题库"
+            :icon="PeopleOutline"
+          />
+          <div v-else>
+            <div
+              v-for="col in collaborators"
+              :key="col.userId"
+              class="flex items-center gap-3 px-5 py-3.5 border-b border-neutral-200 last:border-b-0 hover:bg-neutral-50 transition-colors"
+            >
+              <div
+                class="w-8 h-8 rounded-full bg-brand-gradient flex items-center justify-center text-white text-xs font-semibold flex-shrink-0"
+              >
+                {{ (col.nickname || `用户${col.userId}`).charAt(0).toUpperCase() }}
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="text-sm font-medium text-neutral-900 truncate">
+                  {{ col.nickname || `用户 #${col.userId}` }}
+                </div>
+                <div class="text-xs text-neutral-500">ID: {{ col.userId }}</div>
+              </div>
+              <n-tag size="small" :type="roleTagType(col.role)" round>
+                {{ roleLabel(col.role) }}
+              </n-tag>
+              <n-button
+                v-if="authStore.isAdmin"
+                size="tiny"
+                quaternary
+                type="error"
+                @click="handleRemoveCollaborator(col.userId)"
+              >
                 移除
               </n-button>
-            </template>
-          </n-list-item>
-        </n-list>
-      </n-card>
+            </div>
+          </div>
+        </div>
 
-      <!-- 题目列表 -->
-      <n-card title="题目列表">
-        <QuestionList :bank-id="bankId" />
-      </n-card>
+        <!-- 题目列表 -->
+        <div class="bg-white border border-neutral-200 rounded-lg overflow-hidden mb-6">
+          <div class="flex items-center justify-between px-5 py-4 border-b border-neutral-200">
+            <span class="text-base font-semibold text-neutral-900">题目列表</span>
+          </div>
+          <div class="p-4">
+            <QuestionList :bank-id="bankId" />
+          </div>
+        </div>
+      </template>
     </n-spin>
     <LoadError v-else :description="loadError" :retrying="loading" @retry="fetchDetail" />
 
     <!-- 转让题库弹窗 -->
-    <n-modal v-model:show="showTransfer" title="转让题库" preset="card" style="width: 400px">
+    <n-modal v-model:show="showTransfer" preset="card" title="转让题库" style="width: 400px">
       <n-form>
         <n-form-item label="目标用户ID">
           <n-input v-model:value="transferUserId" placeholder="输入用户ID" />
@@ -69,7 +114,7 @@
     </n-modal>
 
     <!-- 添加协作人弹窗 -->
-    <n-modal v-model:show="showAddCollaborator" title="添加协作人" preset="card" style="width: 400px">
+    <n-modal v-model:show="showAddCollaborator" preset="card" title="添加协作人" style="width: 400px">
       <n-form>
         <n-form-item label="用户ID">
           <n-input v-model:value="newCollaboratorUserId" placeholder="输入用户ID" />
@@ -84,7 +129,7 @@
     </n-modal>
 
     <!-- 编辑题库弹窗 -->
-    <n-modal v-model:show="showEditDialog" title="编辑题库" preset="card" style="width: 480px">
+    <n-modal v-model:show="showEditDialog" preset="card" title="编辑题库" style="width: 480px">
       <n-form ref="editFormRef" :model="editForm" :rules="editRules" label-placement="top">
         <n-form-item label="名称" path="name">
           <n-input v-model:value="editForm.name" placeholder="题库名称" :maxlength="100" />
@@ -111,10 +156,23 @@
 import { ref, reactive, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useMessage, type FormRules, type FormInst } from 'naive-ui'
+import type { QuestionBank, BankCollaborator } from '@/types'
 import { getBankDetail, getCollaborators, addCollaborator, removeCollaborator, transferBank, updateBank } from '@/api/bank'
 import { useAuthStore } from '@/stores/auth'
+import PageHeader from '@/components/common/PageHeader.vue'
+import StatCard from '@/components/common/StatCard.vue'
+import EmptyState from '@/components/common/EmptyState.vue'
 import QuestionList from '@/views/question/QuestionList.vue'
 import LoadError from '@/components/LoadError.vue'
+import { PeopleOutline, PersonOutline, TimeOutline } from '@vicons/ionicons5'
+import dayjs from 'dayjs'
+
+/** 后端 BankResponse 实际包含的展示字段（QuestionBank 类型声明滞后，本地补全） */
+interface BankInfo extends QuestionBank {
+  isOfficial?: boolean
+  creatorName?: string | null
+  practiceCount?: number
+}
 
 const route = useRoute()
 const router = useRouter()
@@ -124,8 +182,8 @@ const authStore = useAuthStore()
 const bankId = route.params.id as string
 const loading = ref(false)
 const loadError = ref('')
-const bank = ref<any>(null)
-const collaborators = ref<any[]>([])
+const bank = ref<BankInfo | null>(null)
+const collaborators = ref<BankCollaborator[]>([])
 
 const showTransfer = ref(false)
 const transferUserId = ref('')
@@ -152,6 +210,33 @@ const editRules: FormRules = {
     { required: true, message: '请输入题库名称', trigger: 'blur' },
     { max: 100, message: '名称不超过100字符', trigger: 'blur' }
   ]
+}
+
+const ROLE_TAG: Record<string, 'default' | 'info' | 'warning' | 'success' | 'error' | 'primary'> = {
+  EDITOR: 'info',
+  REVIEWER: 'warning',
+  VIEWER: 'default'
+}
+const ROLE_LABEL: Record<string, string> = {
+  EDITOR: '编辑者',
+  REVIEWER: '审阅者',
+  VIEWER: '查看者'
+}
+
+function roleLabel(role: BankCollaborator['role'] | string): string {
+  return ROLE_LABEL[role] || role
+}
+
+function roleTagType(role: BankCollaborator['role'] | string) {
+  return ROLE_TAG[role] || 'default'
+}
+
+function formatTime(time?: string) {
+  return time ? dayjs(time).format('YYYY-MM-DD HH:mm') : '-'
+}
+
+function formatDate(time?: string) {
+  return time ? dayjs(time).format('YYYY-MM-DD') : '-'
 }
 
 async function fetchDetail() {
@@ -200,10 +285,8 @@ async function handleAddCollaborator() {
   }
   addColLoading.value = true
   try {
-    await addCollaborator(bankId, {
-      userId: Number(newCollaboratorUserId.value),
-      role: newCollaboratorRole.value
-    })
+    // 当前 addCollaborator API 仅接收 userId，角色选择不再随请求提交
+    await addCollaborator(bankId, Number(newCollaboratorUserId.value))
     message.success('添加成功')
     showAddCollaborator.value = false
     fetchCollaborators()

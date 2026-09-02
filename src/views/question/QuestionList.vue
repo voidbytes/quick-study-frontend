@@ -1,14 +1,18 @@
 <template>
   <div>
     <!-- 筛选栏 -->
-    <div class="flex gap-3 mb-4 flex-wrap items-center">
+    <FilterBar>
       <n-input
         v-model:value="searchKeyword"
         placeholder="搜索题干..."
         clearable
-        style="width: 200px"
+        style="width: 220px"
         @keyup.enter="handleSearch"
-      />
+      >
+        <template #prefix>
+          <n-icon :component="SearchOutline" />
+        </template>
+      </n-input>
       <n-select
         v-model:value="filterType"
         :options="typeOptions"
@@ -42,35 +46,119 @@
         style="width: 200px"
         @update:value="handleSearch"
       />
-      <n-button v-if="authStore.isAdmin" type="primary" @click="router.push(`/banks/${bankId}/questions/create`)">
-        创建题目
-      </n-button>
-      <n-button v-if="authStore.isAdmin" @click="handleBatchImport">批量导入</n-button>
-      <n-button v-if="authStore.isAdmin" @click="handleDownloadTemplate">下载模板</n-button>
+      <div class="ml-auto flex items-center gap-2">
+        <n-button v-if="authStore.isAdmin" type="primary" @click="router.push(`/banks/${bankId}/questions/create`)">
+          创建题目
+        </n-button>
+        <n-button v-if="authStore.isAdmin" @click="handleBatchImport">批量导入</n-button>
+        <n-button v-if="authStore.isAdmin" @click="handleDownloadTemplate">下载模板</n-button>
+      </div>
+    </FilterBar>
+
+    <!-- 题目卡片列表 -->
+    <SkeletonList v-if="loading" :count="5" :cols="1" />
+    <EmptyState
+      v-else-if="questionList.length === 0"
+      title="暂无题目"
+      description="当前筛选条件下没有题目"
+      :icon="DocumentTextOutline"
+    />
+    <div
+      v-else
+      class="bg-white border border-neutral-200 rounded-lg divide-y divide-neutral-200"
+    >
+      <div
+        v-for="(q, index) in questionList"
+        :key="q.id"
+        class="flex items-start gap-3 px-4 py-4 hover:bg-neutral-50 transition-colors"
+      >
+        <!-- 题号 -->
+        <span class="text-sm font-mono text-neutral-400 w-10 flex-shrink-0 pt-0.5">
+          #{{ String((pagination.page - 1) * pagination.pageSize + index + 1).padStart(3, '0') }}
+        </span>
+
+        <!-- 题干与元信息 -->
+        <div class="flex-1 min-w-0">
+          <div class="text-sm font-medium text-neutral-900 line-clamp-1">
+            {{ stripHtml(q.content) }}
+          </div>
+          <div class="flex flex-wrap items-center gap-x-4 gap-y-1.5 mt-1.5">
+            <n-tag size="small" round :type="typeTagType(q.type)">{{ typeLabel(q.type) }}</n-tag>
+            <n-tag size="small" round :type="difficultyTagType(q.difficulty)">
+              {{ difficultyLabel(q.difficulty) }}
+            </n-tag>
+            <n-tag size="small" round :type="statusTagType(q.status)">{{ statusLabel(q.status) }}</n-tag>
+            <span v-for="tag in q.tags" :key="tag.id" class="tag-chip">{{ tag.name }}</span>
+          </div>
+        </div>
+
+        <!-- 时间与操作 -->
+        <div class="flex flex-col items-end gap-2 flex-shrink-0">
+          <span class="text-xs text-neutral-400">{{ formatTime(q.createdAt) }}</span>
+          <div class="flex items-center gap-1">
+            <n-button
+              size="tiny"
+              quaternary
+              type="primary"
+              @click="router.push(`/banks/${bankId}/questions/${q.id}`)"
+            >
+              查看
+            </n-button>
+            <n-button
+              v-if="authStore.isAdmin"
+              size="tiny"
+              quaternary
+              @click="router.push(`/banks/${bankId}/questions/${q.id}/edit`)"
+            >
+              编辑
+            </n-button>
+            <n-button
+              v-if="authStore.isAdmin"
+              size="tiny"
+              quaternary
+              type="error"
+              @click="handleDelete(q)"
+            >
+              删除
+            </n-button>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <!-- 题目表格 -->
-    <n-data-table
-      remote
-      :columns="columns"
-      :data="questionList"
-      :loading="loading"
-      :pagination="pagination"
-      :bordered="true"
-      :row-key="(row: any) => row.id"
-      @update:page="handlePageChange"
-    />
+    <!-- 分页 -->
+    <div v-if="pagination.itemCount > pagination.pageSize" class="flex justify-end mt-4">
+      <n-pagination
+        :page="pagination.page"
+        :item-count="pagination.itemCount"
+        :page-size="pagination.pageSize"
+        @update:page="handlePageChange"
+      />
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, h, onMounted } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { useMessage, useDialog } from 'naive-ui'
-import type { DataTableColumn, SelectOption } from 'naive-ui'
-import { getQuestionList, deleteQuestion, updateSort } from '@/api/question'
+import { useMessage } from 'naive-ui'
+import type { SelectOption } from 'naive-ui'
+import type { Question, QuestionType, Difficulty } from '@/types'
+import { getQuestionList, deleteQuestion } from '@/api/question'
 import { getTagList } from '@/api/tag'
+import {
+  QUESTION_TYPE_MAP,
+  QUESTION_TYPE_OPTIONS,
+  DIFFICULTY_MAP,
+  DIFFICULTY_OPTIONS,
+  QUESTION_STATUS_OPTIONS
+} from '@/utils/constants'
 import { useAuthStore } from '@/stores/auth'
+import { useConfirm } from '@/composables/useConfirm'
+import FilterBar from '@/components/common/FilterBar.vue'
+import SkeletonList from '@/components/common/SkeletonList.vue'
+import EmptyState from '@/components/common/EmptyState.vue'
+import { SearchOutline, DocumentTextOutline } from '@vicons/ionicons5'
 import dayjs from 'dayjs'
 
 const props = defineProps<{
@@ -79,39 +167,22 @@ const props = defineProps<{
 
 const router = useRouter()
 const message = useMessage()
-const dialog = useDialog()
+const { confirmDanger } = useConfirm()
 const authStore = useAuthStore()
 
 const loading = ref(false)
 const searchKeyword = ref('')
-const filterType = ref<string | null>(null)
-const filterDifficulty = ref<string | null>(null)
+const filterType = ref<QuestionType | null>(null)
+const filterDifficulty = ref<Difficulty | null>(null)
 const filterStatus = ref<string | null>(null)
 const filterTagIds = ref<number[]>([])
 const tagOptions = ref<SelectOption[]>([])
-const questionList = ref<any[]>([])
-const dragIndex = ref<number | null>(null)
+const questionList = ref<Question[]>([])
 
-// 与后端 QuestionType 枚举名保持一致
-const typeOptions = [
-  { label: '单选题', value: 'SINGLE' },
-  { label: '多选题', value: 'MULTIPLE' },
-  { label: '判断题', value: 'TRUE_FALSE' },
-  { label: '填空题', value: 'FILL_BLANK' },
-  { label: '简答题', value: 'SHORT_ANSWER' }
-]
-
-const difficultyOptions = [
-  { label: '简单', value: 'EASY' },
-  { label: '中等', value: 'MEDIUM' },
-  { label: '困难', value: 'HARD' }
-]
-
-const statusOptions = [
-  { label: '草稿', value: 'DRAFT' },
-  { label: '待审核', value: 'PENDING_REVIEW' },
-  { label: '已发布', value: 'PUBLISHED' }
-]
+// 选项统一取自 @/utils/constants（全站唯一字典）
+const typeOptions = QUESTION_TYPE_OPTIONS
+const difficultyOptions = DIFFICULTY_OPTIONS
+const statusOptions = QUESTION_STATUS_OPTIONS
 
 const pagination = reactive({
   page: 1,
@@ -119,86 +190,60 @@ const pagination = reactive({
   itemCount: 0
 })
 
-const typeLabels: Record<string, string> = {
-  SINGLE: '单选题', MULTIPLE: '多选题', TRUE_FALSE: '判断题', FILL_BLANK: '填空题', SHORT_ANSWER: '简答题'
-}
-const difficultyLabels: Record<string, string> = { EASY: '简单', MEDIUM: '中等', HARD: '困难' }
-const difficultyColors: Record<string, string> = { EASY: 'success', MEDIUM: 'warning', HARD: 'error' }
+type TagColor = 'default' | 'primary' | 'info' | 'success' | 'warning' | 'error'
 
-const columns: DataTableColumn<any>[] = [
-  {
-    title: '排序',
-    key: 'sortOrder',
-    width: 60,
-    align: 'center'
-  },
-  {
-    title: '题干',
-    key: 'content',
-    ellipsis: { tooltip: true },
-    render(row) {
-      return h('span', { class: 'truncate block max-w-xs' }, row.content?.replace(/<[^>]+>/g, '').substring(0, 80) || '')
-    }
-  },
-  {
-    title: '题型',
-    key: 'type',
-    width: 80,
-    align: 'center',
-    render(row) { return typeLabels[row.type] || '-' }
-  },
-  {
-    title: '难度',
-    key: 'difficulty',
-    width: 70,
-    align: 'center',
-    render(row) {
-      return h('n-tag', { size: 'small', type: difficultyColors[row.difficulty] || 'default' as any }, () => difficultyLabels[row.difficulty] || '-')
-    }
-  },
-  {
-    title: '状态',
-    key: 'status',
-    width: 80,
-    align: 'center',
-    render(row) {
-      const map: Record<string, string> = { DRAFT: '草稿', PENDING_REVIEW: '待审核', PUBLISHED: '已发布' }
-      return map[row.status] || row.status
-    }
-  },
-  {
-    title: '标签',
-    key: 'tags',
-    width: 160,
-    render(row) {
-      if (!row.tags || row.tags.length === 0) return '-'
-      return row.tags.map((t: any) => t.name).join(', ')
-    }
-  },
-  {
-    title: '创建时间',
-    key: 'createdAt',
-    width: 160,
-    render(row) { return dayjs(row.createdAt).format('YYYY-MM-DD HH:mm') }
-  },
-  {
-    title: '操作',
-    key: 'actions',
-    width: 160,
-    render(row) {
-      const actions = [
-        h('a', { class: 'text-primary cursor-pointer', onClick: () => router.push(`/banks/${props.bankId}/questions/${row.id}`) }, '查看')
-      ]
-      if (authStore.isAdmin) {
-        actions.push(
-          h('a', { class: 'text-primary cursor-pointer', onClick: () => router.push(`/banks/${props.bankId}/questions/${row.id}/edit`) }, '编辑'),
-          h('a', { class: 'text-error cursor-pointer', onClick: () => handleDelete(row) }, '删除')
-        )
-      }
-      return h('div', { class: 'flex gap-2' }, actions)
-    }
-  }
-]
+const TYPE_TAG: Record<QuestionType, TagColor> = {
+  SINGLE: 'info',
+  MULTIPLE: 'warning',
+  TRUE_FALSE: 'success',
+  FILL_BLANK: 'default',
+  SHORT_ANSWER: 'primary'
+}
+
+const DIFFICULTY_TAG: Record<Difficulty, TagColor> = {
+  EASY: 'success',
+  MEDIUM: 'warning',
+  HARD: 'error'
+}
+
+const STATUS_TAG: Record<string, TagColor> = {
+  DRAFT: 'default',
+  PENDING_REVIEW: 'warning',
+  PUBLISHED: 'success'
+}
+
+function typeLabel(type: QuestionType): string {
+  return QUESTION_TYPE_MAP[type] || '-'
+}
+
+function typeTagType(type: QuestionType): TagColor {
+  return TYPE_TAG[type] || 'default'
+}
+
+function difficultyLabel(difficulty: Difficulty): string {
+  return DIFFICULTY_MAP[difficulty] || '-'
+}
+
+function difficultyTagType(difficulty: Difficulty): TagColor {
+  return DIFFICULTY_TAG[difficulty] || 'default'
+}
+
+function statusLabel(status: string): string {
+  return QUESTION_STATUS_OPTIONS.find((o) => o.value === status)?.label || status || '-'
+}
+
+function statusTagType(status: string): TagColor {
+  return STATUS_TAG[status] || 'default'
+}
+
+function stripHtml(html: string | undefined): string {
+  if (!html) return ''
+  return html.replace(/<[^>]+>/g, '')
+}
+
+function formatTime(time: string | undefined) {
+  return time ? dayjs(time).format('YYYY-MM-DD') : '-'
+}
 
 async function fetchList() {
   loading.value = true
@@ -224,7 +269,7 @@ async function fetchList() {
 async function fetchTagOptions() {
   try {
     const res = await getTagList()
-    tagOptions.value = (res.data || []).map((t: any) => ({
+    tagOptions.value = (res.data || []).map((t) => ({
       label: t.name,
       value: t.id
     }))
@@ -243,15 +288,14 @@ function handlePageChange(page: number) {
   fetchList()
 }
 
-function handleDelete(row: any) {
-  dialog.warning({
+function handleDelete(q: Question) {
+  confirmDanger({
     title: '确认删除',
-    content: '确定要删除该题目吗？',
-    positiveText: '确定',
-    negativeText: '取消',
+    content: `确定要删除该题目吗？题干：${stripHtml(q.content).slice(0, 30)}...`,
+    positiveText: '确定删除',
     onPositiveClick: async () => {
       try {
-        await deleteQuestion(props.bankId, row.id)
+        await deleteQuestion(props.bankId, q.id)
         message.success('删除成功')
         fetchList()
       } catch {
@@ -274,3 +318,20 @@ onMounted(() => {
   fetchList()
 })
 </script>
+
+<style scoped>
+.line-clamp-1 {
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.tag-chip {
+  font-size: var(--text-xs);
+  font-weight: var(--font-medium);
+  padding: 1px 8px;
+  border-radius: var(--radius-full);
+  background: var(--bg-selected);
+  color: var(--text-brand);
+}
+</style>

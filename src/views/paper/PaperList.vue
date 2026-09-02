@@ -1,70 +1,182 @@
 <template>
-  <div class="p-6 max-w-6xl mx-auto">
-    <div class="flex items-center justify-between mb-6">
-      <h1 class="text-2xl font-bold text-gray-800">试卷管理</h1>
-      <n-button v-if="authStore.isAdmin" type="primary" @click="router.push('/papers/create')">
-        创建试卷
-      </n-button>
-    </div>
+  <div>
+    <!-- 页头 -->
+    <PageHeader title="试卷" subtitle="创建、管理试卷，组织在线考试与练习">
+      <template #actions>
+        <n-button v-if="authStore.isAdmin" type="primary" @click="router.push('/papers/create')">
+          创建试卷
+        </n-button>
+      </template>
+    </PageHeader>
 
     <!-- 搜索与筛选 -->
-    <div class="flex gap-4 mb-4 flex-wrap">
+    <FilterBar>
       <n-input
         v-model:value="searchKeyword"
         placeholder="搜索试卷标题..."
         clearable
-        style="width: 240px"
+        style="width: 260px"
         @keyup.enter="handleSearch"
-      />
+      >
+        <template #prefix>
+          <n-icon :component="SearchOutline" />
+        </template>
+      </n-input>
       <n-select
         v-model:value="filterShareType"
         :options="shareTypeOptions"
-        placeholder="分享类型"
-        style="width: 130px"
+        placeholder="全部分享类型"
+        style="width: 150px"
         clearable
         @update:value="handleSearch"
       />
       <n-select
         v-model:value="filterStatus"
         :options="statusOptions"
-        placeholder="状态"
-        style="width: 100px"
+        placeholder="全部状态"
+        style="width: 130px"
         clearable
         @update:value="handleSearch"
       />
+    </FilterBar>
+
+    <!-- 试卷卡片网格 -->
+    <SkeletonList v-if="loading" :count="4" :cols="2" />
+    <EmptyState
+      v-else-if="paperList.length === 0"
+      title="暂无试卷"
+      description="没有找到匹配的试卷，换个关键词试试"
+      :icon="DocumentTextOutline"
+    />
+    <div v-else class="grid grid-cols-1 xl:grid-cols-2 gap-4">
+      <div
+        v-for="paper in paperList"
+        :key="paper.id"
+        class="bg-white border border-neutral-200 rounded-lg p-5 flex flex-col transition-all hover:border-primary-300 hover:shadow-sm"
+      >
+        <!-- 卡片头部：标题 + 状态 -->
+        <div class="flex items-start justify-between gap-3 mb-2">
+          <h3
+            class="text-base font-semibold text-neutral-900 truncate cursor-pointer"
+            @click="router.push(`/papers/${paper.id}`)"
+          >
+            {{ paper.title }}
+          </h3>
+          <span
+            class="flex-shrink-0 px-2 py-0.5 rounded-full text-xs font-semibold"
+            :class="statusTagClass(paper.status)"
+          >
+            {{ statusLabel(paper.status) }}
+          </span>
+        </div>
+
+        <!-- 描述 -->
+        <p class="text-sm text-neutral-500 mb-4 line-clamp-2">
+          {{ paper.description || '暂无描述' }}
+        </p>
+
+        <!-- 统计 -->
+        <div class="flex items-center gap-6 py-3 border-y border-neutral-200 mb-4">
+          <div class="flex flex-col gap-0.5">
+            <span class="text-base font-bold text-neutral-900">{{ paper.questionCount ?? 0 }}<span class="text-xs font-normal text-neutral-500 ml-0.5">题</span></span>
+            <span class="text-xs text-neutral-500">题目数</span>
+          </div>
+          <div class="flex flex-col gap-0.5">
+            <span class="text-base font-bold text-neutral-900">{{ paper.totalScore ?? 0 }}<span class="text-xs font-normal text-neutral-500 ml-0.5">分</span></span>
+            <span class="text-xs text-neutral-500">总分</span>
+          </div>
+          <div class="flex flex-col gap-0.5">
+            <span class="text-base font-bold text-neutral-900">{{ timeLimitText(paper.timeLimit) }}</span>
+            <span class="text-xs text-neutral-500">时限</span>
+          </div>
+        </div>
+
+        <!-- 底部：创建者 / 日期 -->
+        <div class="flex items-center gap-2 mb-4">
+          <div
+            class="w-7 h-7 rounded-full bg-brand-gradient flex items-center justify-center text-white text-xs font-semibold flex-shrink-0"
+          >
+            {{ (paper.creatorName || '?').charAt(0).toUpperCase() }}
+          </div>
+          <span class="text-sm text-neutral-500 truncate">{{ paper.creatorName || '匿名用户' }}</span>
+          <span class="text-sm text-neutral-400 ml-auto whitespace-nowrap">{{ formatDate(paper.createdAt) }}</span>
+        </div>
+
+        <!-- 操作区 -->
+        <div class="flex items-center gap-2 pt-3 border-t border-neutral-200 mt-auto flex-wrap">
+          <template v-if="paper.status === 'PUBLISHED' && authStore.isAuthenticated">
+            <n-button type="primary" size="small" @click="router.push(`/papers/${paper.id}/exam`)">
+              开始考试
+            </n-button>
+          </template>
+          <n-button size="small" quaternary @click="router.push(`/papers/${paper.id}`)">
+            查看详情
+          </n-button>
+          <template v-if="authStore.isAdmin">
+            <n-button size="small" quaternary @click="router.push(`/papers/${paper.id}/edit`)">
+              编辑
+            </n-button>
+            <n-button
+              v-if="paper.status !== 'PUBLISHED'"
+              size="small"
+              quaternary
+              type="success"
+              @click="handlePublish(paper)"
+            >
+              发布
+            </n-button>
+            <n-button size="small" quaternary type="error" @click="handleDelete(paper)">
+              删除
+            </n-button>
+          </template>
+          <span
+            class="ml-auto flex-shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold"
+            :class="shareTagClass(paper.shareType)"
+          >
+            {{ shareTypeLabels[paper.shareType] || paper.shareType }}
+          </span>
+        </div>
+      </div>
     </div>
 
-    <n-data-table
-      remote
-      :columns="columns"
-      :data="paperList"
-      :loading="loading"
-      :pagination="pagination"
-      :bordered="true"
-      @update:page="handlePageChange"
-    />
+    <!-- 分页 -->
+    <div v-if="pagination.itemCount > pagination.pageSize" class="flex justify-end mt-6">
+      <n-pagination
+        :page="pagination.page"
+        :item-count="pagination.itemCount"
+        :page-size="pagination.pageSize"
+        @update:page="handlePageChange"
+      />
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, h, onMounted } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { useMessage, useDialog } from 'naive-ui'
-import type { DataTableColumn } from 'naive-ui'
+import { useMessage } from 'naive-ui'
 import { getPaperList, deletePaper, publishPaper } from '@/api/paper'
+import type { ExamPaper, PaperShareType, PaperStatus } from '@/types'
+import { PAPER_STATUS_MAP } from '@/utils/constants'
 import { useAuthStore } from '@/stores/auth'
+import { useConfirm } from '@/composables/useConfirm'
+import PageHeader from '@/components/common/PageHeader.vue'
+import FilterBar from '@/components/common/FilterBar.vue'
+import SkeletonList from '@/components/common/SkeletonList.vue'
+import EmptyState from '@/components/common/EmptyState.vue'
+import { SearchOutline, DocumentTextOutline } from '@vicons/ionicons5'
 import dayjs from 'dayjs'
 
 const router = useRouter()
 const message = useMessage()
-const dialog = useDialog()
 const authStore = useAuthStore()
+const { confirmDanger } = useConfirm()
 
 const loading = ref(false)
 const searchKeyword = ref('')
 const filterShareType = ref<string | null>(null)
 const filterStatus = ref<string | null>(null)
-const paperList = ref<any[]>([])
+const paperList = ref<ExamPaper[]>([])
 
 const shareTypeOptions = [
   { label: '私有', value: 'PRIVATE' },
@@ -75,75 +187,49 @@ const shareTypeOptions = [
 
 const statusOptions = [
   { label: '草稿', value: 'DRAFT' },
-  { label: '已发布', value: 'PUBLISHED' }
+  { label: '已发布', value: 'PUBLISHED' },
+  { label: '已关闭', value: 'CLOSED' }
 ]
-
-const pagination = reactive({
-  page: 1,
-  pageSize: 20,
-  itemCount: 0
-})
 
 const shareTypeLabels: Record<string, string> = {
   PRIVATE: '私有', LINK: '链接', PASSWORD: '密码', PUBLIC: '公开'
 }
 
-const columns: DataTableColumn<any>[] = [
-  { title: '标题', key: 'title', ellipsis: { tooltip: true } },
-  { title: '发布者', key: 'creatorName', width: 100, align: 'center', ellipsis: { tooltip: true } },
-  { title: '题目数', key: 'questionCount', width: 80, align: 'center' },
-  { title: '总分', key: 'totalScore', width: 70, align: 'center' },
-  {
-    title: '状态',
-    key: 'status',
-    width: 80,
-    align: 'center',
-    render(row) {
-      return row.status === 'PUBLISHED'
-        ? h('span', { class: 'text-green-500' }, '已发布')
-        : h('span', { class: 'text-gray-500' }, '草稿')
-    }
-  },
-  {
-    title: '分享类型',
-    key: 'shareType',
-    width: 80,
-    align: 'center',
-    render(row) { return shareTypeLabels[row.shareType] || row.shareType }
-  },
-  {
-    title: '创建时间',
-    key: 'createdAt',
-    width: 160,
-    render(row) { return dayjs(row.createdAt).format('YYYY-MM-DD HH:mm') }
-  },
-  {
-    title: '操作',
-    key: 'actions',
-    width: 200,
-    render(row) {
-      const actions = [
-        h('a', { class: 'text-primary cursor-pointer', onClick: () => router.push(`/papers/${row.id}`) }, '详情')
-      ]
-      // 已发布的试卷，所有登录用户可作答
-      if (row.status === 'PUBLISHED' && authStore.isAuthenticated) {
-        actions.push(
-          h('a', { class: 'text-success cursor-pointer', onClick: () => router.push(`/papers/${row.id}/exam`) }, '开始考试')
-        )
-      }
-      if (authStore.isAdmin) {
-        actions.push(
-          h('a', { class: 'text-primary cursor-pointer', onClick: () => router.push(`/papers/${row.id}/edit`) }, '编辑')
-        )
-        if (row.status !== 'PUBLISHED') {
-          actions.push(h('a', { class: 'text-success cursor-pointer', onClick: () => handlePublish(row) }, '发布'))
-        }
-        actions.push(h('a', { class: 'text-error cursor-pointer', onClick: () => handleDelete(row) }, '删除'))
-      }
-      return h('div', { class: 'flex gap-2' }, actions)
-    }
-  }
-]
+const pagination = reactive({
+  page: 1,
+  pageSize: 12,
+  itemCount: 0
+})
+
+const SHARE_TAG_CLASS: Record<PaperShareType, string> = {
+  PRIVATE: 'bg-neutral-100 text-neutral-600',
+  LINK: 'bg-info-50 text-info-600',
+  PASSWORD: 'bg-warning-50 text-warning-600',
+  PUBLIC: 'bg-success-50 text-success-600'
+}
+
+function statusLabel(status: PaperStatus): string {
+  return PAPER_STATUS_MAP[status]?.label ?? status
+}
+
+function statusTagClass(status: PaperStatus): string {
+  const type = PAPER_STATUS_MAP[status]?.type
+  if (type === 'success') return 'bg-success-50 text-success-600'
+  if (type === 'error') return 'bg-error-50 text-error-600'
+  return 'bg-neutral-100 text-neutral-600'
+}
+
+function shareTagClass(shareType: PaperShareType): string {
+  return SHARE_TAG_CLASS[shareType] || SHARE_TAG_CLASS.PRIVATE
+}
+
+function timeLimitText(timeLimit?: number | null): string {
+  return timeLimit ? timeLimit + '分钟' : '不限时'
+}
+
+function formatDate(time: string | undefined) {
+  return time ? dayjs(time).format('YYYY-MM-DD') : '-'
+}
 
 async function fetchList() {
   loading.value = true
@@ -174,7 +260,7 @@ function handlePageChange(page: number) {
   fetchList()
 }
 
-async function handlePublish(row: any) {
+async function handlePublish(row: ExamPaper) {
   try {
     await publishPaper(row.id)
     message.success('发布成功')
@@ -184,12 +270,11 @@ async function handlePublish(row: any) {
   }
 }
 
-function handleDelete(row: any) {
-  dialog.warning({
+function handleDelete(row: ExamPaper) {
+  confirmDanger({
     title: '确认删除',
-    content: `确定要删除试卷「${row.title}」吗？`,
-    positiveText: '确定',
-    negativeText: '取消',
+    content: `确定要删除试卷「${row.title}」吗？该操作不可撤销。`,
+    positiveText: '确定删除',
     onPositiveClick: async () => {
       try {
         await deletePaper(row.id)
@@ -204,3 +289,12 @@ function handleDelete(row: any) {
 
 onMounted(() => { fetchList() })
 </script>
+
+<style scoped>
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+</style>

@@ -1,8 +1,8 @@
 import request from './request'
-import type { ApiResponse, PageResult, Question } from '@/types'
+import type { ApiResponse, PageResult, Question, QuestionType } from '@/types'
 
 export interface CreateQuestionParams {
-  type: number
+  type: QuestionType
   difficulty: string
   content: string
   options?: string
@@ -62,28 +62,8 @@ export function updateSort(ids: number[]) {
   return request.put<ApiResponse<null>>('/questions/sort', { ids })
 }
 
-export function create(data: CreateQuestionParams) {
-  return request.post<ApiResponse<Question>>('/questions', data)
-}
-
-export function list(params?: QuestionListParams) {
-  return request.get<ApiResponse<PageResult<Question>>>('/questions', { params })
-}
-
-export function getById(id: number | string) {
-  return request.get<ApiResponse<Question>>(`/questions/${id}`)
-}
-
-export function update(id: number | string, data: UpdateQuestionParams) {
-  return request.put<ApiResponse<Question>>(`/questions/${id}`, data)
-}
-
 export function deleteQuestion(bankId: number | string, questionId: number | string) {
   return request.delete<ApiResponse<null>>(`/banks/${bankId}/questions/${questionId}`)
-}
-
-export function sort(ids: number[]) {
-  return request.put<ApiResponse<null>>('/questions/sort', { ids })
 }
 
 export function batchImport(bankId: number | string, file: File) {

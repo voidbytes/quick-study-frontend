@@ -1,103 +1,134 @@
 <template>
-  <div class="p-6 max-w-6xl mx-auto">
-    <n-button quaternary @click="router.back()" class="mb-4">← 返回</n-button>
+  <div>
+    <!-- 页头 -->
+    <PageHeader
+      show-back
+      :title="paperTitle"
+      :subtitle="paperSubtitle"
+    >
+      <template #actions>
+        <n-button
+          v-if="paper?.status === 'PUBLISHED' && authStore.isAuthenticated"
+          type="primary"
+          size="small"
+          @click="router.push(`/papers/${paperId}/exam`)"
+        >
+          开始考试
+        </n-button>
+      </template>
+    </PageHeader>
 
     <n-spin v-if="!loadError" :show="loading">
       <!-- 试卷基本信息 -->
-      <n-card class="mb-6">
-        <template #header>
-          <div class="flex items-center justify-between">
-            <span class="text-xl font-bold">{{ paper?.title }}</span>
-            <div class="flex items-center gap-2">
-              <n-button v-if="paper?.status === 'PUBLISHED' && authStore.isAuthenticated" type="primary" size="small" @click="router.push(`/papers/${paperId}/exam`)">>
-                开始考试
-              </n-button>
-              <n-tag v-if="paper?.status === 'PUBLISHED'" type="success">已发布</n-tag>
-              <n-tag v-else>草稿</n-tag>
-            </div>
+      <div class="bg-white border border-neutral-200 rounded-lg p-5 mb-6">
+        <div class="flex items-center justify-between mb-4">
+          <span class="text-base font-semibold text-neutral-900">基本信息</span>
+          <div class="flex items-center gap-2">
+            <n-tag v-if="paper?.status === 'PUBLISHED'" type="success" size="small">已发布</n-tag>
+            <n-tag v-else size="small">草稿</n-tag>
           </div>
-        </template>
-        <n-descriptions :column="2" bordered>
+        </div>
+        <n-descriptions :column="2" bordered size="small">
           <n-descriptions-item label="描述">{{ paper?.description || '暂无' }}</n-descriptions-item>
           <n-descriptions-item label="总分">{{ paper?.totalScore }}</n-descriptions-item>
           <n-descriptions-item label="题目数">{{ paper?.questionCount }}</n-descriptions-item>
           <n-descriptions-item label="时间限制">{{ paper?.timeLimit ? paper.timeLimit + '分钟' : '不限' }}</n-descriptions-item>
           <n-descriptions-item label="发布者">{{ paper?.creatorName || '-' }}</n-descriptions-item>
-          <n-descriptions-item label="分享类型">{{ shareTypeLabels[paper?.shareType] || paper?.shareType }}</n-descriptions-item>
+          <n-descriptions-item label="分享类型">{{ shareTypeLabel(paper?.shareType) }}</n-descriptions-item>
           <n-descriptions-item label="作答次数">
             {{ attemptLimitLabel(paper?.attemptType, paper?.attemptLimit) }}
             <n-tag v-if="paper?.cheatEnabled" size="tiny" type="warning" class="ml-2">防作弊开启</n-tag>
           </n-descriptions-item>
         </n-descriptions>
-      </n-card>
+      </div>
 
       <!-- 批改人管理（仅出卷人可见，与后端权限一致） -->
-      <n-card v-if="canManage" title="批改人管理" class="mb-6">
+      <div v-if="canManage" class="bg-white border border-neutral-200 rounded-lg p-5 mb-6">
+        <div class="text-base font-semibold text-neutral-900 mb-4">批改人管理</div>
         <div class="flex items-center gap-2">
           <n-input v-model:value="newGraderId" placeholder="输入用户ID" style="width: 200px" />
           <n-button size="small" @click="handleUpdateGrader">更换批改人</n-button>
         </div>
-        <div class="mt-2 text-sm text-gray-500">
-          当前批改人ID：{{ paper?.graderId || '未设置' }}
+        <div class="mt-2 text-sm text-neutral-500">
+          当前批改人ID：{{ paper?.graderId ?? '未设置' }}
         </div>
-      </n-card>
+      </div>
 
       <!-- 题目列表（只读快照） -->
-      <n-card title="题目列表" class="mb-6">
-        <n-list>
-          <n-list-item v-for="(q, index) in paperQuestions" :key="q.id">
-            <template #prefix>
-              <span class="text-gray-500 font-mono">#{{ index + 1 }}</span>
-            </template>
-            <n-thing :title="`${typeLabels[q.type] || '未知'} - ${q.score}分`">
-              <span class="text-sm">{{ q.content?.replace(/<[^>]+>/g, '').substring(0, 100) }}</span>
-            </n-thing>
-          </n-list-item>
-        </n-list>
-      </n-card>
+      <div class="bg-white border border-neutral-200 rounded-lg overflow-hidden mb-6">
+        <div class="px-5 py-4 border-b border-neutral-200">
+          <span class="text-base font-semibold text-neutral-900">题目列表</span>
+        </div>
+        <EmptyState
+          v-if="!loading && paperQuestions.length === 0"
+          description="暂无题目"
+          :icon="DocumentTextOutline"
+        />
+        <div v-else>
+          <div
+            v-for="(q, index) in paperQuestions"
+            :key="q.id"
+            class="flex items-start gap-3 px-5 py-4 border-b border-neutral-200 last:border-b-0 hover:bg-neutral-50 transition-colors"
+          >
+            <span class="text-sm text-neutral-500 font-mono flex-shrink-0 mt-0.5">#{{ index + 1 }}</span>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2 mb-1">
+                <span
+                  class="flex-shrink-0 text-xs font-semibold px-2 py-0.5 rounded-full"
+                  :class="typeTagClass(q.type)"
+                >
+                  {{ typeLabel(q.type) }}
+                </span>
+                <span class="text-sm text-neutral-500">{{ q.score }} 分</span>
+              </div>
+              <div class="text-sm text-neutral-900 whitespace-pre-line">{{ stripHtml(q.content) }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
 
       <!-- 作答统计（出卷人视角） -->
-      <n-card v-if="canManage" title="作答统计" class="mb-6">
-        <n-grid :cols="4" :x-gap="16">
-          <n-grid-item>
-            <n-statistic label="总作答人数" :value="sessionStats?.totalSessions || 0" />
-          </n-grid-item>
-          <n-grid-item>
-            <n-statistic label="平均分" :value="sessionStats?.avgScore?.toFixed(1) || '-'" />
-          </n-grid-item>
-          <n-grid-item>
-            <n-statistic label="最高分" :value="sessionStats?.maxScore || '-'" />
-          </n-grid-item>
-          <n-grid-item>
-            <n-statistic label="最低分" :value="sessionStats?.minScore || '-'" />
-          </n-grid-item>
-        </n-grid>
-      </n-card>
+      <div v-if="canManage" class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <StatCard label="总作答人数" :value="sessionStats?.totalSessions || 0" tone="brand" />
+        <StatCard label="平均分" :value="sessionStats?.avgScore?.toFixed(1) || '-'" />
+        <StatCard label="最高分" :value="sessionStats?.maxScore || '-'" tone="success" />
+        <StatCard label="最低分" :value="sessionStats?.minScore || '-'" tone="error" />
+      </div>
 
       <!-- 作答记录列表（仅出卷人可见） -->
-      <n-card v-if="canManage" title="作答记录">
+      <div v-if="canManage" class="bg-white border border-neutral-200 rounded-lg overflow-hidden">
+        <div class="px-5 py-4 border-b border-neutral-200">
+          <span class="text-base font-semibold text-neutral-900">作答记录</span>
+        </div>
         <n-data-table
           remote
           :columns="sessionColumns"
           :data="sessions"
           :loading="sessionsLoading"
           :pagination="sessionPagination"
+          size="small"
           @update:page="handleSessionPageChange"
         />
-      </n-card>
+      </div>
     </n-spin>
     <LoadError v-else :description="loadError" :retrying="loading" @retry="fetchDetail" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted, h } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useMessage } from 'naive-ui'
 import type { DataTableColumn } from 'naive-ui'
 import { getPaperDetail, getPaperSessions, getSessionsSummary, updateGrader } from '@/api/paper'
+import type { ExamPaper, PaperQuestion, GradingSession } from '@/types'
+import { QUESTION_TYPE_MAP } from '@/utils/constants'
 import dayjs from 'dayjs'
 import LoadError from '@/components/LoadError.vue'
+import PageHeader from '@/components/common/PageHeader.vue'
+import StatCard from '@/components/common/StatCard.vue'
+import EmptyState from '@/components/common/EmptyState.vue'
+import { DocumentTextOutline } from '@vicons/ionicons5'
 import { useAuthStore } from '@/stores/auth'
 
 const route = useRoute()
@@ -108,12 +139,20 @@ const authStore = useAuthStore()
 const paperId = route.params.id as string
 const loading = ref(false)
 const loadError = ref('')
-const paper = ref<any>(null)
-const paperQuestions = ref<any[]>([])
-const sessions = ref<any[]>([])
+const paper = ref<ExamPaper | null>(null)
+const paperQuestions = ref<PaperQuestion[]>([])
+/** 作答记录行：后端在 GradingSession 基础上返回昵称/提交时间等展示字段 */
+interface SessionRow extends GradingSession {
+  userNickname?: string
+  submittedAt?: string
+}
+const sessions = ref<SessionRow[]>([])
 const sessionsLoading = ref(false)
 const sessionStats = ref<any>(null)
 const newGraderId = ref('')
+
+const paperTitle = computed(() => paper.value?.title || '试卷详情')
+const paperSubtitle = computed(() => (paper.value?.description ? paper.value.description : '查看试卷基本信息与作答情况'))
 
 // 批改人管理/作答统计/作答记录仅出卷人可见（后端同权限校验：仅创建者）
 const canManage = computed(() => {
@@ -125,14 +164,33 @@ const shareTypeLabels: Record<string, string> = {
   PRIVATE: '私有', LINK: '链接', PASSWORD: '密码', PUBLIC: '公开'
 }
 
-function attemptLimitLabel(attemptType?: string, attemptLimit?: number): string {
+function shareTypeLabel(shareType?: string): string {
+  return shareType ? shareTypeLabels[shareType] || shareType : '-'
+}
+
+function attemptLimitLabel(attemptType?: string, attemptLimit?: number | null): string {
   if (attemptType === 'UNLIMITED') return '不限次数'
   if (attemptLimit && attemptLimit > 0) return attemptLimit + '次'
   return '1次'
 }
 
-const typeLabels: Record<string, string> = {
-  SINGLE: '单选题', MULTIPLE: '多选题', TRUE_FALSE: '判断题', FILL_BLANK: '填空题', SHORT_ANSWER: '简答题'
+function typeLabel(type?: string): string {
+  return (type && QUESTION_TYPE_MAP[type as keyof typeof QUESTION_TYPE_MAP]) || '未知'
+}
+
+function typeTagClass(type?: string): string {
+  switch (type) {
+    case 'SINGLE': return 'bg-info-50 text-info-600'
+    case 'MULTIPLE': return 'bg-primary-50 text-primary-600'
+    case 'TRUE_FALSE': return 'bg-warning-50 text-warning-600'
+    case 'FILL_BLANK': return 'bg-success-50 text-success-600'
+    case 'SHORT_ANSWER': return 'bg-error-50 text-error-600'
+    default: return 'bg-neutral-100 text-neutral-600'
+  }
+}
+
+function stripHtml(content?: string): string {
+  return content?.replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').trim() || ''
 }
 
 const sessionPagination = reactive({
@@ -141,23 +199,30 @@ const sessionPagination = reactive({
   itemCount: 0
 })
 
-const sessionColumns: DataTableColumn<any>[] = [
-  { title: '作答者', key: 'userNickname', width: 120 },
+const sessionStatusMap: Record<string, { label: string; cls: string }> = {
+  IN_PROGRESS: { label: '进行中', cls: 'bg-info-50 text-info-600' },
+  SUBMITTED: { label: '已提交', cls: 'bg-neutral-100 text-neutral-600' },
+  GRADING: { label: '批改中', cls: 'bg-warning-50 text-warning-600' },
+  GRADED: { label: '已批改', cls: 'bg-success-50 text-success-600' }
+}
+
+const sessionColumns: DataTableColumn<SessionRow>[] = [
+  { title: '作答者', key: 'userNickname', width: 140, ellipsis: { tooltip: true } },
   { title: '得分', key: 'totalScore', width: 80, align: 'center' },
   {
     title: '状态',
     key: 'status',
-    width: 90,
+    width: 100,
     align: 'center',
     render(row) {
-      const map: Record<string, string> = { IN_PROGRESS: '进行中', SUBMITTED: '已提交', GRADING: '批改中', GRADED: '已批改' }
-      return map[row.status] || row.status
+      const item = sessionStatusMap[row.status] || { label: row.status, cls: 'bg-neutral-100 text-neutral-600' }
+      return h('span', { class: `inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${item.cls}` }, item.label)
     }
   },
   {
     title: '提交时间',
     key: 'submittedAt',
-    width: 160,
+    width: 170,
     render(row) { return row.submittedAt ? dayjs(row.submittedAt).format('YYYY-MM-DD HH:mm') : '-' }
   }
 ]

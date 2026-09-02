@@ -1,53 +1,140 @@
 <template>
-  <div class="p-6 max-w-6xl mx-auto">
-    <div class="flex items-center justify-between mb-6">
-      <h1 class="text-2xl font-bold text-gray-800">练习记录</h1>
-      <n-button type="primary" @click="showCreateDialog = true">开始练习</n-button>
-    </div>
+  <div class="max-w-content mx-auto w-full">
+    <PageHeader title="练习记录" :subtitle="pagination.itemCount ? `共 ${pagination.itemCount} 次练习` : undefined">
+      <template #actions>
+        <n-button type="primary" @click="showCreateDialog = true">
+          <template #icon>
+            <n-icon><GameControllerOutline /></n-icon>
+          </template>
+          开始练习
+        </n-button>
+      </template>
+    </PageHeader>
 
     <!-- 筛选 -->
-    <div class="flex gap-4 mb-4">
+    <div class="flex gap-3 mb-5 flex-wrap">
       <n-select
         v-model:value="filterStatus"
         :options="statusOptions"
         placeholder="状态"
-        style="width: 130px"
+        style="width: 150px"
         clearable
         @update:value="handleSearch"
       />
     </div>
 
-    <n-data-table
-      remote
-      :columns="columns"
-      :data="sessionList"
-      :loading="loading"
-      :pagination="pagination"
-      :bordered="true"
-      @update:page="handlePageChange"
-    />
+    <!-- 加载骨架 -->
+    <SkeletonList v-if="loading && sessionList.length === 0" :count="3" :cols="1" />
+
+    <!-- 列表 -->
+    <template v-else-if="sessionList.length > 0">
+      <div class="flex flex-col gap-3">
+        <div
+          v-for="row in sessionList"
+          :key="row.sessionId"
+          class="bg-white border border-neutral-200 rounded-lg px-5 py-4 flex items-center gap-4 transition-all hover:border-primary-300 hover:shadow-sm"
+        >
+          <!-- 状态图标 -->
+          <div
+            class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
+            :class="statusIconClass(row.status)"
+          >
+            <n-icon :size="20" :color="statusIconColor(row.status)">
+              <GameControllerOutline v-if="row.status === 'IN_PROGRESS'" />
+              <CheckmarkDoneOutline v-else-if="row.status === 'COMPLETED'" />
+              <CloseCircleOutline v-else />
+            </n-icon>
+          </div>
+
+          <!-- 主要信息 -->
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="text-base font-semibold text-neutral-900">共 {{ row.totalCount }} 题</span>
+              <n-tag size="small" round :type="statusTagType(row.status)">
+                {{ statusLabel(row.status) }}
+              </n-tag>
+            </div>
+            <div class="mt-1 flex items-center gap-3 text-sm text-neutral-500 flex-wrap">
+              <span v-if="row.stats?.accuracy != null">
+                正确率
+                <span class="text-neutral-900 font-medium">{{ (row.stats.accuracy * 100).toFixed(1) }}%</span>
+              </span>
+              <span v-if="row.stats?.duration != null">
+                用时 {{ formatDuration(row.stats.duration) }}
+              </span>
+              <span v-if="row.completedAt">
+                完成于 {{ formatTime(row.completedAt) }}
+              </span>
+            </div>
+          </div>
+
+          <!-- 操作 -->
+          <div class="flex items-center gap-1 flex-shrink-0">
+            <template v-if="row.status === 'IN_PROGRESS'">
+              <n-button size="small" type="primary" quaternary @click="goSession(row)">
+                继续
+              </n-button>
+              <n-button size="small" type="error" quaternary @click="handleAbandon(row)">
+                放弃
+              </n-button>
+            </template>
+            <n-button v-else-if="row.status === 'COMPLETED'" size="small" type="primary" quaternary @click="goSession(row)">
+              查看详情
+            </n-button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 分页 -->
+      <div v-if="pagination.itemCount > pagination.pageSize" class="flex justify-end mt-5">
+        <n-pagination
+          :page="pagination.page"
+          :page-size="pagination.pageSize"
+          :item-count="pagination.itemCount"
+          @update:page="handlePageChange"
+        />
+      </div>
+    </template>
+
+    <!-- 空态 -->
+    <div v-else class="bg-white border border-neutral-200 rounded-lg">
+      <EmptyState title="暂无练习记录" description="点击右上角「开始练习」生成一套随机练习题">
+        <template #action>
+          <n-button type="primary" @click="showCreateDialog = true">开始练习</n-button>
+        </template>
+      </EmptyState>
+    </div>
 
     <PracticeCreateDialog v-model:show="showCreateDialog" @created="handleCreated" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, h, onMounted } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { useMessage, useDialog } from 'naive-ui'
-import type { DataTableColumn } from 'naive-ui'
-import { getPracticeSessions, abandonPractice, completePractice } from '@/api/practice'
+import { useMessage } from 'naive-ui'
+import {
+  GameControllerOutline,
+  CheckmarkDoneOutline,
+  CloseCircleOutline
+} from '@vicons/ionicons5'
+import { getPracticeSessions, abandonPractice } from '@/api/practice'
+import type { PracticeSessionSummary } from '@/types'
+import { useConfirm } from '@/composables/useConfirm'
+import PageHeader from '@/components/common/PageHeader.vue'
+import EmptyState from '@/components/common/EmptyState.vue'
+import SkeletonList from '@/components/common/SkeletonList.vue'
 import PracticeCreateDialog from './PracticeCreateDialog.vue'
 import dayjs from 'dayjs'
 
 const router = useRouter()
 const message = useMessage()
-const dialog = useDialog()
+const { confirmDanger } = useConfirm()
 
 const loading = ref(false)
 const showCreateDialog = ref(false)
 const filterStatus = ref<string | null>(null)
-const sessionList = ref<any[]>([])
+const sessionList = ref<PracticeSessionSummary[]>([])
 
 const statusOptions = [
   { label: '进行中', value: 'IN_PROGRESS' },
@@ -64,61 +151,51 @@ const pagination = reactive({
 const statusLabels: Record<string, string> = {
   IN_PROGRESS: '进行中', COMPLETED: '已完成', EXPIRED: '已过期', ABANDONED: '已放弃'
 }
-const statusColors: Record<string, string> = {
-  IN_PROGRESS: 'info', COMPLETED: 'success', EXPIRED: 'default', ABANDONED: 'warning'
+
+function statusLabel(status?: string) {
+  return status ? statusLabels[status] || status : '未知'
 }
 
-const columns: DataTableColumn<any>[] = [
-  { title: '题目数', key: 'totalCount', width: 80, align: 'center' },
-  {
-    title: '正确率',
-    key: 'accuracy',
-    width: 80,
-    align: 'center',
-    render(row) {
-      return row.stats?.accuracy != null ? (row.stats.accuracy * 100).toFixed(1) + '%' : '-'
-    }
-  },
-  {
-    title: '耗时(秒)',
-    key: 'duration',
-    width: 80,
-    align: 'center',
-    render(row) {
-      return row.stats?.duration != null ? String(row.stats.duration) : '—'
-    }
-  },
-  {
-    title: '状态',
-    key: 'status',
-    width: 80,
-    align: 'center',
-    render(row) {
-      return h('n-tag', { size: 'small', type: statusColors[row.status] || 'default' as any }, () => statusLabels[row.status] || row.status)
-    }
-  },
-  {
-    title: '完成时间',
-    key: 'completedAt',
-    width: 160,
-    render(row) { return row.completedAt ? dayjs(row.completedAt).format('YYYY-MM-DD HH:mm') : '-' }
-  },
-  {
-    title: '操作',
-    key: 'actions',
-    width: 160,
-    render(row) {
-      const actions = []
-      if (row.status === 'IN_PROGRESS') {
-        actions.push(h('a', { class: 'text-primary cursor-pointer', onClick: () => router.push(`/practice/sessions/${row.sessionId}`) }, '继续'))
-        actions.push(h('a', { class: 'text-error cursor-pointer ml-2', onClick: () => handleAbandon(row) }, '放弃'))
-      } else if (row.status === 'COMPLETED') {
-        actions.push(h('a', { class: 'text-primary cursor-pointer', onClick: () => router.push(`/practice/sessions/${row.sessionId}`) }, '查看详情'))
-      }
-      return h('div', {}, actions)
-    }
+function statusTagType(status?: string): 'info' | 'success' | 'default' | 'warning' {
+  switch (status) {
+    case 'IN_PROGRESS': return 'info'
+    case 'COMPLETED': return 'success'
+    case 'ABANDONED': return 'warning'
+    default: return 'default'
   }
-]
+}
+
+function statusIconClass(status?: string): string {
+  switch (status) {
+    case 'IN_PROGRESS': return 'bg-primary-50'
+    case 'COMPLETED': return 'bg-success-50'
+    default: return 'bg-neutral-100'
+  }
+}
+
+function statusIconColor(status?: string): string {
+  switch (status) {
+    case 'IN_PROGRESS': return 'var(--color-primary-500)'
+    case 'COMPLETED': return 'var(--color-success-500)'
+    default: return 'var(--color-neutral-400)'
+  }
+}
+
+function formatDuration(seconds: number): string {
+  if (seconds == null) return '-'
+  if (seconds < 60) return `${seconds} 秒`
+  const m = Math.floor(seconds / 60)
+  const s = seconds % 60
+  return s > 0 ? `${m} 分 ${s} 秒` : `${m} 分钟`
+}
+
+function formatTime(time?: string | null) {
+  return time ? dayjs(time).format('YYYY-MM-DD HH:mm') : '-'
+}
+
+function goSession(row: PracticeSessionSummary) {
+  router.push(`/practice/sessions/${row.sessionId}`)
+}
 
 async function fetchList() {
   loading.value = true
@@ -152,12 +229,11 @@ function handleCreated() {
   fetchList()
 }
 
-function handleAbandon(row: any) {
-  dialog.warning({
+function handleAbandon(row: PracticeSessionSummary) {
+  confirmDanger({
     title: '放弃练习',
-    content: '确定要放弃该练习吗？',
-    positiveText: '确定',
-    negativeText: '取消',
+    content: '确定要放弃该练习吗？放弃后本次进度将清空。',
+    positiveText: '放弃',
     onPositiveClick: async () => {
       try {
         await abandonPractice(row.sessionId)

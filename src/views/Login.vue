@@ -1,74 +1,63 @@
 <template>
-  <div class="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-    <n-card class="w-full max-w-md" title="登录" :bordered="true">
-      <n-form
-        ref="formRef"
-        :model="form"
-        :rules="rules"
-        label-placement="top"
-        @submit.prevent="handleLogin"
-      >
-        <n-form-item label="用户名" path="username">
-          <n-input
-            v-model:value="form.username"
-            placeholder="请输入用户名"
-            :maxlength="50"
-          />
-        </n-form-item>
+  <n-form
+    ref="formRef"
+    :model="form"
+    :rules="rules"
+    label-placement="top"
+    @submit.prevent="handleLogin"
+  >
+    <n-form-item label="用户名" path="username">
+      <n-input
+        v-model:value="form.username"
+        placeholder="请输入用户名"
+        :maxlength="50"
+      />
+    </n-form-item>
 
-        <n-form-item label="密码" path="password">
-          <n-input
-            v-model:value="form.password"
-            type="password"
-            placeholder="请输入密码"
-            show-password-on="click"
-            :maxlength="64"
-          />
-        </n-form-item>
+    <n-form-item label="密码" path="password">
+      <n-input
+        v-model:value="form.password"
+        type="password"
+        placeholder="请输入密码"
+        show-password-on="click"
+        :maxlength="64"
+      />
+    </n-form-item>
 
-        <n-form-item v-if="captchaEnabled" label="验证码" path="captchaCode">
-          <div class="flex gap-2 items-center">
-            <n-input
-              v-model:value="form.captchaCode"
-              placeholder="验证码"
-              :maxlength="6"
-              class="flex-1"
-            />
-            <img
-              v-if="captchaImage"
-              :src="captchaImage"
-              alt="验证码"
-              class="h-10 cursor-pointer rounded"
-              @click="refreshCaptcha"
-            />
-          </div>
-        </n-form-item>
-
-        <n-form-item>
-          <n-button
-            type="primary"
-            attr-type="submit"
-            :loading="loading"
-            block
-            :disabled="loading"
-          >
-            登录
-          </n-button>
-        </n-form-item>
-      </n-form>
-
-      <div class="text-center text-sm text-gray-500">
-        还没有账号？
-        <router-link to="/register" class="text-primary hover:underline">
-          立即注册
-        </router-link>
+    <n-form-item v-if="captchaEnabled" label="验证码" path="captchaCode">
+      <div class="flex gap-3 items-center w-full">
+        <n-input
+          v-model:value="form.captchaCode"
+          placeholder="请输入验证码"
+          :maxlength="6"
+          class="flex-1"
+        />
+        <div
+          class="w-28 h-10 flex items-center justify-center bg-brand-soft border border-dashed border-primary-300 rounded-md font-mono text-xl font-bold tracking-widest text-brand cursor-pointer select-none flex-shrink-0"
+          title="点击刷新验证码"
+          @click="refreshCaptcha"
+        >
+          {{ captchaPlaceholder }}
+        </div>
       </div>
-    </n-card>
-  </div>
+    </n-form-item>
+
+    <n-button
+      type="primary"
+      attr-type="submit"
+      :loading="loading"
+      block
+      size="large"
+      :disabled="loading"
+      class="mt-2"
+    >
+      登录
+    </n-button>
+  </n-form>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useMessage } from 'naive-ui'
@@ -92,6 +81,9 @@ const form = reactive({
   captchaId: '',
   captchaCode: ''
 })
+
+// 验证码占位（本地环境验证码被禁用时为提示文本）
+const captchaPlaceholder = computed(() => (captchaImage.value ? 'ABCD' : '已关闭'))
 
 const rules: FormRules = {
   username: [

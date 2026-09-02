@@ -3,7 +3,8 @@
     :show="show"
     title="创建练习"
     preset="card"
-    style="width: 520px"
+    style="width: 560px; max-width: 90vw"
+    :mask-closable="false"
     @update:show="$emit('update:show', $event)"
   >
     <n-form
@@ -95,7 +96,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   'update:show': [value: boolean]
-  created: [sessionId: number]
+  created: [sessionId: string]
 }>()
 
 const router = useRouter()
@@ -129,8 +130,8 @@ async function loadOptions() {
       getBankList({ page: 1, size: 200 }),
       getTagList()
     ])
-    bankOptions.value = (bankRes.data.records || []).map((b: any) => ({ label: b.name, value: b.id }))
-    tagOptions.value = (tagRes.data || []).map((t: any) => ({ label: t.name, value: t.id }))
+    bankOptions.value = (bankRes.data.records || []).map((b) => ({ label: b.name, value: b.id }))
+    tagOptions.value = tagRes.data.map((t) => ({ label: t.name, value: t.id }))
   } catch {
     // ignore
   }

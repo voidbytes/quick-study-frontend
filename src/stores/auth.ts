@@ -41,7 +41,8 @@ export const useAuthStore = defineStore('auth', () => {
 
   async function login(data: LoginParams) {
     const res = await authApi.login(data)
-    const { accessToken, refreshToken: newRefreshToken, userId, username, nickname, role } = res.data
+    const { accessToken, refreshToken: newRefreshToken, userId, username, nickname } = res.data
+    const role = res.data.role as User['role']
     const newUserInfo: User = { id: userId, username, nickname, role }
     token.value = accessToken
     refreshToken.value = newRefreshToken
@@ -52,7 +53,8 @@ export const useAuthStore = defineStore('auth', () => {
 
   async function register(data: authApi.RegisterParams) {
     const res = await authApi.register(data)
-    const { accessToken, refreshToken: newRefreshToken, userId, username, nickname, role } = res.data
+    const { accessToken, refreshToken: newRefreshToken, userId, username, nickname } = res.data
+    const role = res.data.role as User['role']
     const newUserInfo: User = { id: userId, username, nickname, role }
     token.value = accessToken
     refreshToken.value = newRefreshToken
@@ -86,14 +88,6 @@ export const useAuthStore = defineStore('auth', () => {
     localStorage.setItem(REFRESH_TOKEN_KEY, newRefreshToken)
   }
 
-  async function fetchUserInfo() {
-    const res = await authApi.login({ username: '', password: '' })
-    // 注意：实际应该使用 getUserInfo 接口，这里保留接口结构
-    if (res.data.userInfo) {
-      saveUserInfo(res.data.userInfo)
-    }
-  }
-
   return {
     token,
     refreshToken,
@@ -105,7 +99,6 @@ export const useAuthStore = defineStore('auth', () => {
     login,
     register,
     logout,
-    doRefreshToken,
-    fetchUserInfo
+    doRefreshToken
   }
 })

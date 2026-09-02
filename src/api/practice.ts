@@ -1,5 +1,5 @@
 import request from './request'
-import type { ApiResponse, PageResult, PracticeSession } from '@/types'
+import type { ApiResponse, PageResult, PracticeSession, PracticeResult, PracticeSessionSummary } from '@/types'
 
 export interface CreateSessionParams {
   count: number
@@ -29,7 +29,7 @@ export function createPractice(data: CreateSessionParams) {
 }
 
 export function getPracticeSessions(params?: PracticeListParams) {
-  return request.get<ApiResponse<PageResult<PracticeSession>>>('/practice/sessions', { params })
+  return request.get<ApiResponse<PageResult<PracticeSessionSummary>>>('/practice/sessions', { params })
 }
 
 export function getPracticeSession(id: string) {
@@ -41,37 +41,13 @@ export function submitPracticeAnswer(sessionId: string, data: SaveAnswerParams) 
 }
 
 export function completePractice(sessionId: string) {
-  return request.post<ApiResponse<PracticeSession>>(`/practice/sessions/${sessionId}/complete`)
+  return request.post<ApiResponse<PracticeResult>>(`/practice/sessions/${sessionId}/complete`)
 }
 
 export function abandonPractice(sessionId: string) {
   return request.post<ApiResponse<null>>(`/practice/sessions/${sessionId}/abandon`)
 }
 
-export function createSession(data: CreateSessionParams) {
-  return request.post<ApiResponse<PracticeSession>>('/practice/sessions', data)
-}
-
-export function listSessions(params?: PracticeListParams) {
-  return request.get<ApiResponse<PageResult<PracticeSession>>>('/practice/sessions', { params })
-}
-
-export function getSession(id: number) {
-  return request.get<ApiResponse<PracticeSession>>(`/practice/sessions/${id}`)
-}
-
-export function saveAnswer(sessionId: number, data: SaveAnswerParams) {
-  return request.post<ApiResponse<null>>(`/practice/sessions/${sessionId}/answers`, data)
-}
-
-export function complete(sessionId: number) {
-  return request.post<ApiResponse<PracticeSession>>(`/practice/sessions/${sessionId}/complete`)
-}
-
-export function abandon(sessionId: number) {
-  return request.post<ApiResponse<null>>(`/practice/sessions/${sessionId}/abandon`)
-}
-
-export function reroll(sessionId: number) {
-  return request.post<ApiResponse<PracticeSession>>(`/practice/sessions/${sessionId}/reroll`)
+export function reroll(sessionId: string, data?: Partial<CreateSessionParams>) {
+  return request.post<ApiResponse<PracticeSession>>(`/practice/sessions/${sessionId}/reroll`, data)
 }

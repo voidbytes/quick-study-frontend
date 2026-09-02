@@ -1,8 +1,9 @@
 <template>
-  <div class="p-6 max-w-6xl mx-auto">
-    <h1 class="text-2xl font-bold mb-6">错题本</h1>
+  <div class="max-w-content mx-auto w-full">
+    <PageHeader title="错题本" :subtitle="pagination.itemCount ? `共 ${pagination.itemCount} 道错题` : undefined" />
 
-    <div class="flex gap-4 mb-4 flex-wrap">
+    <!-- 筛选 -->
+    <FilterBar>
       <n-select
         v-model:value="filterBankId"
         :options="bankOptions"
@@ -21,42 +22,119 @@
         filterable
         @update:value="handleSearch"
       />
-    </div>
+    </FilterBar>
 
-    <n-data-table
-      remote
-      :columns="columns"
-      :data="wrongList"
-      :loading="loading"
-      :pagination="pagination"
-      :bordered="true"
-      @update:page="handlePageChange"
-    />
+    <!-- 加载骨架 -->
+    <SkeletonList v-if="loading && wrongList.length === 0" :count="3" :cols="1" />
+
+    <!-- 列表 -->
+    <template v-else-if="wrongList.length > 0">
+      <div class="flex flex-col gap-3">
+        <div
+          v-for="(row, index) in wrongList"
+          :key="row.id"
+          class="bg-white border border-neutral-200 rounded-lg px-5 py-4 flex items-center gap-4 transition-all hover:border-primary-300 hover:shadow-sm"
+        >
+          <!-- 序号 -->
+          <div
+            class="w-8 h-8 rounded-lg bg-error-50 text-error-600 flex items-center justify-center text-sm font-bold flex-shrink-0"
+          >
+            {{ (pagination.page - 1) * pagination.pageSize + index + 1 }}
+          </div>
+
+          <!-- 题干与标签 -->
+          <div class="flex-1 min-w-0 cursor-pointer" @click="handleViewOriginal(row)">
+            <div class="text-neutral-900 font-medium truncate leading-relaxed">
+              {{ row.plainContent || '（内容已缺失）' }}
+            </div>
+            <div class="mt-1.5 flex items-center gap-2 flex-wrap">
+              <n-tag size="small" round :type="typeTagType(row.type)">
+                {{ typeLabel(row.type) }}
+              </n-tag>
+              <n-tag v-if="row.difficulty" size="small" round :type="difficultyTagType(row.difficulty)">
+                {{ difficultyLabel(row.difficulty) }}
+              </n-tag>
+              <span v-if="row.bankName" class="inline-flex items-center gap-1 text-xs text-neutral-400">
+                <n-icon :size="13"><LibraryOutline /></n-icon>
+                {{ row.bankName }}
+              </span>
+            </div>
+          </div>
+
+          <!-- 错误统计 -->
+          <div class="flex flex-col items-end gap-1.5 flex-shrink-0">
+            <span
+              class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-error-50 text-error-600 text-xs font-semibold whitespace-nowrap"
+            >
+              <n-icon :size="13"><CloseCircleOutline /></n-icon>
+              错 {{ row.errorCount }} 次
+            </span>
+            <span class="text-xs text-neutral-400 whitespace-nowrap">
+              最近 {{ formatTime(row.lastWrongTime) }}
+            </span>
+          </div>
+
+          <!-- 操作 -->
+          <div class="flex items-center flex-shrink-0">
+            <n-button size="small" type="primary" quaternary @click="handleViewSnapshot(row)">
+              查看详情
+            </n-button>
+            <n-button size="small" type="error" quaternary @click="handleRemove(row)">
+              移除
+            </n-button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 分页 -->
+      <div v-if="pagination.itemCount > pagination.pageSize" class="flex justify-end mt-5">
+        <n-pagination
+          :page="pagination.page"
+          :page-size="pagination.pageSize"
+          :item-count="pagination.itemCount"
+          @update:page="handlePageChange"
+        />
+      </div>
+    </template>
+
+    <!-- 空态 -->
+    <div v-else class="bg-white border border-neutral-200 rounded-lg">
+      <EmptyState
+        title="暂无错题"
+        description="做错的题目会自动收录到这里，方便你反复巩固"
+        :icon="CloseCircleOutline"
+      />
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, h, onMounted } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { useMessage, useDialog } from 'naive-ui'
-import type { DataTableColumn } from 'naive-ui'
+import { useMessage } from 'naive-ui'
+import { CloseCircleOutline, LibraryOutline } from '@vicons/ionicons5'
 import { list as getWrongQuestionList, deleteWrongQuestion } from '@/api/wrongQuestion'
 import { getBankList } from '@/api/bank'
 import { getTagList } from '@/api/tag'
+import type { WrongQuestion, QuestionType, Difficulty } from '@/types'
+import { QUESTION_TYPE_MAP, DIFFICULTY_MAP } from '@/utils/constants'
+import { useConfirm } from '@/composables/useConfirm'
+import PageHeader from '@/components/common/PageHeader.vue'
+import FilterBar from '@/components/common/FilterBar.vue'
+import EmptyState from '@/components/common/EmptyState.vue'
+import SkeletonList from '@/components/common/SkeletonList.vue'
 import dayjs from 'dayjs'
 
 const router = useRouter()
 const message = useMessage()
-const dialog = useDialog()
+const { confirmDanger } = useConfirm()
 
 const loading = ref(false)
 const filterBankId = ref<number | null>(null)
 const filterTagId = ref<number | null>(null)
-const wrongList = ref<any[]>([])
+const wrongList = ref<WrongRow[]>([])
 const bankOptions = ref<{ label: string; value: number }[]>([])
 const tagOptions = ref<{ label: string; value: number }[]>([])
-
-const typeLabels: Record<string, string> = { SINGLE: '单选', MULTIPLE: '多选', TRUE_FALSE: '判断', FILL_BLANK: '填空', SHORT_ANSWER: '简答' }
 
 const pagination = reactive({
   page: 1,
@@ -64,81 +142,101 @@ const pagination = reactive({
   itemCount: 0
 })
 
-/** 从 questionSnapshot JSON 中提取内容 */
-function parseSnapshot(row: any) {
-  if (!row.questionSnapshot) return { content: '', type: '' }
-  try {
-    return JSON.parse(row.questionSnapshot)
-  } catch {
-    return { content: '', type: '' }
+type TagColor = 'default' | 'primary' | 'info' | 'success' | 'warning' | 'error'
+
+const TYPE_TAG: Record<QuestionType, TagColor> = {
+  SINGLE: 'info',
+  MULTIPLE: 'warning',
+  TRUE_FALSE: 'success',
+  FILL_BLANK: 'default',
+  SHORT_ANSWER: 'primary'
+}
+
+const DIFFICULTY_TAG: Record<Difficulty, TagColor> = {
+  EASY: 'success',
+  MEDIUM: 'warning',
+  HARD: 'error'
+}
+
+/** 列表展示行：在 WrongQuestion 基础上展开快照中的题型 / 难度 / 纯文本题干 */
+interface WrongRow extends WrongQuestion {
+  type?: string | null
+  difficulty?: string | null
+  plainContent: string
+}
+
+function stripHtml(html?: string | null): string {
+  if (!html) return ''
+  return html
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+function toRow(q: WrongQuestion): WrongRow {
+  let type: string | null = null
+  let difficulty: string | null = null
+  let content: string | null = null
+  if (q.questionSnapshot) {
+    try {
+      const obj: unknown = JSON.parse(q.questionSnapshot)
+      if (obj && typeof obj === 'object') {
+        const raw = obj as Record<string, unknown>
+        type = typeof raw.type === 'string' ? raw.type : null
+        difficulty = typeof raw.difficulty === 'string' ? raw.difficulty : null
+        content = typeof raw.content === 'string' ? raw.content : null
+      }
+    } catch {
+      // 忽略解析失败，type/difficulty/content 保持为空
+    }
+  }
+  return {
+    ...q,
+    type,
+    difficulty,
+    plainContent: stripHtml(content)
   }
 }
 
-const columns: DataTableColumn<any>[] = [
-  {
-    title: '题目内容',
-    key: 'content',
-    ellipsis: { tooltip: true },
-    render(row) {
-      const snapshot = parseSnapshot(row)
-      const text = snapshot.content?.replace(/<[^>]+>/g, '').substring(0, 100) || ''
-      return h('a', {
-        class: 'text-primary cursor-pointer hover:underline truncate block max-w-sm',
-        onClick: () => handleViewOriginal(row)
-      }, text)
-    }
-  },
-  {
-    title: '题型',
-    key: 'type',
-    width: 70,
-    align: 'center',
-    render(row) {
-      const snapshot = parseSnapshot(row)
-      return typeLabels[snapshot.type] || '-'
-    }
-  },
-  { title: '错误次数', key: 'errorCount', width: 80, align: 'center' },
-  {
-    title: '最近做错',
-    key: 'lastWrongTime',
-    width: 160,
-    render(row) { return row.lastWrongTime ? dayjs(row.lastWrongTime).format('YYYY-MM-DD HH:mm') : '-' }
-  },
-  {
-    title: '操作',
-    key: 'actions',
-    width: 200,
-    render(row) {
-      const actions = []
-      const snapshot = parseSnapshot(row)
-      if (['SINGLE', 'MULTIPLE', 'TRUE_FALSE'].includes(snapshot.type)) {
-        actions.push(h('a', { class: 'text-primary cursor-pointer', onClick: () => handleRedo(row) }, '错题重做'))
-      }
-      actions.push(h('a', { class: 'text-primary cursor-pointer ml-2', onClick: () => handleViewSnapshot(row) }, '查看详情'))
-      actions.push(h('a', { class: 'text-error cursor-pointer ml-2', onClick: () => handleRemove(row) }, '移除'))
-      return h('div', {}, actions)
-    }
-  }
-]
+function typeLabel(type?: string | null): string {
+  if (!type) return '-'
+  const key = type as QuestionType
+  return key in TYPE_TAG ? QUESTION_TYPE_MAP[key] : type
+}
 
-function handleViewOriginal(row: any) {
-  const bankId = row.bankId
-  const questionId = row.questionId
-  if (bankId && questionId) {
-    router.push(`/banks/${bankId}/questions/${questionId}`)
+function typeTagType(type?: string | null): TagColor {
+  if (!type) return 'default'
+  const key = type as QuestionType
+  return key in TYPE_TAG ? TYPE_TAG[key] : 'default'
+}
+
+function difficultyLabel(difficulty?: string | null): string {
+  if (!difficulty) return '-'
+  const key = difficulty as Difficulty
+  return key in DIFFICULTY_TAG ? DIFFICULTY_MAP[key] : difficulty
+}
+
+function difficultyTagType(difficulty?: string | null): TagColor {
+  if (!difficulty) return 'default'
+  const key = difficulty as Difficulty
+  return key in DIFFICULTY_TAG ? DIFFICULTY_TAG[key] : 'default'
+}
+
+function formatTime(time?: string) {
+  return time ? dayjs(time).format('YYYY-MM-DD HH:mm') : '-'
+}
+
+function handleViewOriginal(row: WrongRow) {
+  if (row.bankId && row.questionId) {
+    router.push(`/banks/${row.bankId}/questions/${row.questionId}`)
   } else {
     message.warning('无法跳转原题')
   }
 }
 
-function handleViewSnapshot(row: any) {
-  const id = row.id
-  if (id) {
-    router.push(`/wrong-questions/snapshot/${id}`)
-  } else {
-    message.warning('无法查看快照')
-  }
+function handleViewSnapshot(row: WrongRow) {
+  router.push(`/wrong-questions/snapshot/${row.id}`)
 }
 
 async function fetchList() {
@@ -150,7 +248,7 @@ async function fetchList() {
       bankId: filterBankId.value ?? undefined,
       tagId: filterTagId.value ?? undefined
     })
-    wrongList.value = res.data.records || []
+    wrongList.value = (res.data.records || []).map(toRow)
     pagination.itemCount = res.data.total || 0
   } catch {
     message.error('加载错题失败')
@@ -165,8 +263,8 @@ async function loadOptions() {
       getBankList({ page: 1, size: 200 }),
       getTagList()
     ])
-    bankOptions.value = (bankRes.data.records || []).map((b: any) => ({ label: b.name, value: b.id }))
-    tagOptions.value = (tagRes.data || []).map((t: any) => ({ label: t.name, value: t.id }))
+    bankOptions.value = (bankRes.data.records || []).map((b) => ({ label: b.name, value: b.id }))
+    tagOptions.value = tagRes.data.map((t) => ({ label: t.name, value: t.id }))
   } catch {
     // ignore
   }
@@ -182,16 +280,11 @@ function handlePageChange(page: number) {
   fetchList()
 }
 
-function handleRedo(row: any) {
-  message.info('错题重做功能')
-}
-
-function handleRemove(row: any) {
-  dialog.warning({
+function handleRemove(row: WrongRow) {
+  confirmDanger({
     title: '移除错题',
-    content: '确定要移除该错题吗？',
-    positiveText: '确定',
-    negativeText: '取消',
+    content: '确定要从错题本中移除该题目吗？',
+    positiveText: '移除',
     onPositiveClick: async () => {
       try {
         await deleteWrongQuestion(row.id)

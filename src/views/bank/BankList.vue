@@ -1,76 +1,171 @@
 <template>
-  <div class="p-6 max-w-6xl mx-auto">
-    <div class="flex items-center justify-between mb-6">
-      <h1 class="text-2xl font-bold text-gray-800">题库管理</h1>
-      <!-- 后端允许所有登录用户创建题库（含私有），按钮不再限管理员 -->
-      <n-button v-if="authStore.isAuthenticated" type="primary" @click="showCreateDialog = true">
-        创建题库
-      </n-button>
-    </div>
+  <div>
+    <!-- 页头 -->
+    <PageHeader title="题库" subtitle="浏览、搜索并管理题库">
+      <template #actions>
+        <n-button v-if="authStore.isAuthenticated" type="primary" @click="showCreateDialog = true">
+          创建题库
+        </n-button>
+      </template>
+    </PageHeader>
 
     <!-- 搜索与筛选 -->
-    <div class="flex gap-4 mb-4 flex-wrap">
+    <FilterBar>
       <n-input
         v-model:value="searchKeyword"
         placeholder="搜索题库名称..."
         clearable
-        style="width: 240px"
+        style="width: 260px"
         @keyup.enter="handleSearch"
-      />
+      >
+        <template #prefix>
+          <n-icon :component="SearchOutline" />
+        </template>
+      </n-input>
       <n-select
         v-model:value="filterVisibility"
         :options="visibilityOptions"
-        style="width: 140px"
+        placeholder="全部可见性"
+        style="width: 150px"
         clearable
         @update:value="handleSearch"
       />
+    </FilterBar>
+
+    <!-- 题库卡片网格 -->
+    <SkeletonList v-if="loading" :count="6" :cols="3" />
+    <EmptyState
+      v-else-if="bankList.length === 0"
+      title="暂无题库"
+      description="没有找到匹配的题库，换个关键词试试"
+      :icon="LibraryOutline"
+    />
+    <div v-else class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+      <div
+        v-for="bank in bankList"
+        :key="bank.id"
+        class="bg-white border border-neutral-200 rounded-lg p-5 flex flex-col transition-all hover:border-primary-300 hover:shadow-sm cursor-pointer"
+        @click="router.push(`/banks/${bank.id}`)"
+      >
+        <!-- 卡片头部：名称 + 可见性标签 -->
+        <div class="flex items-start justify-between gap-2 mb-2">
+          <h3 class="text-base font-semibold text-neutral-900 truncate">{{ bank.name }}</h3>
+          <span
+            class="flex-shrink-0 px-2 py-0.5 rounded-full text-xs font-semibold"
+            :class="visibilityTagClass(bank)"
+          >
+            {{ visibilityTagLabel(bank) }}
+          </span>
+        </div>
+
+        <!-- 描述 -->
+        <p class="text-sm text-neutral-500 mb-4 line-clamp-2">
+          {{ bank.description || '暂无描述' }}
+        </p>
+
+        <!-- 统计 -->
+        <div class="flex items-center gap-4 text-sm text-neutral-500 mb-4">
+          <span class="inline-flex items-center gap-1">
+            <n-icon :size="15" :component="DocumentTextOutline" />
+            {{ bank.questionCount ?? 0 }} 题
+          </span>
+          <span class="inline-flex items-center gap-1">
+            <n-icon :size="15" :component="RepeatOutline" />
+            {{ bank.practiceCount ?? 0 }} 练习
+          </span>
+        </div>
+
+        <!-- 标签 -->
+        <div v-if="bank.tags?.length" class="flex gap-1 flex-wrap mb-4">
+          <span
+            v-for="tag in bank.tags"
+            :key="tag.id"
+            class="px-2 py-0.5 rounded-full text-xs font-medium bg-primary-50 text-primary-600"
+          >
+            {{ tag.name }}
+          </span>
+        </div>
+
+        <!-- 底部：创建者 / 日期 / 管理员操作 -->
+        <div class="pt-3 border-t border-neutral-200 mt-auto">
+          <div class="flex items-center gap-2">
+            <div
+              class="w-7 h-7 rounded-full bg-brand-gradient flex items-center justify-center text-white text-xs font-semibold flex-shrink-0"
+            >
+              {{ (bank.creatorName || '?').charAt(0).toUpperCase() }}
+            </div>
+            <span class="text-sm text-neutral-500 truncate">{{ bank.creatorName || '匿名用户' }}</span>
+            <span class="text-sm text-neutral-400 ml-auto whitespace-nowrap">
+              {{ formatDate(bank.createdAt) }}
+            </span>
+          </div>
+          <div v-if="authStore.isAdmin" class="flex items-center gap-4 mt-2" @click.stop>
+            <a
+              class="text-xs text-primary-500 hover:text-primary-600 font-medium cursor-pointer select-none"
+              @click="handleToggleVisibility(bank)"
+            >
+              {{ bank.isPublic ? '设为私有' : '设为公开' }}
+            </a>
+            <a
+              class="text-xs text-error-500 hover:text-error-600 font-medium cursor-pointer select-none"
+              @click="handleDelete(bank)"
+            >
+              删除
+            </a>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <!-- 题库列表 -->
-    <n-data-table
-      remote
-      :columns="columns"
-      :data="bankList"
-      :loading="loading"
-      :pagination="pagination"
-      :bordered="true"
-      @update:page="handlePageChange"
-    />
+    <!-- 分页 -->
+    <div
+      v-if="pagination.itemCount > pagination.pageSize"
+      class="flex justify-end mt-6"
+    >
+      <n-pagination
+        :page="pagination.page"
+        :item-count="pagination.itemCount"
+        :page-size="pagination.pageSize"
+        @update:page="handlePageChange"
+      />
+    </div>
 
     <!-- 创建题库弹窗 -->
-    <BankCreateDialog
-      v-model:show="showCreateDialog"
-      @created="handleBankCreated"
-    />
+    <BankCreateDialog v-model:show="showCreateDialog" @created="handleBankCreated" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, h, onMounted } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { useMessage, useDialog } from 'naive-ui'
-import type { DataTableColumn } from 'naive-ui'
+import { useMessage } from 'naive-ui'
 import { getBankList, deleteBank, toggleVisibility } from '@/api/bank'
+import type { QuestionBank } from '@/types'
 import { useAuthStore } from '@/stores/auth'
+import { useConfirm } from '@/composables/useConfirm'
+import PageHeader from '@/components/common/PageHeader.vue'
+import FilterBar from '@/components/common/FilterBar.vue'
+import SkeletonList from '@/components/common/SkeletonList.vue'
+import EmptyState from '@/components/common/EmptyState.vue'
 import BankCreateDialog from './BankCreateDialog.vue'
+import {
+  LibraryOutline,
+  SearchOutline,
+  DocumentTextOutline,
+  RepeatOutline
+} from '@vicons/ionicons5'
 import dayjs from 'dayjs'
 
-interface BankItem {
-  id: number
-  name: string
-  description: string
-  questionCount: number
-  practiceCount: number
-  creatorName: string
-  isPublic: boolean
-  isOfficial: boolean
-  tags: string[]
-  createdAt: string
+/** 列表接口实际返回的展示字段（后端 BankResponse）在 QuestionBank 基础上扩展 */
+interface BankItem extends QuestionBank {
+  creatorName?: string | null
+  isOfficial?: boolean
+  practiceCount?: number
 }
 
 const router = useRouter()
 const message = useMessage()
-const dialog = useDialog()
+const { confirmDanger } = useConfirm()
 const authStore = useAuthStore()
 
 const loading = ref(false)
@@ -88,50 +183,23 @@ const bankList = ref<BankItem[]>([])
 
 const pagination = reactive({
   page: 1,
-  pageSize: 20,
-  itemCount: 0,
-  showSizePicker: false,
-  pageSizes: [10, 20, 50]
+  pageSize: 12,
+  itemCount: 0
 })
 
-const columns: DataTableColumn<BankItem>[] = [
-  { title: '名称', key: 'name', width: 180, ellipsis: { tooltip: true } },
-  { title: '描述', key: 'description', ellipsis: { tooltip: true } },
-  { title: '题目数', key: 'questionCount', width: 80, align: 'center' },
-  { title: '练习次数', key: 'practiceCount', width: 90, align: 'center' },
-  { title: '创建者', key: 'creatorName', width: 120 },
-  {
-    title: '状态',
-    key: 'isPublic',
-    width: 80,
-    align: 'center',
-    render(row) {
-      if (row.isOfficial) {
-        return h('span', { class: 'text-orange-500' }, '官方')
-      }
-      return row.isPublic
-        ? h('span', { class: 'text-green-500' }, '公开')
-        : h('span', { class: 'text-gray-500' }, '私有')
-    }
-  },
-  {
-    title: '操作',
-    key: 'actions',
-    width: 200,
-    render(row) {
-      const actions = [
-        h('a', { class: 'text-primary cursor-pointer', onClick: () => router.push(`/banks/${row.id}`) }, '详情')
-      ]
-      if (authStore.isAdmin) {
-        actions.push(
-          h('a', { class: 'text-primary cursor-pointer', onClick: () => handleToggleVisibility(row) }, row.isPublic ? '设为私有' : '设为公开'),
-          h('a', { class: 'text-error cursor-pointer', onClick: () => handleDelete(row) }, '删除')
-        )
-      }
-      return h('div', { class: 'flex gap-2' }, actions)
-    }
-  }
-]
+function visibilityTagLabel(bank: BankItem): string {
+  if (bank.isOfficial) return '官方'
+  return bank.isPublic ? '公开' : '私有'
+}
+
+function visibilityTagClass(bank: BankItem): string {
+  if (bank.isOfficial) return 'bg-warning-50 text-warning-600'
+  return bank.isPublic ? 'bg-success-50 text-success-600' : 'bg-neutral-100 text-neutral-600'
+}
+
+function formatDate(time: string | undefined) {
+  return time ? dayjs(time).format('YYYY-MM-DD') : '-'
+}
 
 async function fetchList() {
   loading.value = true
@@ -178,11 +246,10 @@ async function handleToggleVisibility(row: BankItem) {
 }
 
 function handleDelete(row: BankItem) {
-  dialog.warning({
+  confirmDanger({
     title: '确认删除',
     content: `确定要删除题库「${row.name}」吗？该操作不可撤销。`,
-    positiveText: '确定',
-    negativeText: '取消',
+    positiveText: '确定删除',
     onPositiveClick: async () => {
       try {
         await deleteBank(row.id)
@@ -199,3 +266,12 @@ onMounted(() => {
   fetchList()
 })
 </script>
+
+<style scoped>
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+</style>

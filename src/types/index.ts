@@ -18,12 +18,12 @@ export interface User {
   id: number
   username: string
   nickname: string
-  email: string
-  avatar: string
+  email?: string
+  avatar?: string
   role: 'USER' | 'ADMIN' | 'SUPER_ADMIN'
-  status: 'active' | 'disabled'
-  createdAt: string
-  updatedAt: string
+  status?: 'active' | 'disabled'
+  createdAt?: string
+  updatedAt?: string
 }
 
 // 题库
@@ -41,6 +41,14 @@ export interface QuestionBank {
   updatedAt: string
 }
 
+/** 题库协作人（与 User 不同：用 userId 而非 id） */
+export interface BankCollaborator {
+  userId: number
+  nickname?: string
+  username?: string
+  role: 'OWNER' | 'EDITOR' | 'REVIEWER' | 'VIEWER' | string
+}
+
 // 标签
 export interface Tag {
   id: number
@@ -49,9 +57,10 @@ export interface Tag {
 }
 
 // 题目
-export type QuestionType = 'single_choice' | 'multiple_choice' | 'true_false' | 'fill_blank' | 'short_answer' | 'essay'
+// 与后端运行时一致的大写枚举（历史上此处曾误写为小写，导致三套枚举并存）
+export type QuestionType = 'SINGLE' | 'MULTIPLE' | 'TRUE_FALSE' | 'FILL_BLANK' | 'SHORT_ANSWER'
 
-export type Difficulty = 'easy' | 'medium' | 'hard'
+export type Difficulty = 'EASY' | 'MEDIUM' | 'HARD'
 
 export interface Question {
   id: number
@@ -79,37 +88,47 @@ export interface QuestionOption {
 }
 
 // 试卷
-export type PaperStatus = 'draft' | 'published' | 'closed'
+// 字段与后端运行时（PaperResponse）一致：PaperList / PaperDetail / PaperForm 按此消费。
+export type PaperStatus = 'DRAFT' | 'PUBLISHED' | 'CLOSED'
+export type PaperShareType = 'PRIVATE' | 'LINK' | 'PASSWORD' | 'PUBLIC'
 
 export interface ExamPaper {
   id: number
-  bankId: number
-  bankName: string
   title: string
-  description: string
-  duration: number
-  totalScore: number
+  description?: string
+  creatorId?: number
+  creatorName?: string
   status: PaperStatus
-  isRandom: boolean
-  shuffleOptions: boolean
-  showResult: boolean
-  needGrader: boolean
-  password: string
-  maxAttempts: number
-  questions: PaperQuestion[]
-  createdBy: number
+  questionCount?: number
+  totalScore?: number
+  timeLimit?: number | null
+  startTime?: string | null
+  endTime?: string | null
+  attemptType?: string
+  attemptLimit?: number | null
+  cheatEnabled?: boolean
+  shareType: PaperShareType
+  password?: string
+  graderId?: number | null
+  questions?: PaperQuestion[]
   createdAt: string
-  updatedAt: string
+  updatedAt?: string
 }
 
+/** 试卷内题目快照（paper detail / 组卷回填用） */
 export interface PaperQuestion {
-  questionId: number
+  id: number
+  content: string
+  type: string
+  options?: string | null
+  difficulty?: string
+  analysis?: string
   score: number
-  sort: number
+  sortOrder?: number
 }
 
 // 考试会话
-export type SessionStatus = 'in_progress' | 'pending_review' | 'completed' | 'abandoned'
+export type SessionStatus = 'IN_PROGRESS' | 'PENDING_REVIEW' | 'COMPLETED' | 'ABANDONED'
 
 export interface ExamSession {
   id: number
@@ -171,29 +190,61 @@ export interface PracticeStats {
   duration: number
 }
 
-// 错题
+/** 练习会话列表项（后端 /practice/sessions 分页返回的精简行） */
+export interface PracticeSessionSummary {
+  sessionId: string
+  status: string
+  totalCount: number
+  stats?: { accuracy?: number | null; duration?: number | null; correctCount?: number }
+  completedAt?: string | null
+  createdAt?: string
+}
+
+/** 完成练习后返回（与后端 PracticeResultResponse 一致） */
+export interface PracticeResult {
+  sessionId: string
+  correctCount: number
+  totalCount: number
+  accuracy: number
+  duration: number
+}
+
+// 错题（与后端 WrongQuestionResponse 一致）
 export interface WrongQuestion {
   id: number
   questionId: number
-  question: Question
-  userId: number
-  wrongAnswer: string
-  correctAnswer: string
-  wrongCount: number
-  lastWrongAt: string
+  bankId: number
+  bankName: string
+  /** 题目快照 JSON 字符串，展开结构见 QuestionSnapshot */
+  questionSnapshot: string
+  errorCount: number
+  lastWrongTime: string
   createdAt: string
 }
 
-// 做题记录
+/** questionSnapshot / question_snapshot JSON 字符串展开后的结构（后端将原题序列化为 JSON 存储） */
+export interface QuestionSnapshot {
+  id?: number
+  bankId?: number
+  type?: QuestionType
+  content?: string
+  options?: string
+  answer?: string
+  analysis?: string
+  difficulty?: Difficulty
+}
+
+// 做题记录（与后端 RecordResponse 一致）
 export interface PracticeRecord {
   id: number
   questionId: number
-  question: Question
-  answer: string
-  isCorrect: boolean
-  score: number
+  bankId: number
   bankName: string
-  sessionType: 'exam' | 'practice'
+  questionSnapshot: string
+  userAnswer: string | null
+  isCorrect: boolean | null
+  sourceType: string
+  sourceId: number | null
   createdAt: string
 }
 

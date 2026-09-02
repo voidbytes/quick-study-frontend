@@ -1,118 +1,233 @@
 <template>
-  <div class="p-6 max-w-4xl mx-auto">
-    <h1 class="text-2xl font-bold mb-6">个人中心</h1>
-
+  <div>
     <n-spin :show="loading">
-      <!-- 个人信息 -->
-      <n-card title="个人信息" class="mb-6">
-        <n-form
-          ref="profileFormRef"
-          :model="profileForm"
-          :rules="profileRules"
-          label-placement="left"
-          label-width="100"
-        >
-          <n-form-item label="用户名">
-            <n-input :value="profileForm.username" disabled />
-          </n-form-item>
-          <n-form-item label="昵称" path="nickname">
-            <n-input v-model:value="profileForm.nickname" :maxlength="50" />
-          </n-form-item>
-          <n-form-item label="邮箱">
-            <n-input v-model:value="profileForm.email" :maxlength="100" />
-          </n-form-item>
-          <n-form-item label="个人简介">
-            <n-input v-model:value="profileForm.bio" type="textarea" :rows="3" :maxlength="200" />
-          </n-form-item>
-          <n-button type="primary" :loading="savingProfile" @click="handleSaveProfile">
-            保存修改
-          </n-button>
-        </n-form>
-      </n-card>
+      <!-- 用户信息横幅（品牌渐变欢迎区） -->
+      <div class="relative overflow-hidden bg-white border border-neutral-200 rounded-xl mb-6">
+        <div class="h-24 bg-brand-soft" />
+        <div class="px-5 sm:px-8 pb-5 sm:pb-6">
+          <div class="relative flex items-end gap-4 sm:gap-5 -mt-10 z-10">
+            <div
+              class="w-20 h-20 rounded-full bg-brand-gradient flex items-center justify-center text-white text-2xl font-bold flex-shrink-0 ring-4 ring-white shadow-md"
+            >
+              {{ avatarText }}
+            </div>
+            <div class="min-w-0 flex-1 pb-0.5">
+              <div class="flex items-center gap-2 flex-wrap">
+                <span class="text-xl font-bold text-neutral-900">{{ displayName }}</span>
+                <span
+                  v-if="roleLabel"
+                  class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-neutral-100 text-neutral-600"
+                >
+                  {{ roleLabel }}
+                </span>
+              </div>
+              <div class="text-sm text-neutral-500 mt-1">@{{ profile.username || '—' }}</div>
+            </div>
+          </div>
 
-      <!-- 修改密码 -->
-      <n-card title="修改密码" class="mb-6">
-        <n-form
-          ref="passwordFormRef"
-          :model="passwordForm"
-          :rules="passwordRules"
-          label-placement="left"
-          label-width="120"
-        >
-          <n-form-item label="旧密码" path="oldPassword">
-            <n-input
-              v-model:value="passwordForm.oldPassword"
-              type="password"
-              show-password-on="click"
-            />
-          </n-form-item>
-          <n-form-item label="新密码" path="newPassword">
-            <n-input
-              v-model:value="passwordForm.newPassword"
-              type="password"
-              show-password-on="click"
-              :maxlength="64"
-            />
-          </n-form-item>
-          <n-form-item label="确认新密码" path="confirmPassword">
-            <n-input
-              v-model:value="passwordForm.confirmPassword"
-              type="password"
-              show-password-on="click"
-            />
-          </n-form-item>
-          <n-button type="primary" :loading="savingPassword" @click="handleChangePassword">
-            修改密码
-          </n-button>
-        </n-form>
-      </n-card>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6 pt-5 border-t border-neutral-200">
+            <div>
+              <div class="text-xs text-neutral-500 mb-1">加入时间</div>
+              <div class="text-sm font-semibold text-neutral-900">{{ joinedAt }}</div>
+            </div>
+            <div>
+              <div class="text-xs text-neutral-500 mb-1">邮箱</div>
+              <div class="text-sm font-semibold text-neutral-900 truncate">{{ profile.email || '未设置' }}</div>
+            </div>
+            <div>
+              <div class="text-xs text-neutral-500 mb-1">账号状态</div>
+              <div class="text-sm font-semibold text-success-600">正常</div>
+            </div>
+          </div>
+        </div>
+      </div>
 
-      <!-- AI Key 管理 -->
-      <n-card title="AI Key 管理" class="mb-6">
-        <div class="flex items-center gap-4">
-          <template v-if="aiKeyInfo?.hasKey">
-            <span class="text-sm">当前 Key：{{ aiKeyInfo.maskedKey }}</span>
-            <n-button size="small" @click="handleDeleteAiKey">删除</n-button>
-          </template>
-          <template v-else>
-            <n-input
-              v-model:value="newAiKey"
-              type="password"
-              placeholder="输入 API Key"
-              style="width: 300px"
-              show-password-on="click"
-            />
-            <n-button size="small" type="primary" @click="handleSetAiKey">设置</n-button>
-          </template>
-        </div>
-        <div class="mt-2 text-xs text-gray-400">
-          AI Key 用于 AI 评分建议功能，AES 加密存储
-        </div>
-      </n-card>
+      <!-- 两栏布局 -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
+        <!-- 左栏：资料 + 密码 -->
+        <div class="lg:col-span-2 space-y-4">
+          <!-- 基本信息 -->
+          <div class="bg-white border border-neutral-200 rounded-lg">
+            <div class="flex items-center justify-between px-5 py-4 border-b border-neutral-200">
+              <span class="text-base font-semibold text-neutral-900">基本信息</span>
+            </div>
+            <div class="p-5">
+              <n-form
+                ref="profileFormRef"
+                :model="profile"
+                :rules="profileRules"
+                label-placement="top"
+              >
+                <n-form-item label="用户名">
+                  <n-input :value="profile.username" disabled />
+                </n-form-item>
+                <n-form-item label="昵称" path="nickname">
+                  <n-input v-model:value="profile.nickname" :maxlength="50" placeholder="请输入昵称" />
+                </n-form-item>
+                <n-form-item label="邮箱">
+                  <n-input v-model:value="profile.email" :maxlength="100" placeholder="选填，用于找回密码" />
+                </n-form-item>
+                <div class="flex justify-end">
+                  <n-button type="primary" :loading="savingProfile" @click="handleSaveProfile">
+                    保存修改
+                  </n-button>
+                </div>
+              </n-form>
+            </div>
+          </div>
 
-      <!-- 注销账号 -->
-      <n-card title="危险操作">
-        <n-button type="error" @click="handleDeactivate">
-          注销账号
-        </n-button>
-        <div class="mt-2 text-xs text-gray-400">
-          注销后不可恢复，私有数据将被清除
+          <!-- 修改密码 -->
+          <div class="bg-white border border-neutral-200 rounded-lg">
+            <div class="flex items-center justify-between px-5 py-4 border-b border-neutral-200">
+              <span class="text-base font-semibold text-neutral-900">修改密码</span>
+            </div>
+            <div class="p-5">
+              <n-form
+                ref="passwordFormRef"
+                :model="passwordForm"
+                :rules="passwordRules"
+                label-placement="top"
+              >
+                <n-form-item label="当前密码" path="oldPassword">
+                  <n-input
+                    v-model:value="passwordForm.oldPassword"
+                    type="password"
+                    show-password-on="click"
+                    placeholder="请输入当前密码"
+                  />
+                </n-form-item>
+                <n-form-item label="新密码" path="newPassword">
+                  <n-input
+                    v-model:value="passwordForm.newPassword"
+                    type="password"
+                    show-password-on="click"
+                    :maxlength="64"
+                    placeholder="密码长度 8-64 位"
+                  />
+                </n-form-item>
+                <n-form-item label="确认新密码" path="confirmPassword">
+                  <n-input
+                    v-model:value="passwordForm.confirmPassword"
+                    type="password"
+                    show-password-on="click"
+                    placeholder="请再次输入新密码"
+                  />
+                </n-form-item>
+                <div class="flex justify-end">
+                  <n-button type="primary" :loading="savingPassword" @click="handleChangePassword">
+                    修改密码
+                  </n-button>
+                </div>
+              </n-form>
+            </div>
+          </div>
         </div>
-      </n-card>
+
+        <!-- 右栏：AI Key + 账号安全 -->
+        <div class="space-y-4">
+          <!-- AI Key 配置 -->
+          <div class="bg-white border border-neutral-200 rounded-lg">
+            <div class="flex items-center justify-between px-5 py-4 border-b border-neutral-200">
+              <span class="text-base font-semibold text-neutral-900">AI Key 配置</span>
+            </div>
+            <div class="p-5">
+              <p class="text-sm text-neutral-600 mb-4">
+                配置你的 AI API Key 以使用 AI 评分建议功能
+              </p>
+
+              <template v-if="aiKeyInfo?.hasKey">
+                <div class="flex items-center gap-3 mb-4">
+                  <code class="flex-1 px-3 py-2 rounded-md bg-neutral-100 border border-neutral-200 font-mono text-sm text-neutral-700 truncate">
+                    {{ aiKeyInfo.maskedKey || 'sk-****' }}
+                  </code>
+                  <n-tag size="small" type="success" :bordered="false">已配置</n-tag>
+                </div>
+                <div class="flex gap-3 mb-4">
+                  <n-button size="small" type="error" quaternary @click="handleDeleteAiKey">
+                    <template #icon>
+                      <n-icon :component="TrashOutline" />
+                    </template>
+                    删除 Key
+                  </n-button>
+                </div>
+              </template>
+              <template v-else>
+                <n-input
+                  v-model:value="newAiKey"
+                  type="password"
+                  show-password-on="click"
+                  placeholder="输入 API Key"
+                  class="mb-4"
+                  @keyup.enter="handleSetAiKey"
+                />
+                <div class="flex justify-end mb-4">
+                  <n-button size="small" type="primary" :disabled="!newAiKey.trim()" @click="handleSetAiKey">
+                    设置 Key
+                  </n-button>
+                </div>
+              </template>
+
+              <p class="flex items-start gap-2 text-xs text-neutral-500">
+                <n-icon :size="15" :component="InformationCircleOutline" class="mt-0.5 flex-shrink-0" />
+                API Key 加密存储，仅用于 AI 评分建议
+              </p>
+            </div>
+          </div>
+
+          <!-- 账号安全 -->
+          <div class="bg-white border border-neutral-200 rounded-lg">
+            <div class="flex items-center justify-between px-5 py-4 border-b border-neutral-200">
+              <span class="text-base font-semibold text-neutral-900">账号安全</span>
+            </div>
+            <div class="p-5">
+              <div class="divide-y divide-neutral-200 text-sm">
+                <div class="flex items-center justify-between py-3">
+                  <span class="text-neutral-500">账号用户名</span>
+                  <span class="font-medium text-neutral-900">{{ profile.username || '—' }}</span>
+                </div>
+                <div class="flex items-center justify-between py-3">
+                  <span class="text-neutral-500">角色</span>
+                  <span class="font-medium text-neutral-900">{{ roleLabel || '—' }}</span>
+                </div>
+                <div class="flex items-center justify-between py-3">
+                  <span class="text-neutral-500">账号状态</span>
+                  <span class="font-medium text-success-600">正常</span>
+                </div>
+              </div>
+
+              <div class="text-xs font-semibold tracking-wide text-error-600 uppercase pt-4 mt-1 border-t border-neutral-200">
+                账号注销
+              </div>
+              <div class="mt-3 flex flex-wrap items-center gap-3">
+                <n-button size="small" type="error" quaternary @click="handleDeactivate">
+                  <template #icon>
+                    <n-icon :component="CloseCircleOutline" />
+                  </template>
+                  注销账号
+                </n-button>
+                <span class="text-xs text-neutral-500">注销后不可恢复，私有数据将被清除</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </n-spin>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { useMessage, useDialog } from 'naive-ui'
+import { useMessage } from 'naive-ui'
 import type { FormInst, FormRules } from 'naive-ui'
 import { getProfile, updateProfile, changePassword, getAiKey, setAiKey, deleteAiKey, deactivateAccount } from '@/api/user'
+import { useConfirm } from '@/composables/useConfirm'
+import { TrashOutline, InformationCircleOutline, CloseCircleOutline } from '@vicons/ionicons5'
+import dayjs from 'dayjs'
 
 const router = useRouter()
 const message = useMessage()
-const dialog = useDialog()
+const { confirmDanger } = useConfirm()
 
 const loading = ref(false)
 const savingProfile = ref(false)
@@ -120,12 +235,14 @@ const savingPassword = ref(false)
 const profileFormRef = ref<FormInst | null>(null)
 const passwordFormRef = ref<FormInst | null>(null)
 
-const profileForm = reactive({
+const profile = reactive({
   username: '',
   nickname: '',
-  email: '',
-  bio: ''
+  email: ''
 })
+
+const profileRole = ref('')
+const profileCreatedAt = ref('')
 
 const profileRules: FormRules = {
   nickname: [
@@ -152,17 +269,31 @@ const passwordRules: FormRules = {
   ]
 }
 
-const aiKeyInfo = ref<{ hasKey: boolean; maskedKey?: string } | null>(null)
+/** AI Key 状态：与后端运行时返回结构一致（{ hasKey, maskedKey }） */
+type AiKeyInfo = { hasKey: boolean; maskedKey?: string }
+const aiKeyInfo = ref<AiKeyInfo | null>(null)
 const newAiKey = ref('')
+
+const ROLE_LABELS: Record<string, string> = {
+  USER: '普通用户',
+  ADMIN: '管理员',
+  SUPER_ADMIN: '超级管理员'
+}
+
+const roleLabel = computed(() => ROLE_LABELS[profileRole.value] || '')
+const avatarText = computed(() => (profile.nickname || profile.username || '?').charAt(0).toUpperCase())
+const displayName = computed(() => profile.nickname || profile.username || '未设置昵称')
+const joinedAt = computed(() => (profileCreatedAt.value ? dayjs(profileCreatedAt.value).format('YYYY-MM-DD') : '—'))
 
 async function fetchProfile() {
   loading.value = true
   try {
     const res = await getProfile()
-    profileForm.username = res.data.username
-    profileForm.nickname = res.data.nickname
-    profileForm.email = res.data.email || ''
-    profileForm.bio = res.data.bio || ''
+    profile.username = res.data.username
+    profile.nickname = res.data.nickname
+    profile.email = res.data.email || ''
+    profileRole.value = res.data.role || ''
+    profileCreatedAt.value = res.data.createdAt || ''
   } catch {
     message.error('加载个人信息失败')
   } finally {
@@ -173,7 +304,9 @@ async function fetchProfile() {
 async function fetchAiKey() {
   try {
     const res = await getAiKey()
-    aiKeyInfo.value = res.data
+    // api/user.ts 将 GET /user/ai-key 声明为 { key }，与后端实际返回 { hasKey, maskedKey } 不符（见 UserServiceImpl#getAiKey）
+    const data = res.data as unknown as { hasKey: boolean; maskedKey: string | null }
+    aiKeyInfo.value = { hasKey: data.hasKey, maskedKey: data.maskedKey ?? undefined }
   } catch {
     // ignore
   }
@@ -183,9 +316,8 @@ async function handleSaveProfile() {
   savingProfile.value = true
   try {
     await updateProfile({
-      nickname: profileForm.nickname,
-      email: profileForm.email || undefined,
-      bio: profileForm.bio || undefined
+      nickname: profile.nickname,
+      email: profile.email || undefined
     })
     message.success('保存成功')
   } catch {
@@ -206,7 +338,8 @@ async function handleChangePassword() {
   try {
     await changePassword({
       oldPassword: passwordForm.oldPassword,
-      newPassword: passwordForm.newPassword
+      newPassword: passwordForm.newPassword,
+      confirmPassword: passwordForm.confirmPassword
     })
     message.success('密码修改成功')
     passwordForm.oldPassword = ''
@@ -222,12 +355,13 @@ async function handleChangePassword() {
 }
 
 async function handleSetAiKey() {
-  if (!newAiKey.value) {
+  if (!newAiKey.value.trim()) {
     message.warning('请输入 API Key')
     return
   }
   try {
-    await setAiKey({ apiKey: newAiKey.value })
+    // 后端 AiKeyRequest 字段实为 apiKey，而 api/user.ts 声明为 { key }；此处保留运行时字段名并在类型边界收敛
+    await setAiKey({ apiKey: newAiKey.value } as unknown as { key: string })
     message.success('设置成功')
     newAiKey.value = ''
     fetchAiKey()
@@ -236,22 +370,28 @@ async function handleSetAiKey() {
   }
 }
 
-async function handleDeleteAiKey() {
-  try {
-    await deleteAiKey()
-    message.success('已删除')
-    aiKeyInfo.value = null
-  } catch {
-    message.error('删除失败')
-  }
+function handleDeleteAiKey() {
+  confirmDanger({
+    title: '删除 AI Key',
+    content: '确定要删除当前配置的 AI Key 吗？',
+    positiveText: '删除',
+    onPositiveClick: async () => {
+      try {
+        await deleteAiKey()
+        message.success('已删除')
+        aiKeyInfo.value = null
+      } catch {
+        message.error('删除失败')
+      }
+    }
+  })
 }
 
 function handleDeactivate() {
-  dialog.warning({
+  confirmDanger({
     title: '确认注销',
     content: '确定要注销账号吗？此操作不可撤销！',
     positiveText: '确定注销',
-    negativeText: '取消',
     onPositiveClick: async () => {
       try {
         await deactivateAccount()

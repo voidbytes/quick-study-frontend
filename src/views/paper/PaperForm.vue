@@ -1,6 +1,9 @@
 <template>
-  <div class="p-6 max-w-6xl mx-auto">
-    <h1 class="text-2xl font-bold mb-6">{{ isEdit ? '编辑试卷' : '创建试卷' }}</h1>
+  <div>
+    <PageHeader
+      :title="isEdit ? '编辑试卷' : '创建试卷'"
+      subtitle="按 4 步完成组卷：基本信息 → 选题 → 设置分值 → 确认发布"
+    />
 
     <n-steps :current="currentStep" class="mb-8">
       <n-step title="基本信息" />
@@ -108,16 +111,16 @@
             <div
               v-for="(q, index) in scoredQuestions"
               :key="q.id"
-              class="flex items-center gap-3 p-3 bg-gray-50 rounded"
+              class="flex items-center gap-3 p-3 bg-neutral-50 border border-neutral-200 rounded-lg"
               draggable="true"
               @dragstart="onDragStart(index)"
               @dragover.prevent="onDragOver(index)"
               @drop="onDrop"
             >
-              <n-icon size="18" class="cursor-move text-gray-400">
+              <n-icon size="18" class="cursor-move text-neutral-400">
                 <ReorderTwoOutline />
               </n-icon>
-              <span class="text-sm text-gray-500 w-6">#{{ index + 1 }}</span>
+              <span class="text-sm text-neutral-500 w-6">#{{ index + 1 }}</span>
               <span class="flex-1 truncate text-sm">{{ q.content?.replace(/<[^>]+>/g, '').substring(0, 60) }}</span>
               <n-input-number
                 v-model:value="q.score"
@@ -180,6 +183,8 @@ import { useMessage } from 'naive-ui'
 import { createPaper, updatePaper, getPaperDetail } from '@/api/paper'
 import { getBankList } from '@/api/bank'
 import { getQuestionList } from '@/api/question'
+import { QUESTION_TYPE_MAP } from '@/utils/constants'
+import PageHeader from '@/components/common/PageHeader.vue'
 import { ReorderTwoOutline } from '@vicons/ionicons5'
 
 const route = useRoute()
@@ -234,13 +239,16 @@ const scoredQuestions = ref<any[]>([])
 const questionColumns = [
   { type: 'selection' as const, width: 40 },
   { title: '题干', key: 'content', ellipsis: { tooltip: true } },
-  { title: '题型', key: 'type', width: 80,
+  {
+    title: '题型',
+    key: 'type',
+    width: 90,
     render(row: any) {
-      const labels: Record<number, string> = { 0: '单选', 1: '多选', 2: '判断', 3: '填空', 4: '简答' }
-      return labels[row.type] || '-'
+      // 题型枚举与后端一致为大写字符串
+      return QUESTION_TYPE_MAP[row.type as keyof typeof QUESTION_TYPE_MAP] || row.type || '-'
     }
   },
-  { title: '难度', key: 'difficulty', width: 70 }
+  { title: '难度', key: 'difficulty', width: 80 }
 ]
 
 const totalScore = computed(() =>
@@ -279,10 +287,10 @@ async function loadPaper() {
     const data = res.data
     basicForm.title = data.title
     basicForm.description = data.description || ''
-    basicForm.timeLimit = data.timeLimit
+    basicForm.timeLimit = data.timeLimit ?? null
     basicForm.startTime = data.startTime ? new Date(data.startTime).getTime() : null
     basicForm.endTime = data.endTime ? new Date(data.endTime).getTime() : null
-    basicForm.attemptLimit = data.attemptLimit
+    basicForm.attemptLimit = data.attemptLimit ?? null
     basicForm.shareType = data.shareType || 'PRIVATE'
     basicForm.cheatEnabled = data.cheatEnabled || false
     if (data.questions) {

@@ -1,134 +1,175 @@
 <template>
-  <n-layout position="absolute" has-sider>
+  <div class="app-shell">
     <!-- 移动端遮罩 -->
     <div
       v-if="mobileMenuVisible"
-      class="fixed inset-0 bg-black bg-opacity-50 z-10 lg:hidden"
+      class="fixed inset-0 bg-neutral-950/50 lg:hidden"
+      style="z-index: var(--z-overlay)"
       @click="mobileMenuVisible = false"
     />
 
     <!-- 侧边栏 -->
-    <n-layout-sider
-      :width="240"
-      :native-scrollbar="false"
-      :collapsed="collapsed"
-      :collapsed-width="64"
-      :show-trigger="'bar'"
-      @collapse="collapsed = true"
-      @expand="collapsed = false"
-      :class="[
-        'fixed left-0 top-0 h-full z-20 lg:relative',
-        mobileMenuVisible ? 'block' : 'hidden lg:block'
-      ]"
-      bordered
+    <aside
+      class="sidebar"
+      :class="[mobileMenuVisible ? 'mobile-open' : '', collapsed ? 'sidebar-collapsed' : '']"
     >
-      <div class="flex items-center justify-center h-16 border-b border-gray-200">
-        <n-gradient-text :size="collapsed ? 20 : 24" type="primary">
-          {{ collapsed ? 'QS' : 'Quick Study' }}
-        </n-gradient-text>
+
+      <!-- Logo -->
+      <div class="h-header flex items-center gap-3 px-5 border-b border-neutral-200">
+        <div
+          class="w-9 h-9 rounded-lg bg-brand-gradient flex items-center justify-center text-white font-bold text-base flex-shrink-0"
+        >
+          QS
+        </div>
+        <span v-if="!collapsed" class="text-base font-bold text-neutral-900 whitespace-nowrap">
+          Quick Study
+        </span>
+        <div class="ml-auto cursor-pointer text-neutral-400 hover:text-neutral-900 hidden lg:flex" @click="collapsed = !collapsed">
+          <n-icon :size="16"><component :is="collapsed ? ChevronForwardOutline : ChevronBackOutline" /></n-icon>
+        </div>
       </div>
 
-      <n-menu
-        :collapsed="collapsed"
-        :collapsed-width="64"
-        :collapsed-icon-size="22"
-        :value="activeMenu"
-        :options="menuOptions"
-        @update:value="handleMenuSelect"
-      />
+      <!-- 导航 -->
+      <nav class="flex-1 p-3 overflow-y-auto">
+        <template v-for="(group, gi) in menuGroups" :key="gi">
+          <div
+            v-if="group.label && !collapsed"
+            class="text-xs font-semibold text-tertiary uppercase tracking-wider px-3 py-2 mt-1"
+          >
+            {{ group.label }}
+          </div>
+          <div
+            v-for="item in group.items"
+            :key="item.key"
+            class="flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-colors mb-0.5"
+            :class="activeMenu === item.key
+              ? 'bg-primary-50 text-primary-600 font-semibold'
+              : 'text-neutral-600 font-medium hover:bg-neutral-100 hover:text-neutral-900'"
+            :title="collapsed ? item.label : undefined"
+            @click="handleMenuSelect(item.key)"
+          >
+            <n-icon :size="20" class="flex-shrink-0">
+              <component :is="item.icon" />
+            </n-icon>
+            <span v-if="!collapsed" class="text-sm">{{ item.label }}</span>
+          </div>
+        </template>
+      </nav>
 
-      <!-- 退出登录按钮 -->
-      <div class="absolute bottom-0 left-0 right-0 border-t border-gray-200 p-2">
-        <n-button
-          v-if="authStore.isAuthenticated"
-          quaternary
-          long
-          class="justify-start"
+      <!-- 底部：退出登录 -->
+      <div v-if="authStore.isAuthenticated" class="p-3 border-t border-neutral-200">
+        <div
+          class="flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-colors text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900"
+          :title="collapsed ? '退出登录' : undefined"
           @click="handleLogout"
         >
-          <template #icon>
-            <n-icon><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></n-icon>
-          </template>
-          <span class="hidden sm:inline text-sm">退出登录</span>
-        </n-button>
+          <n-icon :size="20"><LogOutOutline /></n-icon>
+          <span v-if="!collapsed" class="text-sm">退出登录</span>
+        </div>
       </div>
-    </n-layout-sider>
+    </aside>
 
-    <!-- 主内容 -->
-    <n-layout>
-      <!-- 顶部导航栏 -->
-      <n-layout-header
-        bordered
-        class="h-16 flex items-center justify-between px-4 lg:px-8"
-        :class="{ 'z-30 relative': mobileMenuVisible }"
-      >
-        <div class="flex items-center gap-4">
-          <n-button
-            quaternary
-            class="lg:hidden"
-            @click="mobileMenuVisible = true"
-          >
-            <template #icon>
-              <n-icon><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg></n-icon>
-            </template>
-          </n-button>
-          <n-breadcrumb>
-            <n-breadcrumb-item>{{ currentPageTitle }}</n-breadcrumb-item>
-          </n-breadcrumb>
+    <!-- 主内容区 -->
+    <div class="main-area">
+      <!-- 顶部栏 -->
+      <header class="app-header">
+        <div class="app-header-left">
+          <!-- 移动端汉堡菜单 -->
+          <button class="lg:hidden flex items-center justify-center w-9 h-9 rounded-lg text-neutral-600 hover:bg-neutral-100" @click="mobileMenuVisible = true">
+            <n-icon :size="20"><MenuOutline /></n-icon>
+          </button>
+          <!-- 面包屑 / 当前页标题 -->
+          <div class="breadcrumb">
+            <span class="breadcrumb-current">{{ currentPageTitle }}</span>
+          </div>
         </div>
 
-        <div class="flex items-center gap-4">
+        <div class="app-header-right">
+          <!-- 全局搜索（桌面） -->
+          <div class="hidden md:block header-search">
+            <n-input
+              v-model:value="headerKeyword"
+              placeholder="搜索题目 / 题库 / 试卷"
+              size="small"
+              clearable
+              @keyup.enter="handleHeaderSearch"
+            >
+              <template #prefix>
+                <n-icon :component="SearchOutline" />
+              </template>
+            </n-input>
+          </div>
+
           <!-- 通知 -->
           <n-badge :value="unreadCount" :max="99">
-            <n-button quaternary @click="router.push('/notifications')">
-              <template #icon>
-                <n-icon><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></n-icon>
-              </template>
-            </n-button>
+            <button class="flex items-center justify-center w-9 h-9 rounded-lg text-neutral-600 hover:bg-neutral-100" @click="router.push('/notifications')">
+              <n-icon :size="20"><NotificationsOutline /></n-icon>
+            </button>
           </n-badge>
 
-          <!-- 用户信息 / 登录按钮 -->
+          <!-- 用户 / 登录 -->
           <template v-if="authStore.isAuthenticated">
             <n-dropdown :options="userMenuOptions" @select="handleUserMenuSelect">
-              <div class="flex items-center gap-2 cursor-pointer">
-                <n-avatar
-                  :src="authStore.userInfo?.avatar || undefined"
-                  round
-                  size="small"
-                  :style="{ background: avatarBgColor }"
+              <div class="flex items-center gap-2 cursor-pointer select-none">
+                <div
+                  class="w-8 h-8 rounded-full bg-brand-gradient flex items-center justify-center text-white text-xs font-semibold flex-shrink-0"
                 >
                   {{ avatarText }}
-                </n-avatar>
-                <span class="hidden sm:inline text-sm">{{ authStore.userInfo?.nickname || authStore.userInfo?.username }}</span>
+                </div>
+                <span class="hidden sm:inline text-sm text-neutral-700">
+                  {{ authStore.userInfo?.nickname || authStore.userInfo?.username }}
+                </span>
               </div>
             </n-dropdown>
           </template>
           <template v-else>
-            <n-button quaternary @click="router.push('/login')">
-              登录
-            </n-button>
+            <n-button size="small" type="primary" @click="router.push('/login')">登录</n-button>
           </template>
         </div>
-      </n-layout-header>
+      </header>
 
       <!-- 内容区 -->
-      <n-layout-content
-        :native-scrollbar="false"
-        class="p-4 lg:p-8"
-        style="min-height: calc(100vh - 4rem);"
-      >
+      <main class="app-content px-4 lg:px-6 py-6">
         <router-view />
-      </n-layout-content>
-    </n-layout>
-  </n-layout>
+      </main>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
-import { useMessage, type MenuOption } from 'naive-ui'
+import { useMessage } from 'naive-ui'
 import * as notificationApi from '@/api/notification'
+import {
+  HomeOutline,
+  LibraryOutline,
+  DocumentTextOutline,
+  FileTrayFullOutline,
+  GameControllerOutline,
+  CloseCircleOutline,
+  TimeOutline,
+  SearchOutline,
+  BarChartOutline,
+  NotificationsOutline,
+  PeopleOutline,
+  CheckmarkDoneOutline,
+  LogOutOutline,
+  MenuOutline,
+  ChevronBackOutline,
+  ChevronForwardOutline
+} from '@vicons/ionicons5'
+
+interface MenuItem {
+  label: string
+  key: string
+  icon: any
+}
+interface MenuGroup {
+  label?: string
+  items: MenuItem[]
+}
 
 const router = useRouter()
 const route = useRoute()
@@ -138,52 +179,53 @@ const message = useMessage()
 const collapsed = ref(false)
 const mobileMenuVisible = ref(false)
 const unreadCount = ref(0)
+const headerKeyword = ref('')
 
-// 默认头像：无自定义头像时用昵称首字生成
-const AVATAR_COLORS = ['#1890ff', '#52c41a', '#faad14', '#722ed1', '#eb2f96', '#13c2c2', '#fa541c', '#2f54eb']
 const avatarText = computed(() => {
   const name = authStore.userInfo?.nickname || authStore.userInfo?.username || '?'
   return name.charAt(0).toUpperCase()
 })
-const avatarBgColor = computed(() => {
-  const name = authStore.userInfo?.nickname || authStore.userInfo?.username || ''
-  let hash = 0
-  for (let i = 0; i < name.length; i++) hash = (hash * 31 + name.charCodeAt(i)) >>> 0
-  return AVATAR_COLORS[hash % AVATAR_COLORS.length]
-})
 
-const menuOptions = computed<MenuOption[]>(() => {
-  const items: MenuOption[] = [
-    { label: '首页', key: '/' },
-    { label: '题库', key: '/banks' },
-    { label: '题目', key: '/questions' },
-    { label: '试卷', key: '/papers' }
+const menuGroups = computed<MenuGroup[]>(() => {
+  const groups: MenuGroup[] = [
+    {
+      items: [
+        { label: '首页', key: '/', icon: HomeOutline },
+        { label: '题库', key: '/banks', icon: LibraryOutline },
+        { label: '题目', key: '/questions', icon: DocumentTextOutline },
+        { label: '试卷', key: '/papers', icon: FileTrayFullOutline }
+      ]
+    }
   ]
 
-  // 登录用户可见的功能
   if (authStore.isAuthenticated) {
-    items.push(
-      { label: '练习', key: '/practice' },
-      { label: '错题本', key: '/wrong-questions' },
-      { label: '做题记录', key: '/records' },
-      { label: '搜索', key: '/search' },
-      { label: '统计', key: '/statistics' },
-      { label: '通知', key: '/notifications' }
-    )
+    groups.push({
+      label: '学习中心',
+      items: [
+        { label: '练习', key: '/practice', icon: GameControllerOutline },
+        { label: '错题本', key: '/wrong-questions', icon: CloseCircleOutline },
+        { label: '做题记录', key: '/records', icon: TimeOutline },
+        { label: '统计', key: '/statistics', icon: BarChartOutline },
+        { label: '通知', key: '/notifications', icon: NotificationsOutline },
+        { label: '搜索', key: '/search', icon: SearchOutline }
+      ]
+    })
   } else {
-    // 游客可见
-    items.push({ label: '搜索', key: '/search' })
+    groups.push({
+      items: [{ label: '搜索', key: '/search', icon: SearchOutline }]
+    })
   }
 
-  // 管理员可见
   if (authStore.isAdmin) {
-    items.push(
-      { label: '用户管理', key: '/admin/users' },
-      { label: '审核列表', key: '/admin/reviews' }
-    )
+    groups.push({
+      label: '管理',
+      items: [
+        { label: '用户管理', key: '/admin/users', icon: PeopleOutline },
+        { label: '审核列表', key: '/admin/reviews', icon: CheckmarkDoneOutline }
+      ]
+    })
   }
-
-  return items
+  return groups
 })
 
 const userMenuOptions = computed(() => [
@@ -191,26 +233,32 @@ const userMenuOptions = computed(() => [
   { label: '退出登录', key: 'logout' }
 ])
 
+// 由侧边栏 key（路由前缀）到标题的映射
+const MENU_TITLES: Record<string, string> = {
+  '/': '首页',
+  '/banks': '题库',
+  '/questions': '题目',
+  '/papers': '试卷',
+  '/practice': '练习',
+  '/wrong-questions': '错题本',
+  '/records': '做题记录',
+  '/statistics': '统计',
+  '/notifications': '通知',
+  '/search': '搜索',
+  '/admin/users': '用户管理',
+  '/admin/reviews': '审核列表',
+  '/grading': '批改',
+  '/profile': '个人中心'
+}
+
 const activeMenu = computed(() => {
   const path = route.path
-  if (path.startsWith('/banks')) return '/banks'
-  if (path.startsWith('/questions')) return '/questions'
-  if (path.startsWith('/papers')) return '/papers'
-  if (path.startsWith('/practice')) return '/practice'
-  if (path.startsWith('/wrong-questions')) return '/wrong-questions'
-  if (path.startsWith('/records')) return '/records'
-  if (path.startsWith('/search')) return '/search'
-  if (path.startsWith('/statistics')) return '/statistics'
-  if (path.startsWith('/notifications')) return '/notifications'
-  if (path.startsWith('/admin/reviews')) return '/admin/reviews'
-  if (path.startsWith('/admin')) return '/admin/users'
-  return '/'
+  const keys = Object.keys(MENU_TITLES).sort((a, b) => b.length - a.length)
+  const matched = keys.find(k => path.startsWith(k))
+  return matched || '/'
 })
 
-const currentPageTitle = computed(() => {
-  const item = menuOptions.value.find(m => m.key === activeMenu.value)
-  return (item?.label as string) || '首页'
-})
+const currentPageTitle = computed(() => MENU_TITLES[activeMenu.value] || '首页')
 
 function handleMenuSelect(key: string) {
   router.push(key)
@@ -225,6 +273,13 @@ function handleUserMenuSelect(key: string) {
   }
 }
 
+function handleHeaderSearch() {
+  const kw = headerKeyword.value.trim()
+  if (kw) {
+    router.push({ path: '/search', query: { keyword: kw } })
+  }
+}
+
 function handleLogout() {
   authStore.logout()
   message.success('已退出登录')
@@ -232,6 +287,7 @@ function handleLogout() {
 }
 
 async function fetchUnreadCount() {
+  if (!authStore.isAuthenticated) return
   try {
     const res = await notificationApi.getUnreadCount()
     unreadCount.value = res.data.count
@@ -240,10 +296,93 @@ async function fetchUnreadCount() {
   }
 }
 
-onMounted(() => {
-  // 只有登录用户才获取未读通知数
-  if (authStore.isAuthenticated) {
-    fetchUnreadCount()
-  }
-})
+onMounted(fetchUnreadCount)
 </script>
+
+<style scoped>
+.app-shell {
+  display: flex;
+  min-height: 100vh;
+}
+.sidebar {
+  background: var(--bg-card);
+  border-right: 1px solid var(--border-default);
+  display: flex;
+  flex-direction: column;
+  width: var(--sidebar-width);
+  transition: width var(--transition-base);
+  overflow: hidden;
+}
+.sidebar.mobile-open {
+  transform: none;
+}
+@media (max-width: 1023px) {
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    z-index: var(--z-sticky);
+    transform: translateX(-100%);
+  }
+  .sidebar.mobile-open {
+    transform: translateX(0);
+  }
+}
+@media (min-width: 1024px) {
+  .sidebar {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    flex-shrink: 0;
+  }
+  .sidebar.sidebar-collapsed {
+    width: var(--sidebar-collapsed-width);
+  }
+}
+.main-area {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+.app-header {
+  height: var(--header-height);
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border-default);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--space-4) 0 var(--space-4);
+  position: sticky;
+  top: 0;
+  z-index: var(--z-sticky);
+}
+.app-header-left {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.app-header-right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+.breadcrumb {
+  font-size: var(--text-sm);
+  color: var(--text-tertiary);
+}
+.breadcrumb-current {
+  color: var(--text-primary);
+  font-weight: var(--font-medium);
+}
+.header-search {
+  width: 240px;
+}
+.app-content {
+  width: 100%;
+  max-width: var(--content-max-width);
+  margin: 0 auto;
+}
+</style>

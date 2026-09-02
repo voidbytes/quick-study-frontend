@@ -1,134 +1,143 @@
 <template>
-  <div class="min-h-screen bg-gray-50">
-    <!-- 顶部导航 -->
-    <div class="bg-white shadow-sm border-b sticky top-0 z-10">
-      <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-        <h1 class="text-lg font-bold truncate">{{ paperTitle }}</h1>
-        <div class="flex items-center gap-4">
-          <span :class="['text-lg font-mono font-bold', timeRemaining <= 300 ? 'text-red-500 animate-pulse' : 'text-gray-700']">
+  <div class="min-h-screen bg-neutral-100">
+    <!-- 顶部 sticky 导航 -->
+    <header class="bg-white border-b border-neutral-200 sticky top-0 z-10">
+      <div class="max-w-content mx-auto px-6 py-3 flex items-center justify-between gap-4">
+        <h1 class="text-lg font-bold text-neutral-900 truncate">{{ paperTitle }}</h1>
+        <div class="flex items-center gap-4 flex-shrink-0">
+          <span class="hidden md:inline text-sm text-neutral-500">
+            已答 <span class="text-success-600 font-semibold">{{ answeredCount }}</span>
+            / {{ questions.length }} 题
+          </span>
+          <span
+            class="text-xl font-mono font-bold tabular-nums"
+            :class="timeRemaining <= 300 ? 'text-error-500 animate-pulse' : 'text-neutral-900'"
+          >
             {{ formattedTime }}
           </span>
-          <n-button type="error" @click="handleSubmit">交卷</n-button>
+          <n-button type="error" :disabled="submitting" @click="handleSubmit">交卷</n-button>
         </div>
       </div>
-    </div>
+    </header>
 
-    <div class="max-w-6xl mx-auto p-4 flex gap-6">
+    <div class="max-w-content mx-auto p-6 flex gap-6 items-start">
       <!-- 左侧题目导航 -->
-      <div class="w-48 shrink-0">
-        <n-card title="题目导航" size="small">
-          <div class="grid grid-cols-5 gap-2">
-            <div
-              v-for="(q, index) in questions"
-              :key="q.id"
-              class="w-8 h-8 flex items-center justify-center rounded cursor-pointer text-sm font-medium"
-              :class="getQuestionStatusClass(index)"
-              @click="currentIndex = index"
-            >
-              {{ index + 1 }}
-            </div>
+      <aside class="w-52 shrink-0 hidden lg:block">
+        <div class="bg-white border border-neutral-200 rounded-lg overflow-hidden">
+          <div class="px-4 py-3 border-b border-neutral-200">
+            <span class="text-base font-semibold text-neutral-900">题目导航</span>
           </div>
-          <div class="mt-3 text-xs text-gray-500 space-y-1">
-            <div class="flex items-center gap-2">
-              <span class="w-3 h-3 rounded bg-primary inline-block" />
-              <span>当前</span>
-            </div>
-            <div class="flex items-center gap-2">
-              <span class="w-3 h-3 rounded bg-success inline-block" />
-              <span>已答</span>
-            </div>
-            <div class="flex items-center gap-2">
-              <span class="w-3 h-3 rounded bg-gray-200 inline-block" />
-              <span>未答</span>
-            </div>
-            <div class="flex items-center gap-2">
-              <span class="w-3 h-3 rounded bg-warning inline-block" />
-              <span>待检查</span>
-            </div>
-          </div>
-        </n-card>
-      </div>
+          <div class="p-4">
+            <QuestionNavGrid :items="navStatusList" @select="goToQuestion" />
 
-      <!-- 答题区 -->
-      <div class="flex-1">
-        <n-card>
-          <div class="mb-4">
-            <span class="text-sm text-gray-500">第 {{ currentIndex + 1 }} 题 / 共 {{ questions.length }} 题</span>
-            <n-tag :type="difficultyTagType(currentQuestion?.difficulty)" size="small" class="ml-2">
-              {{ difficultyLabels[currentQuestion?.difficulty] || '未知' }}
+            <!-- 图例 -->
+            <div class="mt-4 space-y-2">
+              <div class="flex items-center gap-2 text-sm text-neutral-600">
+                <span class="w-3.5 h-3.5 rounded bg-primary-500 flex-shrink-0" />当前
+              </div>
+              <div class="flex items-center gap-2 text-sm text-neutral-600">
+                <span class="w-3.5 h-3.5 rounded bg-success-500 flex-shrink-0" />已答
+              </div>
+              <div class="flex items-center gap-2 text-sm text-neutral-600">
+                <span class="w-3.5 h-3.5 rounded bg-neutral-100 border border-neutral-200 flex-shrink-0" />未答
+              </div>
+              <div class="flex items-center gap-2 text-sm text-neutral-600">
+                <span class="w-3.5 h-3.5 rounded bg-warning-500 flex-shrink-0" />待检查
+              </div>
+            </div>
+
+            <!-- 汇总 -->
+            <div class="mt-4 pt-4 border-t border-neutral-200 text-sm text-neutral-500">
+              已答：<span class="text-success-600 font-semibold">{{ answeredCount }} 题</span>
+              / 未答：<span class="text-neutral-500 font-semibold">{{ unansweredCount }} 题</span>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- 答题主区 -->
+      <main class="flex-1 min-w-0">
+        <div class="bg-white border border-neutral-200 rounded-lg p-6 md:p-8">
+          <!-- 题目头部 -->
+          <div class="flex items-center gap-3 flex-wrap mb-5">
+            <span class="text-base font-bold text-neutral-900">
+              第 {{ currentIndex + 1 }} 题
+              <span class="text-sm font-medium text-neutral-500">/ 共 {{ questions.length }} 题</span>
+            </span>
+            <n-tag size="small" round :type="typeTagType(currentQuestion?.type)">
+              {{ typeLabel(currentQuestion?.type) }}
             </n-tag>
-            <n-tag size="small" class="ml-2">{{ typeLabels[currentQuestion?.type] || '未知' }}</n-tag>
+            <n-tag size="small" round :type="difficultyTagType(currentQuestion?.difficulty)">
+              {{ difficultyLabel(currentQuestion?.difficulty) }}
+            </n-tag>
+            <div class="flex-1" />
             <n-button
               v-if="currentQuestion"
-              size="tiny"
+              size="small"
               quaternary
               :type="isMarkedForReview(currentIndex) ? 'warning' : 'default'"
-              class="ml-2"
               @click="toggleMarkForReview(currentIndex)"
             >
-              {{ isMarkedForReview(currentIndex) ? '✓ 已标记' : '标记待检查' }}
+              {{ isMarkedForReview(currentIndex) ? '✓ 已标记待检查' : '标记待检查' }}
             </n-button>
           </div>
 
-          <!-- 题目内容 -->
-          <div class="prose max-w-none mb-6" v-html="parsedContent" />
+          <!-- 题干（富文本） -->
+          <div class="exam-stem mb-6">
+            <RichText :content="parsedContent" />
+          </div>
 
-          <!-- 选项 -->
-          <div class="space-y-3">
+          <!-- 作答区 -->
+          <div>
             <!-- 单选题 -->
-            <template v-if="currentQuestion?.type === 'SINGLE'">
-              <div
+            <template v-if="currentQuestion && currentQuestion.type === 'SINGLE'">
+              <QuestionOption
                 v-for="(opt, idx) in parsedOptions"
                 :key="idx"
-                class="p-3 border rounded cursor-pointer hover:border-primary transition-colors"
-                :class="{ 'border-primary bg-primary bg-opacity-5': currentAnswers[currentQuestion.id] === String.fromCharCode(65 + idx) }"
-                @click="selectAnswer(String.fromCharCode(65 + idx))"
+                :marker="String.fromCharCode(65 + idx)"
+                :selected="currentAnswers[currentQuestion.id] === String.fromCharCode(65 + idx)"
+                @select="selectAnswer(String.fromCharCode(65 + idx))"
               >
-                <n-radio :checked="currentAnswers[currentQuestion.id] === String.fromCharCode(65 + idx)">
-                  <span class="font-mono mr-2">{{ String.fromCharCode(65 + idx) }}.</span>
-                  {{ opt }}
-                </n-radio>
-              </div>
+                {{ opt }}
+              </QuestionOption>
             </template>
 
             <!-- 多选题 -->
-            <template v-if="currentQuestion?.type === 'MULTIPLE'">
-              <div
+            <template v-if="currentQuestion && currentQuestion.type === 'MULTIPLE'">
+              <QuestionOption
                 v-for="(opt, idx) in parsedOptions"
                 :key="idx"
-                class="p-3 border rounded cursor-pointer hover:border-primary transition-colors"
-                :class="{ 'border-primary bg-primary bg-opacity-5': isMultipleSelected(String.fromCharCode(65 + idx)) }"
-                @click="toggleMultipleAnswer(String.fromCharCode(65 + idx))"
+                :marker="String.fromCharCode(65 + idx)"
+                :selected="isMultipleSelected(String.fromCharCode(65 + idx))"
+                @select="toggleMultipleAnswer(String.fromCharCode(65 + idx))"
               >
-                <n-checkbox :checked="isMultipleSelected(String.fromCharCode(65 + idx))">
-                  <span class="font-mono mr-2">{{ String.fromCharCode(65 + idx) }}.</span>
-                  {{ opt }}
-                </n-checkbox>
-              </div>
+                {{ opt }}
+              </QuestionOption>
             </template>
 
             <!-- 判断题：答案值与题目标准答案(true/false)对齐 -->
-            <template v-if="currentQuestion?.type === 'TRUE_FALSE'">
-              <div class="flex gap-4">
-                <div
-                  class="flex-1 p-3 border rounded text-center cursor-pointer hover:border-primary"
-                  :class="{ 'border-primary bg-primary bg-opacity-5': currentAnswers[currentQuestion.id] === 'true' }"
-                  @click="selectAnswer('true')"
+            <template v-if="currentQuestion && currentQuestion.type === 'TRUE_FALSE'">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-3">
+                <QuestionOption
+                  marker="√"
+                  :selected="currentAnswers[currentQuestion.id] === 'true'"
+                  @select="selectAnswer('true')"
                 >
-                  <n-radio :checked="currentAnswers[currentQuestion.id] === 'true'">正确</n-radio>
-                </div>
-                <div
-                  class="flex-1 p-3 border rounded text-center cursor-pointer hover:border-primary"
-                  :class="{ 'border-primary bg-primary bg-opacity-5': currentAnswers[currentQuestion.id] === 'false' }"
-                  @click="selectAnswer('false')"
+                  正确
+                </QuestionOption>
+                <QuestionOption
+                  marker="×"
+                  :selected="currentAnswers[currentQuestion.id] === 'false'"
+                  @select="selectAnswer('false')"
                 >
-                  <n-radio :checked="currentAnswers[currentQuestion.id] === 'false'">错误</n-radio>
-                </div>
+                  错误
+                </QuestionOption>
               </div>
             </template>
 
             <!-- 填空题 -->
-            <template v-if="currentQuestion?.type === 'FILL_BLANK'">
+            <template v-if="currentQuestion && currentQuestion.type === 'FILL_BLANK'">
+              <label class="block text-sm font-medium text-neutral-700 mb-2">请填写答案</label>
               <n-input
                 v-model:value="fillAnswers[currentQuestion.id]"
                 type="textarea"
@@ -139,7 +148,8 @@
             </template>
 
             <!-- 简答题 -->
-            <template v-if="currentQuestion?.type === 'SHORT_ANSWER'">
+            <template v-if="currentQuestion && currentQuestion.type === 'SHORT_ANSWER'">
+              <label class="block text-sm font-medium text-neutral-700 mb-2">请填写答案</label>
               <n-input
                 v-model:value="fillAnswers[currentQuestion.id]"
                 type="textarea"
@@ -151,7 +161,7 @@
           </div>
 
           <!-- 导航按钮 -->
-          <div class="flex justify-between mt-8">
+          <div class="flex justify-between items-center mt-8 pt-5 border-t border-neutral-200">
             <n-button :disabled="currentIndex === 0" @click="prevQuestion">
               上一题
             </n-button>
@@ -162,26 +172,9 @@
               完成作答
             </n-button>
           </div>
-        </n-card>
-      </div>
-    </div>
-
-    <!-- 提交确认弹窗 -->
-    <n-modal v-model:show="showSubmitConfirm" title="确认交卷" preset="card" style="width: 400px">
-      <div class="space-y-3">
-        <p>确定要提交试卷吗？</p>
-        <p>已答：{{ answeredCount }} 题，未答：{{ unansweredCount }} 题</p>
-        <n-alert type="warning" v-if="unansweredCount > 0">
-          还有 {{ unansweredCount }} 道题未作答，确定提交吗？
-        </n-alert>
-      </div>
-      <template #footer>
-        <div class="flex justify-end gap-2">
-          <n-button @click="showSubmitConfirm = false">继续作答</n-button>
-          <n-button type="primary" :loading="submitting" @click="confirmSubmit">确认交卷</n-button>
         </div>
-      </template>
-    </n-modal>
+      </main>
+    </div>
   </div>
 </template>
 
@@ -190,37 +183,49 @@ import { ref, reactive, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useMessage } from 'naive-ui'
 import { startSession, getSession, saveAnswers, submitSession, reportCheat } from '@/api/exam'
+import type { QuestionItem, AnswerItem } from '@/api/exam'
+import { QUESTION_TYPE_MAP } from '@/utils/constants'
+import { useConfirm } from '@/composables/useConfirm'
+import type { QuestionNavStatus } from '@/components/common/questionNav'
+import QuestionNavGrid from '@/components/common/QuestionNavGrid.vue'
+import QuestionOption from '@/components/common/QuestionOption.vue'
+import RichText from '@/components/common/RichText.vue'
 
 const route = useRoute()
 const router = useRouter()
 const message = useMessage()
+const { confirm } = useConfirm()
 
 const paperId = route.params.id as string
 const sessionId = ref<string | null>(null)
 const paperTitle = ref('')
-const questions = ref<any[]>([])
+/** 作答页题目行：后端还会下发 difficulty 等展示字段 */
+interface ExamQuestion extends QuestionItem {
+  difficulty?: string
+}
+const questions = ref<ExamQuestion[]>([])
 const currentIndex = ref(0)
 const currentAnswers = reactive<Record<number, string>>({})
 const fillAnswers = reactive<Record<number, string>>({})
 const markedForReview = ref<Set<number>>(new Set())
 const timeRemaining = ref(0)
 const timerHandle = ref<ReturnType<typeof setInterval> | null>(null)
-const showSubmitConfirm = ref(false)
 const submitting = ref(false)
 const cheatCount = ref(0)
 
-const typeLabels: Record<string, string> = { SINGLE: '单选题', MULTIPLE: '多选题', TRUE_FALSE: '判断题', FILL_BLANK: '填空题', SHORT_ANSWER: '简答题' }
 const difficultyLabels: Record<string, string> = { EASY: '简单', MEDIUM: '中等', HARD: '困难' }
 
 const currentQuestion = computed(() => questions.value[currentIndex.value] || null)
 
 /** 解析 options JSON 字符串为数组 */
-const parsedOptions = computed(() => {
+const parsedOptions = computed<string[]>(() => {
   const q = currentQuestion.value
   if (!q || !q.options) return []
-  if (Array.isArray(q.options)) return q.options
+  const options = q.options
+  if (Array.isArray(options)) return (options as unknown as string[]).map((o) => String(o))
   try {
-    return JSON.parse(q.options)
+    const parsed: unknown = JSON.parse(options)
+    return Array.isArray(parsed) ? parsed.map((o: unknown) => String(o)) : []
   } catch {
     return []
   }
@@ -240,19 +245,22 @@ const parsedContent = computed(() => {
 
 const answeredCount = computed(() => {
   let count = 0
-  questions.value.forEach((q: any) => {
-    if (q.type === 'MULTIPLE') {
-      if (currentAnswers[q.id]?.length) count++
-    } else if (q.type === 'FILL_BLANK' || q.type === 'SHORT_ANSWER') {
-      if (fillAnswers[q.id]?.trim()) count++
-    } else {
-      if (currentAnswers[q.id]) count++
-    }
+  questions.value.forEach((q) => {
+    if (hasAnswer(q)) count++
   })
   return count
 })
 
 const unansweredCount = computed(() => questions.value.length - answeredCount.value)
+
+/** 导航网格状态：当前 > 标记 > 已答 > 未答 */
+const navStatusList = computed<QuestionNavStatus[]>(() =>
+  questions.value.map((q, index) => {
+    if (currentIndex.value === index) return 'current'
+    if (markedForReview.value.has(index)) return 'review'
+    return hasAnswer(q) ? 'answered' : 'unanswered'
+  })
+)
 
 const formattedTime = computed(() => {
   if (timeRemaining.value <= 0) return '00:00'
@@ -261,41 +269,58 @@ const formattedTime = computed(() => {
   return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
 })
 
-function difficultyTagType(d: string) {
+function hasAnswer(q: ExamQuestion): boolean {
+  if (q.type === 'MULTIPLE') return !!currentAnswers[q.id]?.length
+  if (q.type === 'FILL_BLANK' || q.type === 'SHORT_ANSWER') return !!fillAnswers[q.id]?.trim()
+  return !!currentAnswers[q.id]
+}
+
+function typeLabel(type?: string): string {
+  return (type && QUESTION_TYPE_MAP[type as keyof typeof QUESTION_TYPE_MAP]) || '未知'
+}
+
+function difficultyLabel(d?: string): string {
+  return d ? difficultyLabels[d] || '未知' : '未知'
+}
+
+function typeTagType(type?: string): 'default' | 'info' | 'primary' {
+  if (type === 'SINGLE' || type === 'MULTIPLE') return 'primary'
+  if (type === 'FILL_BLANK' || type === 'SHORT_ANSWER') return 'info'
+  return 'default'
+}
+
+function difficultyTagType(d?: string): 'error' | 'warning' | 'success' {
   return d === 'HARD' ? 'error' : d === 'MEDIUM' ? 'warning' : 'success'
 }
 
-function getQuestionStatusClass(index: number) {
-  const q = questions.value[index]
-  if (!q) return 'bg-gray-200 text-gray-500'
-  if (currentIndex.value === index) return 'bg-primary text-white'
-  if (markedForReview.value.has(index)) return 'bg-warning text-white'
-  const hasAnswer = q.type === 'MULTIPLE'
-    ? currentAnswers[q.id]?.length
-    : (q.type === 'FILL_BLANK' || q.type === 'SHORT_ANSWER')
-      ? fillAnswers[q.id]?.trim()
-      : currentAnswers[q.id]
-  return hasAnswer ? 'bg-success text-white' : 'bg-gray-200 text-gray-500'
+function goToQuestion(index: number) {
+  currentIndex.value = index
 }
 
 function selectAnswer(value: string) {
-  currentAnswers[currentQuestion.value.id] = value
+  const q = currentQuestion.value
+  if (!q) return
+  currentAnswers[q.id] = value
   saveToLocal()
   autoSave()
 }
 
 function isMultipleSelected(value: string) {
-  const ans = currentAnswers[currentQuestion.value.id] || ''
+  const q = currentQuestion.value
+  if (!q) return false
+  const ans = currentAnswers[q.id] || ''
   return ans.split(',').includes(value)
 }
 
 function toggleMultipleAnswer(value: string) {
-  const ans = currentAnswers[currentQuestion.value.id] || ''
+  const q = currentQuestion.value
+  if (!q) return
+  const ans = currentAnswers[q.id] || ''
   const arr = ans ? ans.split(',') : []
   const idx = arr.indexOf(value)
   if (idx >= 0) arr.splice(idx, 1)
   else arr.push(value)
-  currentAnswers[currentQuestion.value.id] = arr.join(',')
+  currentAnswers[q.id] = arr.join(',')
   saveToLocal()
   autoSave()
 }
@@ -336,12 +361,12 @@ async function autoSave() {
 }
 
 function buildAnswerPayload() {
-  return questions.value.map((q: any) => {
-    const answer = q.type === 'MULTIPLE'
-      ? currentAnswers[q.id] || ''
-      : (q.type === 'FILL_BLANK' || q.type === 'SHORT_ANSWER')
-        ? fillAnswers[q.id] || ''
-        : currentAnswers[q.id] || ''
+  return questions.value.map((q) => {
+    const answer = hasAnswer(q)
+      ? (q.type === 'MULTIPLE' || q.type === 'FILL_BLANK' || q.type === 'SHORT_ANSWER'
+          ? fillAnswers[q.id] || currentAnswers[q.id] || ''
+          : currentAnswers[q.id] || '')
+      : ''
     return { paperQuestionId: q.id, answer }
   })
 }
@@ -374,7 +399,7 @@ async function initSession() {
     const res = await startSession(paperId)
     const data = res.data
     sessionId.value = data.sessionId
-    paperTitle.value = route.params.title as string || '考试'
+    paperTitle.value = (route.params.title as string) || '考试'
     questions.value = data.questions || []
     if (data.deadline) {
       timeRemaining.value = Math.max(0, Math.floor((new Date(data.deadline).getTime() - Date.now()) / 1000))
@@ -405,8 +430,20 @@ async function autoSubmit() {
   await confirmSubmit()
 }
 
-async function handleSubmit() {
-  showSubmitConfirm.value = true
+/** 交卷二次确认（未答提醒随弹窗内容展示） */
+function handleSubmit() {
+  if (!sessionId.value) return
+  const answered = answeredCount.value
+  const remain = unansweredCount.value
+  const content = remain > 0
+    ? `已答 ${answered} 题，还有 ${remain} 道题未作答。确定要提交试卷吗？`
+    : `已答 ${answered} 题，确定要提交试卷吗？`
+  confirm({
+    title: '确认交卷',
+    content,
+    positiveText: '确认交卷',
+    onPositiveClick: confirmSubmit
+  })
 }
 
 async function confirmSubmit() {
@@ -422,7 +459,6 @@ async function confirmSubmit() {
     message.error('交卷失败')
   } finally {
     submitting.value = false
-    showSubmitConfirm.value = false
   }
 }
 
@@ -447,8 +483,8 @@ async function restoreSession() {
     const res = await getSession(sessionId.value)
     const data = res.data
     if (data.currentAnswers) {
-      data.currentAnswers.forEach((a: any) => {
-        const q = questions.value.find((q: any) => q.id === a.paperQuestionId)
+      data.currentAnswers.forEach((a: AnswerItem) => {
+        const q = questions.value.find((item) => item.id === a.paperQuestionId)
         if (q) {
           if (q.type === 'FILL_BLANK' || q.type === 'SHORT_ANSWER') {
             fillAnswers[q.id] = a.userAnswer
@@ -477,3 +513,12 @@ onUnmounted(() => {
   document.removeEventListener('visibilitychange', handleVisibilityChange)
 })
 </script>
+
+<style scoped>
+.exam-stem :deep(.markdown-body) {
+  font-size: 17px;
+  line-height: var(--leading-relaxed);
+  color: var(--text-primary);
+  font-weight: var(--font-medium);
+}
+</style>

@@ -1,5 +1,5 @@
 import request from './request'
-import type { ApiResponse, PageResult, QuestionBank, User } from '@/types'
+import type { ApiResponse, PageResult, QuestionBank, BankCollaborator } from '@/types'
 
 export interface CreateBankParams {
   name: string
@@ -39,27 +39,11 @@ export function getBankDetail(id: number | string) {
 }
 
 export function getCollaborators(bankId: number | string) {
-  return request.get<ApiResponse<User[]>>(`/banks/${bankId}/collaborators`)
+  return request.get<ApiResponse<BankCollaborator[]>>(`/banks/${bankId}/collaborators`)
 }
 
 export function transferBank(id: number | string, targetUserId: number) {
   return request.post<ApiResponse<null>>(`/banks/${id}/transfer`, { targetUserId })
-}
-
-export function create(data: CreateBankParams) {
-  return request.post<ApiResponse<QuestionBank>>('/banks', data)
-}
-
-export function list(params?: BankListParams) {
-  return request.get<ApiResponse<PageResult<QuestionBank>>>('/banks', { params })
-}
-
-export function getById(id: number) {
-  return request.get<ApiResponse<QuestionBank>>(`/banks/${id}`)
-}
-
-export function update(id: number, data: UpdateBankParams) {
-  return request.put<ApiResponse<QuestionBank>>(`/banks/${id}`, data)
 }
 
 export function updateBank(id: number | string, data: UpdateBankParams) {
@@ -76,10 +60,6 @@ export function toggleVisibility(id: number, isPublic: boolean) {
 
 export function transfer(id: number, targetUserId: number) {
   return request.post<ApiResponse<null>>(`/banks/${id}/transfer`, { targetUserId })
-}
-
-export function listCollaborators(bankId: number) {
-  return request.get<ApiResponse<User[]>>(`/banks/${bankId}/collaborators`)
 }
 
 export function addCollaborator(bankId: number | string, userId: number) {
