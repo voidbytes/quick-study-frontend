@@ -1,6 +1,9 @@
 import axios from 'axios'
 import type { AxiosInstance, AxiosRequestConfig, InternalAxiosRequestConfig, AxiosResponse } from 'axios'
 import { TOKEN_KEY, REFRESH_TOKEN_KEY } from '@/utils/constants'
+import { createLogger } from '@/utils/logger'
+
+const log = createLogger('http')
 
 /**
  * 响应拦截器将 AxiosResponse 解包为 response.data（即 ApiResponse<T>），
@@ -48,9 +51,12 @@ request.interceptors.request.use(
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`
     }
+    const method = (config.method || 'get').toUpperCase()
+    log.debug(`${method} ${config.url ?? ''}`, config.params ? { params: config.params } : undefined)
     return config
   },
   error => {
+    log.error('请求配置错误', error)
     return Promise.reject(error)
   }
 )
@@ -67,6 +73,8 @@ request.interceptors.response.use(
     const data = response.data
     // 检查业务状态码，非0表示业务错误，转为reject以便统一处理
     if (data && data.code !== undefined && data.code !== 0) {
+      const method = (response.config.method || 'get').toUpperCase()
+      log.warn(`${method} ${response.config.url ?? ''} 业务失败 code=${data.code}`, data.message)
       const error = new Error(data.message || '业务错误')
       ;(error as any).response = response
       return Promise.reject(error)
@@ -76,11 +84,15 @@ request.interceptors.response.use(
   async error => {
     const { response, config } = error
     if (!response) {
+      log.warn('网络错误(无响应)', config?.url ?? '', error?.message ?? '')
       return Promise.reject(error)
     }
+    const method = (config?.method || 'get').toUpperCase()
+    const url = config?.url ?? ''
 
     // 401 未授权 - 尝试刷新 token
     if (response.status === 401 && !config._retry) {
+      log.info(`${method} ${url} 401，尝试刷新 token`)
       if (isRefreshing) {
         return new Promise(resolve => {
           addRefreshSubscriber((token: string) => {
@@ -96,6 +108,7 @@ request.interceptors.response.use(
       const refreshToken = localStorage.getItem(REFRESH_TOKEN_KEY)
       if (!refreshToken) {
         isRefreshing = false
+        log.warn('401 且无 refreshToken，跳转登录页')
         localStorage.removeItem(TOKEN_KEY)
         localStorage.removeItem(REFRESH_TOKEN_KEY)
         localStorage.removeItem('quick-study-user-info')
@@ -109,12 +122,14 @@ request.interceptors.response.use(
         localStorage.setItem(TOKEN_KEY, newToken)
         localStorage.setItem(REFRESH_TOKEN_KEY, newRefreshToken)
         isRefreshing = false
+        log.info('token 刷新成功')
         onRefreshed(newToken)
         config.headers.Authorization = `Bearer ${newToken}`
         return request(config)
-      } catch {
+      } catch (refreshErr) {
         isRefreshing = false
         refreshSubscribers = []
+        log.error('token 刷新失败，跳转登录页', refreshErr)
         localStorage.removeItem(TOKEN_KEY)
         localStorage.removeItem(REFRESH_TOKEN_KEY)
         localStorage.removeItem('quick-study-user-info')
@@ -125,16 +140,19 @@ request.interceptors.response.use(
 
     // 403 权限不足
     if (response.status === 403) {
+      log.warn(`${method} ${url} 403 权限不足`)
       window.$message?.error('权限不足，无法执行此操作')
       return Promise.reject(error)
     }
 
     // 500 服务器错误
     if (response.status >= 500) {
+      log.error(`${method} ${url} ${response.status} 服务器错误`)
       window.$message?.error('服务器错误，请稍后重试')
       return Promise.reject(error)
     }
 
+    log.warn(`${method} ${url} HTTP ${response.status}`)
     return Promise.reject(error)
   }
 )

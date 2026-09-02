@@ -34,7 +34,7 @@ import { useRoute, useRouter } from 'vue-router'
 const route = useRoute()
 const router = useRouter()
 
-const isLogin = computed(() => route.name === 'Login')
+const isLogin = computed(() => route.path.startsWith('/login'))
 
 function go(path: string) {
   if (route.path !== path) {

@@ -2,7 +2,10 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { User } from '@/types'
 import { TOKEN_KEY, REFRESH_TOKEN_KEY, USER_INFO_KEY } from '@/utils/constants'
+import { createLogger } from '@/utils/logger'
 import * as authApi from '@/api/auth'
+
+const log = createLogger('auth')
 
 export interface LoginParams {
   username: string
@@ -49,6 +52,7 @@ export const useAuthStore = defineStore('auth', () => {
     saveUserInfo(newUserInfo)
     localStorage.setItem(TOKEN_KEY, accessToken)
     localStorage.setItem(REFRESH_TOKEN_KEY, newRefreshToken)
+    log.info(`登录成功 user=${username} id=${userId} role=${role}`)
   }
 
   async function register(data: authApi.RegisterParams) {
@@ -61,19 +65,21 @@ export const useAuthStore = defineStore('auth', () => {
     saveUserInfo(newUserInfo)
     localStorage.setItem(TOKEN_KEY, accessToken)
     localStorage.setItem(REFRESH_TOKEN_KEY, newRefreshToken)
+    log.info(`注册成功 user=${username} id=${userId}`)
   }
 
   async function logout() {
     try {
       await authApi.logout()
-    } catch {
-      // 忽略退出登录时的错误
+    } catch (e) {
+      log.warn('退出登录接口调用失败（继续清理本地态）', e)
     }
     token.value = null
     refreshToken.value = null
     saveUserInfo(null)
     localStorage.removeItem(TOKEN_KEY)
     localStorage.removeItem(REFRESH_TOKEN_KEY)
+    log.info('已登出，清理本地凭证')
   }
 
   async function doRefreshToken() {
@@ -86,6 +92,7 @@ export const useAuthStore = defineStore('auth', () => {
     refreshToken.value = newRefreshToken
     localStorage.setItem(TOKEN_KEY, newToken)
     localStorage.setItem(REFRESH_TOKEN_KEY, newRefreshToken)
+    log.debug('手动刷新 token 成功')
   }
 
   return {

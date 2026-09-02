@@ -1,6 +1,9 @@
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { TOKEN_KEY } from '@/utils/constants'
+import { createLogger } from '@/utils/logger'
+
+const log = createLogger('router')
 
 const routes: RouteRecordRaw[] = [
   {
@@ -196,11 +199,13 @@ router.beforeEach((to, _from, next) => {
   const requiresAuth = to.meta.requiresAuth !== false
 
   if (requiresAuth && !token) {
+    log.info(`访问受限页面 ${to.fullPath} → 重定向登录`)
     next({ name: 'Login', query: { redirect: to.fullPath } })
     return
   }
 
   if (!requiresAuth && token && (to.name === 'Login' || to.name === 'Register')) {
+    log.info('已登录访问认证页 → 回首页')
     next({ name: 'Home' })
     return
   }
@@ -209,12 +214,17 @@ router.beforeEach((to, _from, next) => {
   if (to.meta.requiresAdmin) {
     const authStore = useAuthStore()
     if (!authStore.isAdmin) {
+      log.warn(`非管理员访问管理页 ${to.fullPath}，拦截`)
       next({ name: 'Home' })
       return
     }
   }
 
   next()
+})
+
+router.afterEach(to => {
+  log.debug(`导航完成 → ${to.fullPath}`)
 })
 
 export default router
