@@ -40,11 +40,12 @@
           @update:value="handleSearch"
         />
         <n-select
-          v-model:value="filter.tagId"
+          v-model:value="filter.tagIds"
           :options="tagOptions"
-          placeholder="标签"
-          style="width: 120px"
+          placeholder="标签（可多选）"
+          multiple
           clearable
+          style="width: 200px"
           @update:value="handleSearch"
         />
         <n-input
@@ -100,7 +101,7 @@ const filter = reactive({
   type: null as string | null,
   difficulty: null as string | null,
   status: null as string | null,
-  tagId: null as number | null,
+  tagIds: [] as number[],
   keyword: ''
 })
 
@@ -253,7 +254,7 @@ async function fetchList() {
     if (filter.type) params.type = filter.type
     if (filter.difficulty) params.difficulty = filter.difficulty
     if (filter.status) params.status = filter.status
-    if (filter.tagId) params.tagId = filter.tagId
+    if (filter.tagIds.length) params.tagIds = filter.tagIds
     if (filter.keyword) params.keyword = filter.keyword
 
     const res = await getAllQuestions(params)
@@ -276,7 +277,7 @@ function handleReset() {
   filter.type = null
   filter.difficulty = null
   filter.status = null
-  filter.tagId = null
+  filter.tagIds = []
   filter.keyword = ''
   pagination.page = 1
   fetchList()

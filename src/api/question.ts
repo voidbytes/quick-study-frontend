@@ -32,7 +32,7 @@ export interface QuestionListParams {
   type?: string
   difficulty?: string
   keyword?: string
-  tagId?: number
+  tagIds?: number[]
   status?: string
   sortBy?: string
   sortOrder?: string

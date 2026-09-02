@@ -33,6 +33,15 @@
         clearable
         @update:value="handleSearch"
       />
+      <n-select
+        v-model:value="filterTagIds"
+        :options="tagOptions"
+        placeholder="标签（可多选）"
+        multiple
+        clearable
+        style="width: 200px"
+        @update:value="handleSearch"
+      />
       <n-button v-if="authStore.isAdmin" type="primary" @click="router.push(`/banks/${bankId}/questions/create`)">
         创建题目
       </n-button>
@@ -58,8 +67,9 @@
 import { ref, reactive, h, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useMessage, useDialog } from 'naive-ui'
-import type { DataTableColumn } from 'naive-ui'
+import type { DataTableColumn, SelectOption } from 'naive-ui'
 import { getQuestionList, deleteQuestion, updateSort } from '@/api/question'
+import { getTagList } from '@/api/tag'
 import { useAuthStore } from '@/stores/auth'
 import dayjs from 'dayjs'
 
@@ -77,6 +87,8 @@ const searchKeyword = ref('')
 const filterType = ref<string | null>(null)
 const filterDifficulty = ref<string | null>(null)
 const filterStatus = ref<string | null>(null)
+const filterTagIds = ref<number[]>([])
+const tagOptions = ref<SelectOption[]>([])
 const questionList = ref<any[]>([])
 const dragIndex = ref<number | null>(null)
 
@@ -155,6 +167,15 @@ const columns: DataTableColumn<any>[] = [
     }
   },
   {
+    title: '标签',
+    key: 'tags',
+    width: 160,
+    render(row) {
+      if (!row.tags || row.tags.length === 0) return '-'
+      return row.tags.map((t: any) => t.name).join(', ')
+    }
+  },
+  {
     title: '创建时间',
     key: 'createdAt',
     width: 160,
@@ -188,6 +209,7 @@ async function fetchList() {
       type: filterType.value ?? undefined,
       difficulty: filterDifficulty.value || undefined,
       status: filterStatus.value || undefined,
+      tagIds: filterTagIds.value.length ? filterTagIds.value : undefined,
       keyword: searchKeyword.value || undefined
     })
     questionList.value = res.data.records || []
@@ -196,6 +218,18 @@ async function fetchList() {
     message.error('加载题目列表失败')
   } finally {
     loading.value = false
+  }
+}
+
+async function fetchTagOptions() {
+  try {
+    const res = await getTagList()
+    tagOptions.value = (res.data || []).map((t: any) => ({
+      label: t.name,
+      value: t.id
+    }))
+  } catch {
+    // 忽略错误
   }
 }
 
@@ -236,6 +270,7 @@ function handleDownloadTemplate() {
 }
 
 onMounted(() => {
+  fetchTagOptions()
   fetchList()
 })
 </script>
