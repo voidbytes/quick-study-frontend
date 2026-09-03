@@ -15,8 +15,22 @@ const props = withDefaults(
   { content: '' }
 )
 
+/** 存量纯文本内容（如旧版纯文本答案）无换行渲染，按纯文本转义并保留换行。
+ *  外层包 <p>：DOMPurify 对"裸文本+标签"混合串会丢弃首个标签前的文本（jsdom/浏览器解析差异） */
+const normalized = computed(() => {
+  const raw = props.content ?? ''
+  if (!raw) return ''
+  const hasTag = /<[a-z][^>]*>/i.test(raw)
+  if (hasTag) return raw
+  return `<p>${raw
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/\n/g, '<br>')}</p>`
+})
+
 const sanitized = computed(() =>
-  DOMPurify.sanitize(props.content ?? '', {
+  DOMPurify.sanitize(normalized.value, {
     USE_PROFILES: { html: true },
     ADD_ATTR: ['target']
   })

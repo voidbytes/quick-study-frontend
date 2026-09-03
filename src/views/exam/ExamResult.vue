@@ -88,17 +88,28 @@
               <RichText :content="parseQuestionContent(q.content)" />
             </div>
 
-            <!-- 答案对比 -->
+            <!-- 答案对比（简答题为富文本 HTML，用 RichText 渲染；客观题保持文本插值） -->
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
               <div class="px-4 py-3 rounded-lg" :class="answerBoxClass(q.isCorrect)">
                 <div class="text-xs text-neutral-500 mb-1">你的答案</div>
-                <div class="text-sm font-semibold" :class="answerTextClass(q.isCorrect)">
+                <RichText
+                  v-if="q.type === 'SHORT_ANSWER'"
+                  :content="formatAnswer(q, q.yourAnswer)"
+                  class="answer-rich"
+                  :class="answerTextClass(q.isCorrect)"
+                />
+                <div v-else class="text-sm font-semibold" :class="answerTextClass(q.isCorrect)">
                   {{ formatAnswer(q, q.yourAnswer) }}
                 </div>
               </div>
               <div v-if="q.correctAnswer" class="px-4 py-3 rounded-lg bg-success-50">
                 <div class="text-xs text-neutral-500 mb-1">正确答案</div>
-                <div class="text-sm font-semibold text-success-700">
+                <RichText
+                  v-if="q.type === 'SHORT_ANSWER'"
+                  :content="formatAnswer(q, q.correctAnswer)"
+                  class="answer-rich text-success-700"
+                />
+                <div v-else class="text-sm font-semibold text-success-700">
                   {{ formatAnswer(q, q.correctAnswer) }}
                 </div>
               </div>
@@ -106,7 +117,7 @@
 
             <!-- 解析 -->
             <div v-if="q.analysis" class="flex items-start gap-2 px-4 py-3 rounded-lg bg-info-50 text-sm text-info-600 mb-4">
-              {{ q.analysis }}
+              <RichText :content="q.analysis" class="analysis-rich" />
             </div>
 
             <!-- 得分 -->
@@ -257,5 +268,14 @@ onMounted(() => {
   font-size: var(--text-base);
   color: var(--text-primary);
   line-height: var(--leading-relaxed);
+}
+.answer-rich :deep(.markdown-body),
+.analysis-rich :deep(.markdown-body) {
+  font-size: var(--text-sm);
+  line-height: var(--leading-relaxed);
+}
+.answer-rich :deep(img),
+.analysis-rich :deep(img) {
+  max-width: 100%;
 }
 </style>

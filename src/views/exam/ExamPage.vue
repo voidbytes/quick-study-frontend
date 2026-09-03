@@ -152,17 +152,20 @@
               />
             </template>
 
-            <!-- 简答题 -->
+            <!-- 简答题：富媒体作答（富文本 + 图片，与题目创建侧同款编辑器） -->
             <template v-if="currentQuestion && currentQuestion.type === 'SHORT_ANSWER'">
-              <label class="block text-sm font-medium text-neutral-700 mb-2">请填写答案</label>
-              <n-input
+              <label class="block text-sm font-medium text-neutral-700 mb-2">
+                请作答（支持文字、图片与公式）
+              </label>
+              <MarkdownEditor
                 :key="`short-${currentQuestion.id}`"
-                :value="fillAnswers[currentQuestion.id] || ''"
-                type="textarea"
-                placeholder="请输入答案"
-                :rows="8"
-                @update:value="(v: string) => { fillAnswers[currentQuestion.id] = v }"
-                @blur="saveFillAnswer"
+                :model-value="fillAnswers[currentQuestion.id] || ''"
+                mode="edit"
+                height="280px"
+                placeholder="输入文字作答，可通过工具栏插入图片（最多 9 张）"
+                :max-images="9"
+                :disabled-menus="answerDisabledMenus"
+                @update:model-value="handleShortAnswerChange"
               />
             </template>
           </div>
@@ -197,6 +200,7 @@ import type { QuestionNavStatus } from '@/components/common/questionNav'
 import QuestionNavGrid from '@/components/common/QuestionNavGrid.vue'
 import QuestionOption from '@/components/common/QuestionOption.vue'
 import RichText from '@/components/common/RichText.vue'
+import MarkdownEditor from '@/components/MarkdownEditor.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -278,7 +282,14 @@ const formattedTime = computed(() => {
 
 function hasAnswer(q: ExamQuestion): boolean {
   if (q.type === 'MULTIPLE') return !!currentAnswers[q.id]?.length
-  if (q.type === 'FILL_BLANK' || q.type === 'SHORT_ANSWER') return !!fillAnswers[q.id]?.trim()
+  if (q.type === 'FILL_BLANK') return !!fillAnswers[q.id]?.trim()
+  if (q.type === 'SHORT_ANSWER') {
+    const ans = fillAnswers[q.id]
+    if (!ans) return false
+    // 富文本答案：含图片即算已答；纯文字需 strip 标签后非空
+    if (ans.includes('<img')) return true
+    return !!ans.replace(/<[^>]+>/g, '').trim()
+  }
   return !!currentAnswers[q.id]
 }
 
@@ -335,6 +346,24 @@ function toggleMultipleAnswer(value: string) {
 function saveFillAnswer() {
   saveToLocal()
   autoSave()
+}
+
+/** 答题模式禁用的编辑器菜单：保留加粗/斜体/删除线/图片/公式，去掉低频排版项 */
+const answerDisabledMenus = ['title', 'quote', 'code', 'table', 'hr', 'link', 'clear', 'sub', 'sup']
+
+/** 富文本编辑无 blur 事件，change 防抖 2s 自动保存草稿（考试切屏计作弊，用户不会主动触发 blur） */
+let shortAnswerSaveTimer: ReturnType<typeof setTimeout> | null = null
+
+function handleShortAnswerChange(v: string) {
+  const q = currentQuestion.value
+  if (!q) return
+  fillAnswers[q.id] = v
+  saveToLocal()
+  if (shortAnswerSaveTimer) clearTimeout(shortAnswerSaveTimer)
+  shortAnswerSaveTimer = setTimeout(() => {
+    shortAnswerSaveTimer = null
+    autoSave()
+  }, 2000)
 }
 
 function isMarkedForReview(index: number) {
@@ -517,6 +546,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   if (timerHandle.value) clearInterval(timerHandle.value)
+  if (shortAnswerSaveTimer) clearTimeout(shortAnswerSaveTimer)
   document.removeEventListener('visibilitychange', handleVisibilityChange)
 })
 </script>
