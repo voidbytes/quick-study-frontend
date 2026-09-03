@@ -81,7 +81,8 @@ export function aiSuggest(sessionId: string, answerId: number) {
   )
 }
 
-export function keywordSuggest(sessionId: string, answerId: number, data?: { keywords?: string[] }) {
+/** keywords 可省略：后端按题目快照/参考答案自动抽取关键词兜底 */
+export function keywordSuggest(sessionId: string, answerId: number, data: { keywords?: string[] } = {}) {
   return request.post<ApiResponse<KeywordSuggestResult>>(
     `/grading/sessions/${sessionId}/answers/${answerId}/keyword-suggest`,
     data

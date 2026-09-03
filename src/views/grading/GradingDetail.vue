@@ -126,6 +126,22 @@
                   v-if="suggestionTexts[answerKey(answer)]"
                   class="mt-3 bg-primary-50 border border-primary-100 rounded-lg px-4 py-3 text-sm text-neutral-700 leading-relaxed"
                 >
+                  <!-- 关键词命中明细 -->
+                  <div
+                    v-if="matchedKeywords[answerKey(answer)]?.length"
+                    class="flex flex-wrap gap-1.5 mb-2"
+                  >
+                    <n-tag
+                      v-for="m in matchedKeywords[answerKey(answer)]"
+                      :key="m.keyword"
+                      size="small"
+                      round
+                      :bordered="false"
+                      :type="m.found ? 'success' : 'default'"
+                    >
+                      {{ m.keyword }} {{ m.found ? '✓' : '✗' }}
+                    </n-tag>
+                  </div>
                   {{ suggestionTexts[answerKey(answer)] }}
                 </div>
               </section>
@@ -135,6 +151,33 @@
       </template>
     </n-spin>
     <LoadError v-else :description="loadError" :retrying="loading" @retry="fetchDetail" />
+
+    <!-- 关键词评分弹窗 -->
+    <n-modal v-model:show="kwDialogShow" preset="card" title="关键词评分" style="width: 480px">
+      <div class="space-y-4">
+        <p class="text-sm text-neutral-600 leading-relaxed">
+          填写关键词（逗号、顿号或空格分隔），系统按命中比例给出建议分。<br />
+          留空则自动从参考答案中抽取关键词。
+        </p>
+        <n-input
+          v-model:value="kwInput"
+          type="textarea"
+          :rows="3"
+          placeholder="例：组合式 API，setup，响应式"
+        />
+        <div class="flex justify-end gap-2">
+          <n-button size="small" @click="kwDialogShow = false">取消</n-button>
+          <n-button
+            size="small"
+            type="primary"
+            :loading="kwLoadingId === (kwTargetAnswer ? String(kwTargetAnswer.id) : '')"
+            @click="confirmKeywordSuggest"
+          >
+            开始匹配
+          </n-button>
+        </div>
+      </div>
+    </n-modal>
   </div>
 </template>
 
@@ -165,6 +208,12 @@ const aiLoadingId = ref('')
 const kwLoadingId = ref('')
 const saveLoadingId = ref('')
 const suggestionTexts = ref<Record<string, string>>({})
+const matchedKeywords = ref<Record<string, { keyword: string; found: boolean }[]>>({})
+
+// 关键词评分弹窗
+const kwDialogShow = ref(false)
+const kwInput = ref('')
+const kwTargetAnswer = ref<GradingAnswerDetail | null>(null)
 
 const answers = computed(() => session.value?.answers ?? [])
 
@@ -239,7 +288,8 @@ function handleAiError(err: unknown) {
   const code = e?.response?.data?.code
   if (code === 60601) message.error('未配置 AI Key')
   else if (code === 60602) message.error('AI 调用失败')
-  else message.error(e?.response?.data?.message || '获取 AI 建议失败')
+  else if (code === 60604) message.error(e?.response?.data?.message || '无可用关键词')
+  else message.error(e?.response?.data?.message || '获取建议失败')
 }
 
 async function handleSaveScore(answer: GradingAnswerDetail) {
@@ -278,17 +328,40 @@ async function handleAiSuggest(answer: GradingAnswerDetail) {
   }
 }
 
-async function handleKeywordSuggest(answer: GradingAnswerDetail) {
+/** 打开关键词评分弹窗：可填关键词（逗号/顿号/空白分隔），留空则后端按参考答案自动抽取 */
+function handleKeywordSuggest(answer: GradingAnswerDetail) {
   const key = answerKey(answer)
   if (!key) {
     message.warning('该题暂无作答记录，无法评分')
     return
   }
+  kwTargetAnswer.value = answer
+  kwInput.value = ''
+  kwDialogShow.value = true
+}
+
+/** 解析关键词输入：支持中英文逗号、顿号、分号及空白分隔 */
+function parseKeywordInput(input: string): string[] {
+  return input
+    .split(/[,，、;；\s]+/)
+    .map(k => k.trim())
+    .filter(k => k.length > 0)
+}
+
+async function confirmKeywordSuggest() {
+  const answer = kwTargetAnswer.value
+  if (!answer) return
+  const key = answerKey(answer)
+  if (!key) return
+
+  const keywords = parseKeywordInput(kwInput.value)
   kwLoadingId.value = key
   try {
-    const res = await keywordSuggest(sessionId, answer.id as number)
+    const res = await keywordSuggest(sessionId, answer.id as number, keywords.length ? { keywords } : {})
     answer.score = res.data.suggestedScore
     suggestionTexts.value[key] = res.data.reasoning || ''
+    matchedKeywords.value[key] = res.data.matchedKeywords || []
+    kwDialogShow.value = false
     message.success(`关键词匹配建议得分：${res.data.suggestedScore}`)
   } catch (err) {
     handleAiError(err)
