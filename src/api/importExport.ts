@@ -13,14 +13,18 @@ async function ensureBlob(promise: Promise<Blob>): Promise<Blob> {
   const blob = await promise
   if (blob.type && blob.type.includes('application/json')) {
     const text = await blob.text()
-    let msg = '导出失败'
+    let json: any = null
+    let parseFailed = false
     try {
-      const json = JSON.parse(text)
-      if (json?.message) msg = json.message
+      json = JSON.parse(text)
     } catch {
-      // 非 JSON 兜底用默认提示
+      parseFailed = true
     }
-    throw new Error(msg)
+    // 仅当解析失败（非 JSON 异常）或为 ApiResponse（含 code 字段）时才视为业务错误；
+    // 导出文件本身也是合法 JSON，不能仅凭 Content-Type 判定失败
+    if (parseFailed || json?.code !== undefined) {
+      throw new Error(json?.message || '导出失败')
+    }
   }
   return blob
 }
