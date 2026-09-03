@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>考试结果 — Quick Study</title>
+  <link rel="stylesheet" href="styles/mockup.css">
+  <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
+  <script nomodule src="https://cdn.jsdelivr.net/npm/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
+  <style>
+    /* --- Result Hero Card --- */
+    .result-hero {
+      background: var(--bg-card);
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius-xl);
+      padding: var(--space-8) var(--space-6);
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+      margin-bottom: var(--space-6);
+    }
+    .result-hero::before {
+      content: '';
+      position: absolute;
+      top: -60px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 260px;
+      height: 260px;
+      background: radial-gradient(circle, rgba(34, 181, 112, 0.08) 0%, transparent 70%);
+      border-radius: 50%;
+      pointer-events: none;
+    }
+    .result-hero .pass-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-2);
+      padding: 6px var(--space-4);
+      border-radius: var(--radius-full);
+      background: var(--color-success-50);
+      color: var(--color-success-600);
+      font-size: var(--text-base);
+      font-weight: var(--font-semibold);
+      margin-bottom: var(--space-4);
+    }
+    .result-hero .pass-badge ion-icon { font-size: 18px; }
+    .result-hero .score-row {
+      display: flex;
+      align-items: baseline;
+      justify-content: center;
+      gap: var(--space-1);
+      margin-bottom: var(--space-1);
+      position: relative;
+    }
+    .result-hero .score-value {
+      font-size: 56px;
+      font-weight: var(--font-bold);
+      color: var(--color-success-500);
+      line-height: 1;
+    }
+    .result-hero .score-total {
+      font-size: var(--text-2xl);
+      color: var(--text-tertiary);
+      font-weight: var(--font-medium);
+    }
+    .result-hero .score-label {
+      font-size: var(--text-sm);
+      color: var(--text-tertiary);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: var(--space-6);
+    }
+    .result-hero .stats-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: var(--space-4);
+      padding-top: var(--space-6);
+      border-top: 1px solid var(--border-default);
+      position: relative;
+    }
+    .result-hero .hero-stat {
+      text-align: center;
+    }
+    .result-hero .hero-stat-label {
+      font-size: var(--text-xs);
+      color: var(--text-tertiary);
+      margin-bottom: var(--space-1);
+    }
+    .result-hero .hero-stat-value {
+      font-size: var(--text-xl);
+      font-weight: var(--font-bold);
+      color: var(--text-primary);
+    }
+    .result-hero .hero-stat-value.success { color: var(--color-success-600); }
+
+    /* --- Filter Tabs --- */
+    .filter-tabs {
+      display: flex;
+      gap: var(--space-2);
+      background: var(--color-neutral-100);
+      border-radius: var(--radius-md);
+      padding: 3px;
+    }
+    .filter-tab {
+      padding: var(--space-2) var(--space-4);
+      border-radius: var(--radius-sm);
+      font-size: var(--text-sm);
+      font-weight: var(--font-medium);
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all var(--transition-base);
+      white-space: nowrap;
+    }
+    .filter-tab:hover { color: var(--text-primary); }
+    .filter-tab.active {
+      background: var(--bg-card);
+      color: var(--text-brand);
+      box-shadow: var(--shadow-xs);
+    }
+
+    /* --- Question Review Card --- */
+    .review-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius-lg);
+      padding: var(--space-5);
+      transition: all var(--transition-base);
+    }
+    .review-card:hover { border-color: var(--color-primary-300); }
+    .review-card-header {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      margin-bottom: var(--space-3);
+      flex-wrap: wrap;
+    }
+    .review-q-num {
+      width: 28px;
+      height: 28px;
+      border-radius: var(--radius-md);
+      background: var(--color-primary-50);
+      color: var(--text-brand);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: var(--text-sm);
+      font-weight: var(--font-bold);
+      flex-shrink: 0;
+    }
+    .review-q-content {
+      font-size: var(--text-base);
+      color: var(--text-primary);
+      line-height: var(--leading-relaxed);
+      margin-bottom: var(--space-4);
+    }
+    .review-answer-block {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-3);
+      margin-bottom: var(--space-4);
+    }
+    .review-answer-box {
+      padding: var(--space-3) var(--space-4);
+      border-radius: var(--radius-md);
+      background: var(--bg-subtle);
+    }
+    .review-answer-box.correct { background: var(--color-success-50); }
+    .review-answer-box.wrong { background: var(--color-error-50); }
+    .review-answer-box.pending { background: var(--color-warning-50); }
+    .review-answer-label {
+      font-size: var(--text-xs);
+      color: var(--text-tertiary);
+      margin-bottom: var(--space-1);
+    }
+    .review-answer-value {
+      font-size: var(--text-sm);
+      font-weight: var(--font-semibold);
+      color: var(--text-primary);
+    }
+    .review-answer-value.text-success { color: var(--color-success-600); }
+    .review-answer-value.text-error { color: var(--color-error-600); }
+    .review-answer-value.text-warning { color: var(--color-warning-600); }
+    .review-essay-text {
+      font-size: var(--text-sm);
+      color: var(--text-secondary);
+      line-height: var(--leading-normal);
+      padding: var(--space-3) var(--space-4);
+      border-radius: var(--radius-md);
+      background: var(--color-warning-50);
+      margin-bottom: var(--space-4);
+      border-left: 3px solid var(--color-warning-500);
+    }
+    .review-analysis {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--space-2);
+      padding: var(--space-3) var(--space-4);
+      border-radius: var(--radius-md);
+      background: var(--color-info-50);
+      margin-bottom: var(--space-4);
+      font-size: var(--text-sm);
+      color: var(--color-info-600);
+      line-height: var(--leading-normal);
+    }
+    .review-analysis ion-icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+    .review-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-top: var(--space-3);
+      border-top: 1px solid var(--border-default);
+    }
+    .review-score {
+      font-size: var(--text-sm);
+      color: var(--text-secondary);
+    }
+    .review-score-value {
+      font-size: var(--text-lg);
+      font-weight: var(--font-bold);
+    }
+    .review-score-value.success { color: var(--color-success-600); }
+    .review-score-value.error { color: var(--color-error-600); }
+    .review-score-value.warning { color: var(--color-warning-600); }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-logo">
+        <div class="sidebar-logo-icon">QS</div>
+        <span class="sidebar-logo-text">Quick Study</span>
+      <button class="sidebar-toggle" data-tooltip="折叠侧边栏">
+        <ion-icon name="chevron-back-outline"></ion-icon>
+      </button>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="sidebar-nav-section">
+          <div class="sidebar-nav-item"><ion-icon name="home-outline"></ion-icon><span>首页</span></div>
+          <div class="sidebar-nav-item"><ion-icon name="library-outline"></ion-icon><span>题库</span></div>
+          <div class="sidebar-nav-item"><ion-icon name="document-text-outline"></ion-icon><span>题目</span></div>
+          <div class="sidebar-nav-item active"><ion-icon name="file-tray-full-outline"></ion-icon><span>试卷</span></div>
+        </div>
+        <div class="sidebar-nav-label">学习中心</div>
+        <div class="sidebar-nav-item"><ion-icon name="game-controller-outline"></ion-icon><span>练习</span></div>
+        <div class="sidebar-nav-item" data-tooltip="错题本"><ion-icon name="close-circle-outline"></ion-icon><span>错题本</span><span class="sidebar-badge">47</span></div>
+        <div class="sidebar-nav-item"><ion-icon name="time-outline"></ion-icon><span>做题记录</span></div>
+        
+        <div class="sidebar-nav-item"><ion-icon name="bar-chart-outline"></ion-icon><span>统计</span></div>
+        <div class="sidebar-nav-item" data-tooltip="通知"><ion-icon name="notifications-outline"></ion-icon><span>通知</span><span class="sidebar-badge brand">3</span></div>
+        <div class="sidebar-nav-label">管理</div>
+        <div class="sidebar-nav-item"><ion-icon name="people-outline"></ion-icon><span>用户管理</span></div>
+        <div class="sidebar-nav-item"><ion-icon name="checkmark-done-outline"></ion-icon><span>审核列表</span></div>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="sidebar-nav-item"><ion-icon name="log-out-outline"></ion-icon><span>退出登录</span></div>
+      </div>
+    </aside>
+
+    <!-- Main Area -->
+    <div class="main-area">
+      <header class="app-header">
+        <div class="app-header-left">
+          <div class="breadcrumb">
+            <span>试卷</span>
+            <ion-icon name="chevron-forward-outline" style="font-size:14px;"></ion-icon>
+            <span class="breadcrumb-current">考试结果</span>
+          </div>
+        </div>
+        <div class="app-header-right">
+          <button class="mobile-menu-btn" onclick="document.querySelector('.sidebar').classList.toggle('mobile-open')"><ion-icon name="menu-outline"></ion-icon></button>
+          <div class="header-search">
+            <ion-icon name="search-outline"></ion-icon>
+            <input class="input" type="text" placeholder="搜索题库、题目、试卷..." readonly style="cursor:pointer;" onclick="window.location.href='12-search.html'">
+          </div>
+          <button class="header-action-btn" data-tooltip="暗色模式" onclick="var t=document.documentElement.getAttribute('data-theme');document.documentElement.setAttribute('data-theme',t==='dark'?'light':'dark')"><ion-icon name="moon-outline"></ion-icon></button>
+          <div class="lang-switcher" data-tooltip="语言">
+            <ion-icon name="language-outline"></ion-icon>
+            <span>中文</span>
+            <ion-icon name="chevron-down-outline"></ion-icon>
+          </div>
+          <div style="position:relative;cursor:pointer;">
+            <ion-icon name="notifications-outline" style="font-size:22px;color:var(--text-secondary);"></ion-icon>
+            <span class="badge" style="position:absolute;top:-4px;right:-4px;">3</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+            <div class="avatar" style="background:#5B5FE9;">张</div>
+            <span style="font-size:14px;font-weight:500;">张同学</span>
+            <ion-icon name="chevron-down-outline" style="font-size:16px;color:var(--text-tertiary);"></ion-icon>
+          </div>
+        </div>
+      </header>
+
+      <main class="app-content">
+        <!-- Result Summary Hero Card -->
+        <div class="result-hero">
+          <div class="pass-badge">
+            <ion-icon name="checkmark-circle"></ion-icon>
+            <span>通过</span>
+          </div>
+          <div class="score-row">
+            <span class="score-value">87</span>
+            <span class="score-total">/ 100</span>
+          </div>
+          <div class="score-label">最终得分</div>
+          <div class="stats-row">
+            <div class="hero-stat">
+              <div class="hero-stat-label">客观题得分</div>
+              <div class="hero-stat-value success">72<span style="font-size:14px;color:var(--text-tertiary);font-weight:400;"> / 80</span></div>
+            </div>
+            <div class="hero-stat">
+              <div class="hero-stat-label">主观题得分</div>
+              <div class="hero-stat-value">15<span style="font-size:14px;color:var(--text-tertiary);font-weight:400;"> / 20</span></div>
+            </div>
+            <div class="hero-stat">
+              <div class="hero-stat-label">排名</div>
+              <div class="hero-stat-value">第3名</div>
+            </div>
+            <div class="hero-stat">
+              <div class="hero-stat-label">用时</div>
+              <div class="hero-stat-value">1小时28分</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Answer Review Section -->
+        <div class="card">
+          <div class="card-header">
+            <div style="display:flex;align-items:center;gap:var(--space-3);">
+              <ion-icon name="document-text-outline" style="font-size:20px;color:var(--text-brand);"></ion-icon>
+              <span class="card-title">答题回顾</span>
+              <span class="tag tag-default">共 4 题</span>
+            </div>
+            <div class="filter-tabs">
+              <div class="filter-tab active">全部</div>
+              <div class="filter-tab">正确</div>
+              <div class="filter-tab">错误</div>
+              <div class="filter-tab">待批改</div>
+            </div>
+          </div>
+          <div class="card-body" style="display:flex;flex-direction:column;gap:var(--space-4);">
+
+            <!-- Q1: Correct Single Choice -->
+            <div class="review-card">
+              <div class="review-card-header">
+                <div class="review-q-num">1</div>
+                <span class="tag tag-info">单选</span>
+                <span class="tag tag-default">简单</span>
+                <span class="tag tag-success">正确</span>
+              </div>
+              <div class="review-q-content">以下哪个不是 Java 的基本数据类型？</div>
+              <div class="review-answer-block">
+                <div class="review-answer-box correct">
+                  <div class="review-answer-label">你的答案</div>
+                  <div class="review-answer-value text-success">B. String</div>
+                </div>
+                <div class="review-answer-box correct">
+                  <div class="review-answer-label">正确答案</div>
+                  <div class="review-answer-value text-success">B. String</div>
+                </div>
+              </div>
+              <div class="review-analysis">
+                <ion-icon name="bulb-outline"></ion-icon>
+                <span>Java 的基本数据类型共有 8 种：byte、short、int、long、float、double、char、boolean。String 是引用数据类型，不属于基本数据类型。</span>
+              </div>
+              <div class="review-footer">
+                <span class="review-score">得分</span>
+                <span class="review-score-value success">2 / 2</span>
+              </div>
+            </div>
+
+            <!-- Q2: Wrong Multiple Choice -->
+            <div class="review-card">
+              <div class="review-card-header">
+                <div class="review-q-num">2</div>
+                <span class="tag tag-info">多选</span>
+                <span class="tag tag-default">困难</span>
+                <span class="tag tag-error">错误</span>
+              </div>
+              <div class="review-q-content">关于 Java 集合框架，以下说法正确的有？</div>
+              <div class="review-answer-block">
+                <div class="review-answer-box wrong">
+                  <div class="review-answer-label">你的答案</div>
+                  <div class="review-answer-value text-error">B, C</div>
+                </div>
+                <div class="review-answer-box correct">
+                  <div class="review-answer-label">正确答案</div>
+                  <div class="review-answer-value text-success">B, D</div>
+                </div>
+              </div>
+              <div class="review-analysis">
+                <ion-icon name="bulb-outline"></ion-icon>
+                <span>ArrayList 基于动态数组实现，查询效率高；LinkedList 基于双向链表实现，增删效率高。HashMap 允许 null 键和 null 值，而 Hashtable 不允许。HashMap 不是线程安全的，多线程环境下应使用 ConcurrentHashMap。</span>
+              </div>
+              <div class="review-footer">
+                <span class="review-score">得分</span>
+                <span class="review-score-value error">0 / 3</span>
+              </div>
+            </div>
+
+            <!-- Q3: Pending Essay -->
+            <div class="review-card">
+              <div class="review-card-header">
+                <div class="review-q-num">3</div>
+                <span class="tag tag-primary">简答</span>
+                <span class="tag tag-default">中等</span>
+                <span class="tag tag-warning">待批改</span>
+              </div>
+              <div class="review-q-content">简述 TCP 三次握手的过程。</div>
+              <div class="review-essay-text">
+                TCP 三次握手是建立连接的过程。首先客户端发送 SYN 报文给服务器，进入 SYN_SENT 状态；服务器收到后回复 SYN+ACK 报文，进入 SYN_RCVD 状态；最后客户端再发送 ACK 报文，双方进入 ESTABLISHED 状态...
+              </div>
+              <div class="review-footer">
+                <span class="review-score">得分</span>
+                <span class="review-score-value warning">待批改</span>
+              </div>
+            </div>
+
+            <!-- Q4: Correct True/False -->
+            <div class="review-card">
+              <div class="review-card-header">
+                <div class="review-q-num">4</div>
+                <span class="tag tag-warning">判断</span>
+                <span class="tag tag-default">简单</span>
+                <span class="tag tag-success">正确</span>
+              </div>
+              <div class="review-q-content">Java 是一门面向对象的编程语言。</div>
+              <div class="review-answer-block">
+                <div class="review-answer-box correct">
+                  <div class="review-answer-label">你的答案</div>
+                  <div class="review-answer-value text-success">正确</div>
+                </div>
+                <div class="review-answer-box correct">
+                  <div class="review-answer-label">正确答案</div>
+                  <div class="review-answer-value text-success">正确</div>
+                </div>
+              </div>
+              <div class="review-analysis">
+                <ion-icon name="bulb-outline"></ion-icon>
+                <span>Java 是一门纯粹的面向对象编程语言，支持封装、继承、多态三大特性。虽然 Java 有基本数据类型，但它们都有对应的包装类，整体设计仍然以面向对象为核心。</span>
+              </div>
+              <div class="review-footer">
+                <span class="review-score">得分</span>
+                <span class="review-score-value success">2 / 2</span>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Bottom Actions -->
+        <div style="display:flex;gap:var(--space-3);justify-content:center;margin-top:var(--space-6);">
+          <button class="btn btn-secondary">
+            <ion-icon name="arrow-back-outline"></ion-icon>
+            <span>返回试卷列表</span>
+          </button>
+          <button class="btn btn-ghost">
+            <ion-icon name="document-text-outline"></ion-icon>
+            <span>查看试卷详情</span>
+          </button>
+        </div>
+      </main>
+    </div>
+  </div>
+<button class="back-to-top visible" onclick="window.scrollTo({top:0,behavior:'smooth'})" data-tooltip="回到顶部"><ion-icon name="arrow-up-outline"></ion-icon></button>
+<script>
+    document.querySelector(".sidebar-toggle")?.addEventListener("click", function() {
+      var s=document.querySelector(".sidebar"),m=document.querySelector(".main-area");
+      s.classList.toggle("sidebar-collapsed");m.classList.toggle("main-area-collapsed");
+      var i=this.querySelector("ion-icon");
+      i.setAttribute("name",s.classList.contains("sidebar-collapsed")?"chevron-forward-outline":"chevron-back-outline");
+    });
+    window.addEventListener("scroll",function(){var b=document.querySelector(".back-to-top");if(b)b.classList.toggle("visible",window.scrollY>400)});
+  </script>
+</body>
+</html>

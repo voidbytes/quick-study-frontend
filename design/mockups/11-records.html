@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>做题记录 — Quick Study</title>
+  <link rel="stylesheet" href="styles/mockup.css">
+  <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
+  <script nomodule src="https://cdn.jsdelivr.net/npm/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
+  <style>
+    .page-title {
+      font-size: var(--text-2xl);
+      font-weight: var(--font-bold);
+      color: var(--text-primary);
+      margin-bottom: var(--space-6);
+    }
+
+    /* --- Filter Bar --- */
+    .filter-bar {
+      background: var(--bg-card);
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius-lg);
+      padding: var(--space-4);
+      margin-bottom: var(--space-5);
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      flex-wrap: wrap;
+    }
+    .filter-select {
+      padding: var(--space-2) var(--space-3);
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius-md);
+      background: var(--bg-card);
+      font-size: var(--text-sm);
+      color: var(--text-primary);
+      cursor: pointer;
+      outline: none;
+      transition: all var(--transition-base);
+    }
+    .filter-select:hover { border-color: var(--color-primary-300); }
+    .filter-select:focus { border-color: var(--color-primary-500); box-shadow: 0 0 0 3px rgba(91, 95, 233, 0.12); }
+    .type-tabs {
+      display: flex;
+      gap: 2px;
+      background: var(--color-neutral-100);
+      border-radius: var(--radius-md);
+      padding: 3px;
+    }
+    .type-tab {
+      padding: var(--space-2) var(--space-3);
+      border-radius: var(--radius-sm);
+      font-size: var(--text-sm);
+      font-weight: var(--font-medium);
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all var(--transition-base);
+      white-space: nowrap;
+    }
+    .type-tab:hover { color: var(--text-primary); }
+    .type-tab.active {
+      background: var(--bg-card);
+      color: var(--text-brand);
+      box-shadow: var(--shadow-xs);
+    }
+    .filter-divider {
+      width: 1px;
+      height: 24px;
+      background: var(--border-default);
+    }
+    .search-input-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+    .search-input-wrap ion-icon {
+      position: absolute;
+      left: var(--space-3);
+      font-size: 18px;
+      color: var(--text-tertiary);
+      pointer-events: none;
+    }
+    .search-input {
+      padding: var(--space-2) var(--space-3) var(--space-2) var(--space-8);
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius-md);
+      background: var(--bg-card);
+      font-size: var(--text-sm);
+      color: var(--text-primary);
+      outline: none;
+      transition: all var(--transition-base);
+      width: 220px;
+    }
+    .search-input::placeholder { color: var(--text-tertiary); }
+    .search-input:focus { border-color: var(--color-primary-500); box-shadow: 0 0 0 3px rgba(91, 95, 233, 0.12); }
+
+    /* --- Summary Cards --- */
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: var(--space-5);
+      margin-bottom: var(--space-6);
+    }
+    .summary-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius-lg);
+      padding: var(--space-5);
+      display: flex;
+      align-items: center;
+      gap: var(--space-4);
+    }
+    .summary-card-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      flex-shrink: 0;
+    }
+    .summary-card-icon.brand { background: var(--color-primary-50); color: var(--text-brand); }
+    .summary-card-icon.info { background: var(--color-info-50); color: var(--color-info-600); }
+    .summary-card-icon.success { background: var(--color-success-50); color: var(--color-success-600); }
+    .summary-card-info { flex: 1; }
+    .summary-card-label {
+      font-size: var(--text-sm);
+      color: var(--text-tertiary);
+      margin-bottom: var(--space-1);
+    }
+    .summary-card-value {
+      font-size: var(--text-3xl);
+      font-weight: var(--font-bold);
+      color: var(--text-primary);
+      line-height: 1.2;
+    }
+
+    /* --- Records Table --- */
+    .records-table .time-cell {
+      white-space: nowrap;
+      color: var(--text-secondary);
+      font-size: var(--text-sm);
+    }
+    .records-table .summary-cell {
+      max-width: 260px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: var(--text-primary);
+    }
+    .records-table .answer-cell {
+      font-family: var(--font-mono);
+      font-size: var(--text-sm);
+    }
+    .records-table .score-cell {
+      font-weight: var(--font-bold);
+    }
+    .records-table .action-link {
+      color: var(--text-brand);
+      font-size: var(--text-sm);
+      font-weight: var(--font-medium);
+      cursor: pointer;
+    }
+    .records-table .action-link:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-logo">
+        <div class="sidebar-logo-icon">QS</div>
+        <span class="sidebar-logo-text">Quick Study</span>
+      <button class="sidebar-toggle" data-tooltip="折叠侧边栏">
+        <ion-icon name="chevron-back-outline"></ion-icon>
+      </button>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="sidebar-nav-section">
+          <div class="sidebar-nav-item"><ion-icon name="home-outline"></ion-icon><span>首页</span></div>
+          <div class="sidebar-nav-item"><ion-icon name="library-outline"></ion-icon><span>题库</span></div>
+          <div class="sidebar-nav-item"><ion-icon name="document-text-outline"></ion-icon><span>题目</span></div>
+          <div class="sidebar-nav-item"><ion-icon name="file-tray-full-outline"></ion-icon><span>试卷</span></div>
+        </div>
+        <div class="sidebar-nav-label">学习中心</div>
+        <div class="sidebar-nav-item"><ion-icon name="game-controller-outline"></ion-icon><span>练习</span></div>
+        <div class="sidebar-nav-item" data-tooltip="错题本"><ion-icon name="close-circle-outline"></ion-icon><span>错题本</span><span class="sidebar-badge">47</span></div>
+        <div class="sidebar-nav-item active"><ion-icon name="time-outline"></ion-icon><span>做题记录</span></div>
+        
+        <div class="sidebar-nav-item"><ion-icon name="bar-chart-outline"></ion-icon><span>统计</span></div>
+        <div class="sidebar-nav-item" data-tooltip="通知"><ion-icon name="notifications-outline"></ion-icon><span>通知</span><span class="sidebar-badge brand">3</span></div>
+        <div class="sidebar-nav-label">管理</div>
+        <div class="sidebar-nav-item"><ion-icon name="people-outline"></ion-icon><span>用户管理</span></div>
+        <div class="sidebar-nav-item"><ion-icon name="checkmark-done-outline"></ion-icon><span>审核列表</span></div>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="sidebar-nav-item"><ion-icon name="log-out-outline"></ion-icon><span>退出登录</span></div>
+      </div>
+    </aside>
+
+    <!-- Main Area -->
+    <div class="main-area">
+      <header class="app-header">
+        <div class="app-header-left">
+          <div class="breadcrumb">
+            <span class="breadcrumb-current">做题记录</span>
+          </div>
+        </div>
+        <div class="app-header-right">
+          <button class="mobile-menu-btn" onclick="document.querySelector('.sidebar').classList.toggle('mobile-open')"><ion-icon name="menu-outline"></ion-icon></button>
+          <div class="header-search">
+            <ion-icon name="search-outline"></ion-icon>
+            <input class="input" type="text" placeholder="搜索题库、题目、试卷..." readonly style="cursor:pointer;" onclick="window.location.href='12-search.html'">
+          </div>
+          <button class="header-action-btn" data-tooltip="暗色模式" onclick="var t=document.documentElement.getAttribute('data-theme');document.documentElement.setAttribute('data-theme',t==='dark'?'light':'dark')"><ion-icon name="moon-outline"></ion-icon></button>
+          <div class="lang-switcher" data-tooltip="语言">
+            <ion-icon name="language-outline"></ion-icon>
+            <span>中文</span>
+            <ion-icon name="chevron-down-outline"></ion-icon>
+          </div>
+          <div style="position:relative;cursor:pointer;">
+            <ion-icon name="notifications-outline" style="font-size:22px;color:var(--text-secondary);"></ion-icon>
+            <span class="badge" style="position:absolute;top:-4px;right:-4px;">3</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+            <div class="avatar" style="background:#5B5FE9;">张</div>
+            <span style="font-size:14px;font-weight:500;">张同学</span>
+            <ion-icon name="chevron-down-outline" style="font-size:16px;color:var(--text-tertiary);"></ion-icon>
+          </div>
+        </div>
+      </header>
+
+      <main class="app-content">
+        <h1 class="page-title">做题记录</h1>
+
+        <!-- Filter Bar -->
+        <div class="filter-bar">
+          <select class="filter-select">
+            <option>全部时间</option>
+            <option>今天</option>
+            <option>本周</option>
+            <option>本月</option>
+          </select>
+          <div class="filter-divider"></div>
+          <div class="type-tabs">
+            <div class="type-tab active">全部</div>
+            <div class="type-tab">练习</div>
+            <div class="type-tab">考试</div>
+          </div>
+          <div class="filter-divider"></div>
+          <select class="filter-select">
+            <option>全部题库</option>
+            <option>Java基础与进阶</option>
+            <option>Python入门</option>
+            <option>数据结构</option>
+            <option>计算机网络</option>
+            <option>数据库原理</option>
+          </select>
+          <div class="filter-divider"></div>
+          <div class="search-input-wrap">
+            <ion-icon name="search-outline"></ion-icon>
+            <input type="text" class="search-input" placeholder="搜索题目内容...">
+          </div>
+        </div>
+
+        <!-- Summary Cards -->
+        <div class="summary-grid">
+          <div class="summary-card">
+            <div class="summary-card-icon brand"><ion-icon name="documents-outline"></ion-icon></div>
+            <div class="summary-card-info">
+              <div class="summary-card-label">总记录数</div>
+              <div class="summary-card-value">1,536</div>
+            </div>
+          </div>
+          <div class="summary-card">
+            <div class="summary-card-icon info"><ion-icon name="game-controller-outline"></ion-icon></div>
+            <div class="summary-card-info">
+              <div class="summary-card-label">练习记录</div>
+              <div class="summary-card-value">1,408</div>
+            </div>
+          </div>
+          <div class="summary-card">
+            <div class="summary-card-icon success"><ion-icon name="file-tray-full-outline"></ion-icon></div>
+            <div class="summary-card-info">
+              <div class="summary-card-label">考试记录</div>
+              <div class="summary-card-value">128</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Records Table -->
+        <div class="card">
+          <div class="table-wrapper records-table" style="border:none;border-radius:0;">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>时间</th>
+                  <th>类型</th>
+                  <th>题目摘要</th>
+                  <th>题型</th>
+                  <th>你的答案</th>
+                  <th>正确答案</th>
+                  <th>结果</th>
+                  <th class="col-right">得分</th>
+                  <th class="col-narrow">操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="time-cell">09-03 14:32</td>
+                  <td><span class="tag tag-info">练习</span></td>
+                  <td class="summary-cell">以下哪个不是 Java 的基本数据类型？</td>
+                  <td><span class="tag tag-default">单选</span></td>
+                  <td class="answer-cell">B</td>
+                  <td class="answer-cell">B</td>
+                  <td><span class="tag tag-success">正确</span></td>
+                  <td class="col-right score-cell text-success">+2</td>
+                  <td><span class="action-link">查看详情</span></td>
+                </tr>
+                <tr>
+                  <td class="time-cell">09-03 14:28</td>
+                  <td><span class="tag tag-info">练习</span></td>
+                  <td class="summary-cell">关于 Java 集合框架，以下说法正确的有？</td>
+                  <td><span class="tag tag-default">多选</span></td>
+                  <td class="answer-cell">B,C</td>
+                  <td class="answer-cell">B,D</td>
+                  <td><span class="tag tag-error">错误</span></td>
+                  <td class="col-right score-cell text-error">0</td>
+                  <td><span class="action-link">查看详情</span></td>
+                </tr>
+                <tr>
+                  <td class="time-cell">09-03 10:15</td>
+                  <td><span class="tag tag-primary">考试</span></td>
+                  <td class="summary-cell">Java 期末模拟卷 — 第3题</td>
+                  <td><span class="tag tag-default">判断</span></td>
+                  <td class="answer-cell">正确</td>
+                  <td class="answer-cell">正确</td>
+                  <td><span class="tag tag-success">正确</span></td>
+                  <td class="col-right score-cell text-success">+2</td>
+                  <td><span class="action-link">查看详情</span></td>
+                </tr>
+                <tr>
+                  <td class="time-cell">09-02 21:45</td>
+                  <td><span class="tag tag-info">练习</span></td>
+                  <td class="summary-cell">TCP 协议是面向连接的可靠传输协议。</td>
+                  <td><span class="tag tag-default">判断</span></td>
+                  <td class="answer-cell">错误</td>
+                  <td class="answer-cell">正确</td>
+                  <td><span class="tag tag-error">错误</span></td>
+                  <td class="col-right score-cell text-error">0</td>
+                  <td><span class="action-link">查看详情</span></td>
+                </tr>
+                <tr>
+                  <td class="time-cell">09-02 16:20</td>
+                  <td><span class="tag tag-primary">考试</span></td>
+                  <td class="summary-cell">Python 期中测试 — 简述 TCP 三次握手过程</td>
+                  <td><span class="tag tag-default">简答</span></td>
+                  <td class="answer-cell" style="color:var(--text-tertiary);">已提交</td>
+                  <td class="answer-cell" style="color:var(--text-tertiary);">—</td>
+                  <td><span class="tag tag-warning">待批改</span></td>
+                  <td class="col-right score-cell text-warning">—</td>
+                  <td><span class="action-link">查看详情</span></td>
+                </tr>
+                <tr>
+                  <td class="time-cell">09-02 14:10</td>
+                  <td><span class="tag tag-info">练习</span></td>
+                  <td class="summary-cell">在 Python 中，以下哪个不是内置数据类型？</td>
+                  <td><span class="tag tag-default">单选</span></td>
+                  <td class="answer-cell">D</td>
+                  <td class="answer-cell">D</td>
+                  <td><span class="tag tag-success">正确</span></td>
+                  <td class="col-right score-cell text-success">+2</td>
+                  <td><span class="action-link">查看详情</span></td>
+                </tr>
+                <tr>
+                  <td class="time-cell">09-01 22:30</td>
+                  <td><span class="tag tag-info">练习</span></td>
+                  <td class="summary-cell">数据库范式中，3NF 消除了哪种依赖？</td>
+                  <td><span class="tag tag-default">单选</span></td>
+                  <td class="answer-cell">A</td>
+                  <td class="answer-cell">C</td>
+                  <td><span class="tag tag-error">错误</span></td>
+                  <td class="col-right score-cell text-error">0</td>
+                  <td><span class="action-link">查看详情</span></td>
+                </tr>
+                <tr>
+                  <td class="time-cell">09-01 18:55</td>
+                  <td><span class="tag tag-primary">考试</span></td>
+                  <td class="summary-cell">Java 集合模拟卷 — ArrayList 与 LinkedList 区别</td>
+                  <td><span class="tag tag-default">简答</span></td>
+                  <td class="answer-cell" style="color:var(--text-tertiary);">已批改</td>
+                  <td class="answer-cell" style="color:var(--text-tertiary);">—</td>
+                  <td><span class="tag tag-success">正确</span></td>
+                  <td class="col-right score-cell text-success">+8</td>
+                  <td><span class="action-link">查看详情</span></td>
+                </tr>
+                <tr>
+                  <td class="time-cell">09-01 15:42</td>
+                  <td><span class="tag tag-info">练习</span></td>
+                  <td class="summary-cell">以下哪些是操作系统的基本功能？</td>
+                  <td><span class="tag tag-default">多选</span></td>
+                  <td class="answer-cell">A,B,D</td>
+                  <td class="answer-cell">A,B,C,D</td>
+                  <td><span class="tag tag-error">错误</span></td>
+                  <td class="col-right score-cell text-error">0</td>
+                  <td><span class="action-link">查看详情</span></td>
+                </tr>
+                <tr>
+                  <td class="time-cell">08-31 20:18</td>
+                  <td><span class="tag tag-info">练习</span></td>
+                  <td class="summary-cell">Java 是一门面向对象的编程语言。</td>
+                  <td><span class="tag tag-default">判断</span></td>
+                  <td class="answer-cell">正确</td>
+                  <td class="answer-cell">正确</td>
+                  <td><span class="tag tag-success">正确</span></td>
+                  <td class="col-right score-cell text-success">+2</td>
+                  <td><span class="action-link">查看详情</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <!-- Pagination -->
+          <div class="pagination">
+            <span style="font-size:var(--text-sm);color:var(--text-tertiary);margin-right:auto;">共 1,536 条，每页 10 条</span>
+            <button class="page-btn" disabled><ion-icon name="chevron-back-outline" style="font-size:16px;"></ion-icon></button>
+            <button class="page-btn active">1</button>
+            <button class="page-btn">2</button>
+            <button class="page-btn">3</button>
+            <button class="page-btn">4</button>
+            <span style="font-size:var(--text-sm);color:var(--text-tertiary);">...</span>
+            <button class="page-btn">154</button>
+            <button class="page-btn"><ion-icon name="chevron-forward-outline" style="font-size:16px;"></ion-icon></button>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+<button class="back-to-top visible" onclick="window.scrollTo({top:0,behavior:'smooth'})" data-tooltip="回到顶部"><ion-icon name="arrow-up-outline"></ion-icon></button>
+<script>
+    document.querySelector(".sidebar-toggle")?.addEventListener("click", function() {
+      var s=document.querySelector(".sidebar"),m=document.querySelector(".main-area");
+      s.classList.toggle("sidebar-collapsed");m.classList.toggle("main-area-collapsed");
+      var i=this.querySelector("ion-icon");
+      i.setAttribute("name",s.classList.contains("sidebar-collapsed")?"chevron-forward-outline":"chevron-back-outline");
+    });
+    window.addEventListener("scroll",function(){var b=document.querySelector(".back-to-top");if(b)b.classList.toggle("visible",window.scrollY>400)});
+  </script>
+</body>
+</html>

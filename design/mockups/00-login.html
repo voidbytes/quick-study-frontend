@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>登录 — Quick Study</title>
+  <link rel="stylesheet" href="styles/mockup.css">
+  <style>
+    /* Auth tab switcher */
+    .auth-tabs {
+      display: flex;
+      background: var(--bg-subtle);
+      border-radius: var(--radius-lg);
+      padding: 4px;
+      margin-bottom: var(--space-6);
+    }
+    .auth-tab {
+      flex: 1;
+      text-align: center;
+      padding: var(--space-2) var(--space-4);
+      border-radius: var(--radius-md);
+      font-size: var(--text-base);
+      font-weight: var(--font-medium);
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all var(--transition-base);
+    }
+    .auth-tab.active {
+      background: var(--bg-card);
+      color: var(--text-brand);
+      font-weight: var(--font-semibold);
+      box-shadow: var(--shadow-sm);
+    }
+    /* Input with affix icons */
+    .input-affix { position: relative; }
+    .input-affix .input-affix-icon {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 18px;
+      color: var(--text-tertiary);
+    }
+    .input-affix .input-affix-icon.leading { left: 12px; pointer-events: none; }
+    .input-affix .input-affix-icon.trailing { right: 12px; cursor: pointer; }
+    .input-affix .input { padding-left: 40px; }
+    .input-affix .input.has-trailing { padding-right: 40px; }
+    /* Captcha row */
+    .captcha-row { display: flex; gap: var(--space-3); align-items: stretch; }
+    .captcha-row .input-affix { flex: 1; }
+    .captcha-box {
+      width: 112px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--gradient-brand-soft);
+      border: 1px dashed var(--color-primary-300);
+      border-radius: var(--radius-md);
+      font-family: var(--font-mono);
+      font-size: var(--text-xl);
+      font-weight: var(--font-bold);
+      letter-spacing: 4px;
+      color: var(--text-brand);
+      cursor: pointer;
+      user-select: none;
+      flex-shrink: 0;
+    }
+    /* Auth options */
+    .auth-options {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: var(--space-5);
+      font-size: var(--text-sm);
+    }
+    .checkbox-row {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      color: var(--text-secondary);
+      cursor: pointer;
+    }
+    .checkbox-row input { width: 16px; height: 16px; accent-color: var(--color-primary-500); cursor: pointer; }
+    .auth-footer {
+      text-align: center;
+      margin-top: var(--space-6);
+      font-size: var(--text-sm);
+      color: var(--text-secondary);
+    }
+    /* Decorative background blobs on the brand gradient */
+    .auth-page { position: relative; overflow: hidden; }
+    .auth-page::before, .auth-page::after {
+      content: "";
+      position: absolute;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.12);
+      pointer-events: none;
+    }
+    .auth-page::before { width: 380px; height: 380px; top: -120px; right: -80px; }
+    .auth-page::after { width: 300px; height: 300px; bottom: -100px; left: -60px; }
+  </style>
+</head>
+<body>
+  <div class="auth-page">
+    <div class="auth-card" style="position:relative;z-index:1;">
+      <div class="auth-logo">
+        <div class="auth-logo-icon">QS</div>
+        <div class="auth-title">题库与组卷练习系统</div>
+        <div class="auth-subtitle">登录你的账号开始学习</div>
+      </div>
+
+      <!-- Tab switcher: 登录 / 注册 -->
+      <div class="auth-tabs">
+        <div class="auth-tab active">登录</div>
+        <div class="auth-tab">注册</div>
+      </div>
+
+      <form onsubmit="return false;">
+        <!-- Username -->
+        <div class="input-group">
+          <label class="input-label">用户名</label>
+          <div class="input-affix">
+            <ion-icon name="person-outline" class="input-affix-icon leading"></ion-icon>
+            <input class="input" type="text" placeholder="请输入用户名" value="zhangstudent">
+          </div>
+        </div>
+
+        <!-- Password -->
+        <div class="input-group">
+          <label class="input-label">密码</label>
+          <div class="input-affix">
+            <ion-icon name="lock-closed-outline" class="input-affix-icon leading"></ion-icon>
+            <input class="input has-trailing" type="password" placeholder="请输入密码" value="password123">
+            <ion-icon name="eye-outline" class="input-affix-icon trailing" title="显示/隐藏密码"></ion-icon>
+          </div>
+        </div>
+
+        <!-- Captcha -->
+        <div class="input-group">
+          <label class="input-label">验证码</label>
+          <div class="captcha-row">
+            <div class="input-affix">
+              <ion-icon name="shield-checkmark-outline" class="input-affix-icon leading"></ion-icon>
+              <input class="input" type="text" placeholder="请输入验证码" value="ABCD">
+            </div>
+            <div class="captcha-box" title="点击刷新验证码">ABCD</div>
+          </div>
+        </div>
+
+        <!-- Remember me + forgot password -->
+        <div class="auth-options">
+          <label class="checkbox-row">
+            <input type="checkbox" checked> 记住我
+          </label>
+          <a href="#">忘记密码？</a>
+        </div>
+
+        <!-- Login button -->
+        <button class="btn btn-primary btn-block btn-lg" type="button">
+          <ion-icon name="log-in-outline"></ion-icon>
+          登录
+        </button>
+
+        <div class="auth-footer">
+          还没有账号？<a href="#">立即注册</a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
+  <script nomodule src="https://cdn.jsdelivr.net/npm/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
+</body>
+</html>

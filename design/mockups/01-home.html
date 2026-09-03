@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>首页 — Quick Study</title>
+  <link rel="stylesheet" href="styles/mockup.css">
+  <style>
+    .quick-entry-icon ion-icon { font-size: 24px; }
+    .welcome-stats { display: flex; align-items: center; gap: 32px; }
+    .welcome-stat-divider { width: 1px; height: 44px; background: rgba(255,255,255,0.25); }
+    .activity-row { display: flex; align-items: center; gap: var(--space-3); }
+    .activity-main { flex: 1; min-width: 0; }
+    .activity-title { font-size: var(--text-base); font-weight: var(--font-medium); color: var(--text-primary); }
+    .activity-desc { font-size: var(--text-sm); color: var(--text-tertiary); margin-top: 2px; }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-logo">
+        <div class="sidebar-logo-icon">QS</div>
+        <span class="sidebar-logo-text">Quick Study</span>
+      <button class="sidebar-toggle" data-tooltip="折叠侧边栏">
+        <ion-icon name="chevron-back-outline"></ion-icon>
+      </button>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="sidebar-nav-section">
+          <div class="sidebar-nav-item active">
+            <ion-icon name="home-outline"></ion-icon>
+            <span>首页</span>
+          </div>
+          <div class="sidebar-nav-item"><ion-icon name="library-outline"></ion-icon><span>题库</span></div>
+          <div class="sidebar-nav-item"><ion-icon name="document-text-outline"></ion-icon><span>题目</span></div>
+          <div class="sidebar-nav-item"><ion-icon name="file-tray-full-outline"></ion-icon><span>试卷</span></div>
+        </div>
+        <div class="sidebar-nav-label">学习中心</div>
+        <div class="sidebar-nav-item"><ion-icon name="game-controller-outline"></ion-icon><span>练习</span></div>
+        <div class="sidebar-nav-item" data-tooltip="错题本"><ion-icon name="close-circle-outline"></ion-icon><span>错题本</span><span class="sidebar-badge">47</span></div>
+        <div class="sidebar-nav-item"><ion-icon name="time-outline"></ion-icon><span>做题记录</span></div>
+        
+        <div class="sidebar-nav-item"><ion-icon name="bar-chart-outline"></ion-icon><span>统计</span></div>
+        <div class="sidebar-nav-item" data-tooltip="通知"><ion-icon name="notifications-outline"></ion-icon><span>通知</span><span class="sidebar-badge brand">3</span></div>
+        <div class="sidebar-nav-label">管理</div>
+        <div class="sidebar-nav-item"><ion-icon name="people-outline"></ion-icon><span>用户管理</span></div>
+        <div class="sidebar-nav-item"><ion-icon name="checkmark-done-outline"></ion-icon><span>审核列表</span></div>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="sidebar-nav-item"><ion-icon name="log-out-outline"></ion-icon><span>退出登录</span></div>
+      </div>
+    </aside>
+
+    <!-- Main Area -->
+    <div class="main-area">
+      <header class="app-header">
+        <div class="app-header-left">
+          <div class="breadcrumb">
+            <span class="breadcrumb-current">首页</span>
+          </div>
+        </div>
+        <div class="app-header-right">
+          <button class="mobile-menu-btn" onclick="document.querySelector('.sidebar').classList.toggle('mobile-open')"><ion-icon name="menu-outline"></ion-icon></button>
+          <div class="header-search">
+            <ion-icon name="search-outline"></ion-icon>
+            <input class="input" type="text" placeholder="搜索题库、题目、试卷..." readonly style="cursor:pointer;" onclick="window.location.href='12-search.html'">
+          </div>
+          <button class="header-action-btn" data-tooltip="暗色模式" onclick="var t=document.documentElement.getAttribute('data-theme');document.documentElement.setAttribute('data-theme',t==='dark'?'light':'dark')"><ion-icon name="moon-outline"></ion-icon></button>
+          <div class="lang-switcher" data-tooltip="语言">
+            <ion-icon name="language-outline"></ion-icon>
+            <span>中文</span>
+            <ion-icon name="chevron-down-outline"></ion-icon>
+          </div>
+          <div style="position:relative;cursor:pointer;">
+            <ion-icon name="notifications-outline" style="font-size:22px;color:var(--text-secondary);"></ion-icon>
+            <span class="badge" style="position:absolute;top:-4px;right:-4px;">3</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+            <div class="avatar" style="background:#5B5FE9;">张</div>
+            <span style="font-size:14px;font-weight:500;color:var(--text-primary);">张同学</span>
+            <ion-icon name="chevron-down-outline" style="font-size:16px;color:var(--text-tertiary);"></ion-icon>
+          </div>
+        </div>
+      </header>
+      <main class="app-content">
+
+        <!-- Welcome Banner -->
+        <div class="welcome-banner mb-6">
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:24px;position:relative;z-index:1;">
+            <div>
+              <h1>欢迎回来，张同学</h1>
+              <p>今天也要加油学习哦！</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Entry Grid -->
+        <div class="grid grid-cols-5 gap-4 mb-6">
+          <div class="quick-entry">
+            <div class="quick-entry-icon" style="background:#E8F1FF;color:#3B8BFF;">
+              <ion-icon name="library-outline"></ion-icon>
+            </div>
+            <div class="quick-entry-label">题库管理</div>
+          </div>
+          <div class="quick-entry">
+            <div class="quick-entry-icon" style="background:#E8F9F0;color:#22B570;">
+              <ion-icon name="document-text-outline"></ion-icon>
+            </div>
+            <div class="quick-entry-label">试卷管理</div>
+          </div>
+          <div class="quick-entry">
+            <div class="quick-entry-icon" style="background:#FFF8E6;color:#FFA42B;">
+              <ion-icon name="game-controller-outline"></ion-icon>
+            </div>
+            <div class="quick-entry-label">随机练习</div>
+          </div>
+          <div class="quick-entry">
+            <div class="quick-entry-icon" style="background:#FFEFEC;color:#F0503C;">
+              <ion-icon name="close-circle-outline"></ion-icon>
+            </div>
+            <div class="quick-entry-label">错题本</div>
+          </div>
+          <div class="quick-entry">
+            <div class="quick-entry-icon" style="background:#F5F0FF;color:#7C4FD4;">
+              <ion-icon name="time-outline"></ion-icon>
+            </div>
+            <div class="quick-entry-label">做题记录</div>
+          </div>
+        </div>
+
+        <!-- Continue Learning -->
+        <div class="card mb-6" style="border-left: 4px solid var(--color-primary-500);">
+          <div class="card-body" style="display:flex;align-items:center;justify-content:space-between;gap:24px;">
+            <div style="display:flex;align-items:center;gap:16px;">
+              <div style="width:48px;height:48px;border-radius:12px;background:var(--color-primary-50);display:flex;align-items:center;justify-content:center;">
+                <ion-icon name="play-circle-outline" style="font-size:28px;color:var(--text-brand);"></ion-icon>
+              </div>
+              <div>
+                <div style="font-size:16px;font-weight:600;color:var(--text-primary);margin-bottom:4px;">继续学习：Java基础与进阶</div>
+                <div style="font-size:13px;color:var(--text-tertiary);">上次练习到第 12 题 · 正确率 80% · 3 天前</div>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px;">
+              <div style="width:120px;">
+                <div class="progress"><div class="progress-bar" style="width:60%;"></div></div>
+                <div style="font-size:12px;color:var(--text-tertiary);margin-top:4px;text-align:right;">12/20 题</div>
+              </div>
+              <button class="btn btn-primary btn-sm">
+                <ion-icon name="play-outline"></ion-icon>
+                <span>继续</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Statistics Overview -->
+        <div class="grid grid-cols-4 gap-4 mb-6">
+          <div class="stat-card">
+            <div class="stat-label">练习场次</div>
+            <div class="stat-value">128<span class="stat-suffix">次</span></div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">总题数</div>
+            <div class="stat-value">1,536<span class="stat-suffix">题</span></div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">正确率</div>
+            <div class="stat-value">85.2<span class="stat-suffix">%</span></div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">错题数</div>
+            <div class="stat-value">47<span class="stat-suffix">题</span></div>
+          </div>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">最近活动</div>
+            <a href="#" class="text-sm text-brand">查看全部</a>
+          </div>
+          <div class="card-body">
+            <div class="list-item">
+              <span class="tag tag-info">练习</span>
+              <div class="activity-main">
+                <div class="activity-title">完成了「Java基础与进阶」随机练习</div>
+                <div class="activity-desc">共 20 题 · 正确率 90%</div>
+              </div>
+              <span class="text-sm text-tertiary">10 分钟前</span>
+            </div>
+            <div class="list-item">
+              <span class="tag tag-warning">考试</span>
+              <div class="activity-main">
+                <div class="activity-title">参加了「数据结构期末模拟卷」考试</div>
+                <div class="activity-desc">共 50 题 · 得分 88 分</div>
+              </div>
+              <span class="text-sm text-tertiary">2 小时前</span>
+            </div>
+            <div class="list-item">
+              <span class="tag tag-info">练习</span>
+              <div class="activity-main">
+                <div class="activity-title">完成了「计算机网络」专项练习</div>
+                <div class="activity-desc">共 15 题 · 正确率 73%</div>
+              </div>
+              <span class="text-sm text-tertiary">昨天 19:20</span>
+            </div>
+            <div class="list-item">
+              <span class="tag tag-warning">考试</span>
+              <div class="activity-main">
+                <div class="activity-title">参加了「操作系统阶段性测验」考试</div>
+                <div class="activity-desc">共 30 题 · 得分 92 分</div>
+              </div>
+              <span class="text-sm text-tertiary">昨天 14:00</span>
+            </div>
+            <div class="list-item">
+              <span class="tag tag-info">练习</span>
+              <div class="activity-main">
+                <div class="activity-title">完成了「Python入门」错题重做</div>
+                <div class="activity-desc">共 8 题 · 正确率 100%</div>
+              </div>
+              <span class="text-sm text-tertiary">3 天前</span>
+            </div>
+          </div>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
+  <script nomodule src="https://cdn.jsdelivr.net/npm/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
+<button class="back-to-top visible" onclick="window.scrollTo({top:0,behavior:'smooth'})" data-tooltip="回到顶部"><ion-icon name="arrow-up-outline"></ion-icon></button>
+<script>
+    document.querySelector(".sidebar-toggle")?.addEventListener("click", function() {
+      var s=document.querySelector(".sidebar"),m=document.querySelector(".main-area");
+      s.classList.toggle("sidebar-collapsed");m.classList.toggle("main-area-collapsed");
+      var i=this.querySelector("ion-icon");
+      i.setAttribute("name",s.classList.contains("sidebar-collapsed")?"chevron-forward-outline":"chevron-back-outline");
+    });
+    window.addEventListener("scroll",function(){var b=document.querySelector(".back-to-top");if(b)b.classList.toggle("visible",window.scrollY>400)});
+  </script>
+</body>
+</html>

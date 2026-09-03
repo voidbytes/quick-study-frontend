@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>随机练习 — Quick Study</title>
+  <link rel="stylesheet" href="styles/mockup.css">
+  <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
+  <script nomodule src="https://cdn.jsdelivr.net/npm/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
+  <style>
+    .practice-page {
+      min-height: 100vh;
+      background: var(--bg-page);
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ---- Simple header ---- */
+    .practice-header {
+      background: var(--bg-card);
+      border-bottom: 1px solid var(--border-default);
+      padding: 16px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: var(--z-sticky);
+    }
+    .practice-header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .practice-header h1 {
+      font-size: var(--text-xl);
+      font-weight: var(--font-bold);
+      color: var(--text-primary);
+    }
+    .practice-header .practice-icon {
+      width: 36px; height: 36px;
+      border-radius: var(--radius-lg);
+      background: var(--gradient-brand);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+    }
+    .practice-header .practice-icon ion-icon { font-size: 20px; }
+    .close-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px; height: 36px;
+      border-radius: var(--radius-md);
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all var(--transition-base);
+      border: none;
+      background: transparent;
+    }
+    .close-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
+    .close-btn ion-icon { font-size: 24px; }
+
+    /* ---- Condition tag bar ---- */
+    .condition-bar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      padding: 14px 32px;
+      background: var(--bg-card);
+      border-bottom: 1px solid var(--border-default);
+    }
+    .condition-bar .label {
+      font-size: var(--text-sm);
+      font-weight: var(--font-semibold);
+      color: var(--text-tertiary);
+    }
+    .condition-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 12px;
+      border-radius: var(--radius-full);
+      background: var(--color-primary-50);
+      color: var(--text-brand);
+      font-size: var(--text-sm);
+      font-weight: var(--font-medium);
+    }
+    .condition-tag ion-icon { font-size: 14px; }
+
+    /* ---- Main content ---- */
+    .practice-content {
+      flex: 1;
+      padding: 32px 24px 48px;
+      max-width: 880px;
+      width: 100%;
+      margin: 0 auto;
+    }
+
+    .question-card { padding: 28px 32px; }
+
+    .question-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 18px;
+    }
+    .question-index {
+      font-size: var(--text-lg);
+      font-weight: var(--font-bold);
+      color: var(--text-primary);
+    }
+    .question-index .total {
+      font-size: var(--text-sm);
+      font-weight: var(--font-medium);
+      color: var(--text-tertiary);
+    }
+
+    /* ---- Progress ---- */
+    .progress-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    .progress-row .progress { flex: 1; }
+    .progress-row .progress-text {
+      font-size: var(--text-sm);
+      font-weight: var(--font-medium);
+      color: var(--text-secondary);
+      white-space: nowrap;
+    }
+    .progress-row .progress-text strong { color: var(--text-brand); }
+
+    .question-content {
+      font-size: 17px;
+      line-height: var(--leading-relaxed);
+      color: var(--text-primary);
+      font-weight: var(--font-medium);
+      margin-bottom: 24px;
+    }
+    .options { margin-bottom: 24px; }
+
+    /* ---- Analysis ---- */
+    .analysis-section {
+      margin-top: 4px;
+    }
+    .analysis-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: var(--text-base);
+      font-weight: var(--font-bold);
+      color: var(--text-primary);
+      margin-bottom: 10px;
+    }
+    .analysis-title ion-icon { font-size: 18px; color: var(--text-brand); }
+    .analysis-text {
+      font-size: var(--text-sm);
+      line-height: var(--leading-relaxed);
+      color: var(--text-secondary);
+      padding: 14px 16px;
+      background: var(--bg-subtle);
+      border-radius: var(--radius-md);
+      border-left: 3px solid var(--color-primary-500);
+    }
+
+    /* ---- Bottom buttons ---- */
+    .practice-actions {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding-top: 20px;
+      margin-top: 24px;
+      border-top: 1px solid var(--border-default);
+    }
+    .practice-actions-left { display: flex; gap: 10px; }
+    .practice-actions-right { display: flex; gap: 10px; }
+  </style>
+</head>
+<body>
+  <div class="practice-page">
+    <!-- Simple header -->
+    <header class="practice-header">
+      <div class="practice-header-left">
+        <div class="practice-icon"><ion-icon name="game-controller-outline"></ion-icon></div>
+        <h1>随机练习</h1>
+      </div>
+      <button class="close-btn" title="退出练习">
+        <ion-icon name="close-outline"></ion-icon>
+      </button>
+    </header>
+
+    <!-- Condition tag bar -->
+    <div class="condition-bar">
+      <span class="label">练习条件</span>
+      <span class="condition-tag"><ion-icon name="shuffle-outline"></ion-icon>来源: 随机练习</span>
+      <span class="condition-tag"><ion-icon name="library-outline"></ion-icon>题库: 3个</span>
+      <span class="condition-tag"><ion-icon name="documents-outline"></ion-icon>题型: 单选、多选、判断</span>
+      <span class="condition-tag"><ion-icon name="list-outline"></ion-icon>题量: 20题</span>
+    </div>
+
+    <!-- Main content -->
+    <div class="practice-content">
+      <div class="card question-card">
+        <!-- Question header -->
+        <div class="question-header">
+          <div class="question-index">第 5 题 <span class="total">/ 共 20 题</span></div>
+          <span class="tag tag-warning">多选</span>
+          <span class="tag tag-error">困难</span>
+        </div>
+
+        <!-- Progress bar -->
+        <div class="progress-row">
+          <div class="progress">
+            <div class="progress-bar" style="width:25%;"></div>
+          </div>
+          <div class="progress-text">已答 <strong>4</strong> / 20 题</div>
+        </div>
+
+        <!-- Question content -->
+        <div class="question-content">
+          关于 Java 集合框架，以下说法正确的有？
+        </div>
+
+        <!-- Options (B and D selected & correct) -->
+        <div class="options">
+          <div class="option-item">
+            <div class="option-marker">A</div>
+            <div class="option-content">ArrayList 底层基于数组实现</div>
+          </div>
+          <div class="option-item correct">
+            <div class="option-marker">B</div>
+            <div class="option-content">LinkedList 同时实现了 List 和 Deque 接口</div>
+          </div>
+          <div class="option-item">
+            <div class="option-marker">C</div>
+            <div class="option-content">HashMap 是线程安全的</div>
+          </div>
+          <div class="option-item correct">
+            <div class="option-marker">D</div>
+            <div class="option-content">TreeMap 基于红黑树实现</div>
+          </div>
+          <div class="option-item">
+            <div class="option-marker">E</div>
+            <div class="option-content">HashSet 底层使用 HashMap</div>
+          </div>
+        </div>
+
+        <!-- Result feedback -->
+        <div class="alert alert-success" style="margin-bottom:20px;">
+          <ion-icon name="checkmark-circle-outline" style="font-size:20px;flex-shrink:0;"></ion-icon>
+          <div>
+            <strong>回答正确！</strong>
+            <span style="display:block;margin-top:2px;opacity:0.85;">本题正确答案为 B、D，用时 42 秒。</span>
+          </div>
+        </div>
+
+        <!-- Analysis -->
+        <div class="analysis-section">
+          <div class="analysis-title">
+            <ion-icon name="bulb-outline"></ion-icon>
+            <span>解析</span>
+          </div>
+          <div class="analysis-text">
+            LinkedList 同时实现了 List 与 Deque 接口，因此既可以作为列表按索引访问，也可以作为双端队列使用；TreeMap 内部基于红黑树（Red-Black Tree）实现，能够保证键有序并维持 O(log n) 的查找、插入与删除复杂度。需要注意 HashMap 并非线程安全的，并发场景下应使用 ConcurrentHashMap 或通过 Collections.synchronizedMap 包装。
+          </div>
+        </div>
+
+        <!-- Bottom buttons -->
+        <div class="practice-actions">
+          <div class="practice-actions-left">
+            <button class="btn btn-secondary">
+              <ion-icon name="chevron-back-outline"></ion-icon>
+              <span>上一题</span>
+            </button>
+            <button class="btn btn-primary" disabled>
+              <ion-icon name="checkmark-outline"></ion-icon>
+              <span>提交答案</span>
+            </button>
+          </div>
+          <div class="practice-actions-right">
+            <button class="btn btn-primary">
+              <span>下一题</span>
+              <ion-icon name="chevron-forward-outline"></ion-icon>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

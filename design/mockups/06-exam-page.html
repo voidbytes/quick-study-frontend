@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>考试作答 — Quick Study</title>
+  <link rel="stylesheet" href="styles/mockup.css">
+  <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
+  <script nomodule src="https://cdn.jsdelivr.net/npm/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
+  <style>
+    .exam-layout {
+      display: flex;
+      gap: 24px;
+      padding: 24px;
+      max-width: 1200px;
+      margin: 0 auto;
+      align-items: flex-start;
+    }
+    .exam-side {
+      width: 200px;
+      flex-shrink: 0;
+      position: sticky;
+      top: 88px;
+    }
+    .exam-main { flex: 1; min-width: 0; }
+
+    /* ---- Question card ---- */
+    .question-card { padding: 28px 32px; }
+    .question-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+    }
+    .question-index {
+      font-size: var(--text-lg);
+      font-weight: var(--font-bold);
+      color: var(--text-primary);
+    }
+    .question-index .total {
+      font-size: var(--text-sm);
+      font-weight: var(--font-medium);
+      color: var(--text-tertiary);
+    }
+    .question-content {
+      font-size: 17px;
+      line-height: var(--leading-relaxed);
+      color: var(--text-primary);
+      font-weight: var(--font-medium);
+      margin-bottom: 24px;
+    }
+    .options { margin-bottom: 28px; }
+
+    .question-nav-buttons {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 20px;
+      border-top: 1px solid var(--border-default);
+    }
+
+    /* ---- Nav legend ---- */
+    .nav-legend {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 16px;
+    }
+    .nav-legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: var(--text-sm);
+      color: var(--text-secondary);
+    }
+    .nav-legend-dot {
+      width: 14px; height: 14px;
+      border-radius: var(--radius-sm);
+      flex-shrink: 0;
+    }
+    .nav-legend-dot.current { background: var(--color-primary-500); }
+    .nav-legend-dot.answered { background: var(--color-success-500); }
+    .nav-legend-dot.unanswered { background: var(--color-neutral-100); border: 1px solid var(--border-default); }
+    .nav-legend-dot.marked { background: var(--color-warning-500); }
+
+    .nav-summary {
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border-default);
+      font-size: var(--text-sm);
+      color: var(--text-secondary);
+    }
+    .nav-summary .answered-count { color: var(--color-success-600); font-weight: var(--font-semibold); }
+    .nav-summary .unanswered-count { color: var(--text-tertiary); font-weight: var(--font-semibold); }
+
+    /* ---- Exam header back button ---- */
+    .exam-back {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--text-secondary);
+      font-size: var(--text-sm);
+      font-weight: var(--font-medium);
+      cursor: pointer;
+      transition: color var(--transition-base);
+    }
+    .exam-back:hover { color: var(--text-brand); }
+    .exam-back ion-icon { font-size: 20px; }
+    .exam-paper-title {
+      font-size: var(--text-lg);
+      font-weight: var(--font-semibold);
+      color: var(--text-primary);
+    }
+  </style>
+</head>
+<body>
+  <!-- Exam header (sticky) -->
+  <header class="exam-header">
+    <div style="display:flex;align-items:center;gap:16px;">
+      <div class="exam-back">
+        <ion-icon name="arrow-back-outline"></ion-icon>
+        <span>返回</span>
+      </div>
+      <div style="width:1px;height:24px;background:var(--border-default);"></div>
+      <div class="exam-paper-title">Java 基础测试卷 (一)</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:16px;">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <ion-icon name="time-outline" style="font-size:20px;color:var(--text-secondary);"></ion-icon>
+        <span class="exam-timer">01:32:45</span>
+      </div>
+      <div style="width:1px;height:20px;background:var(--border-default);"></div>
+      <div style="display:flex;align-items:center;gap:6px;font-size:14px;color:var(--text-secondary);">
+        <ion-icon name="checkmark-circle-outline" style="font-size:18px;color:var(--color-success-500);"></ion-icon>
+        <span>已答 <strong style="color:var(--text-primary);">8</strong> / 20 题</span>
+      </div>
+    </div>
+    <button class="btn btn-secondary">
+      <ion-icon name="checkmark-done-outline"></ion-icon>
+      <span>交卷</span>
+    </button>
+  </header>
+
+  <!-- Main layout -->
+  <div class="exam-layout">
+    <!-- Left sidebar: question navigation -->
+    <aside class="exam-side">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title" style="font-size:var(--text-base);">题目导航</span>
+        </div>
+        <div class="card-body-sm">
+          <div class="q-nav-grid">
+            <div class="q-nav-cell answered">1</div>
+            <div class="q-nav-cell answered">2</div>
+            <div class="q-nav-cell current">3</div>
+            <div class="q-nav-cell answered">4</div>
+            <div class="q-nav-cell answered">5</div>
+            <div class="q-nav-cell answered">6</div>
+            <div class="q-nav-cell answered">7</div>
+            <div class="q-nav-cell answered">8</div>
+            <div class="q-nav-cell unanswered">9</div>
+            <div class="q-nav-cell unanswered">10</div>
+            <div class="q-nav-cell unanswered">11</div>
+            <div class="q-nav-cell unanswered">12</div>
+            <div class="q-nav-cell unanswered">13</div>
+            <div class="q-nav-cell unanswered">14</div>
+            <div class="q-nav-cell unanswered">15</div>
+            <div class="q-nav-cell unanswered">16</div>
+            <div class="q-nav-cell unanswered">17</div>
+            <div class="q-nav-cell unanswered">18</div>
+            <div class="q-nav-cell unanswered">19</div>
+            <div class="q-nav-cell unanswered">20</div>
+          </div>
+
+          <div class="nav-legend">
+            <div class="nav-legend-item"><span class="nav-legend-dot current"></span>当前</div>
+            <div class="nav-legend-item"><span class="nav-legend-dot answered"></span>已答</div>
+            <div class="nav-legend-item"><span class="nav-legend-dot unanswered"></span>未答</div>
+            <div class="nav-legend-item"><span class="nav-legend-dot marked"></span>待检查</div>
+          </div>
+
+          <div class="nav-summary">
+            已答：<span class="answered-count">8 题</span> / 未答：<span class="unanswered-count">12 题</span>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Right main: question content -->
+    <main class="exam-main">
+      <div class="card question-card">
+        <!-- Question header -->
+        <div class="question-header">
+          <div class="question-index">第 3 题 <span class="total">/ 共 20 题</span></div>
+          <span class="tag tag-info">单选</span>
+          <span class="tag tag-warning">中等</span>
+          <div style="flex:1;"></div>
+          <button class="btn btn-ghost btn-sm">
+            <ion-icon name="flag-outline"></ion-icon>
+            <span>标记待检查</span>
+          </button>
+        </div>
+
+        <!-- Keyboard shortcuts hint -->
+        <div class="kbd-hints mb-4">
+          <div class="kbd-hints-item"><span class="kbd">A</span><span class="kbd">B</span><span class="kbd">C</span><span class="kbd">D</span> 选择答案</div>
+          <div class="kbd-hints-item"><span class="kbd">←</span><span class="kbd">→</span> 切换题目</div>
+          <div class="kbd-hints-item"><span class="kbd">F</span> 标记待检查</div>
+          <div class="kbd-hints-item"><span class="kbd">Enter</span> 下一题</div>
+        </div>
+
+        <!-- Question content -->
+        <div class="question-content">
+          在 Java 中，以下哪个关键字用于实现继承？
+        </div>
+
+        <!-- Options -->
+        <div class="options">
+          <div class="option-item">
+            <div class="option-marker">A</div>
+            <div class="option-content">implements</div>
+            <div class="option-kbd">A</div>
+          </div>
+          <div class="option-item">
+            <div class="option-marker">B</div>
+            <div class="option-content">interface</div>
+            <div class="option-kbd">B</div>
+          </div>
+          <div class="option-item selected">
+            <div class="option-marker">C</div>
+            <div class="option-content">extends</div>
+            <div class="option-kbd">C</div>
+          </div>
+          <div class="option-item">
+            <div class="option-marker">D</div>
+            <div class="option-content">inherits</div>
+            <div class="option-kbd">D</div>
+          </div>
+        </div>
+
+        <!-- Navigation buttons -->
+        <div class="question-nav-buttons">
+          <button class="btn btn-secondary">
+            <ion-icon name="chevron-back-outline"></ion-icon>
+            <span>上一题</span>
+          </button>
+          <button class="btn btn-primary">
+            <span>下一题</span>
+            <ion-icon name="chevron-forward-outline"></ion-icon>
+          </button>
+        </div>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

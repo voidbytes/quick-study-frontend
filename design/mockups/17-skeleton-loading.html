@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>骨架屏 — Quick Study</title>
+  <link rel="stylesheet" href="styles/mockup.css">
+  <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
+  <script nomodule src="https://cdn.jsdelivr.net/npm/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
+  <style>
+    body { background: var(--bg-page); padding: 48px 24px; }
+    .demo-section { margin-bottom: 48px; }
+    .demo-label { font-size: 14px; font-weight: 600; color: var(--text-tertiary); margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.05em; }
+    /* Remove default bottom margin when skeleton bars sit inside table cells / cards */
+    .data-table td .skeleton,
+    .card-body .skeleton { margin-bottom: 0; }
+    .skeleton-row { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+  </style>
+</head>
+<body>
+  <div style="max-width:1000px;margin:0 auto;">
+    <h1 style="font-size:24px;font-weight:700;margin-bottom:32px;">骨架屏加载态</h1>
+
+    <!-- Stat cards skeleton -->
+    <div class="demo-section">
+      <div class="demo-label">统计卡片骨架</div>
+      <div class="grid grid-cols-4 gap-4">
+        <!-- 4 skeleton stat cards -->
+        <div class="stat-card">
+          <div class="skeleton skeleton-text-sm" style="width:55%;"></div>
+          <div class="skeleton" style="height:28px;width:70%;margin-top:12px;"></div>
+        </div>
+        <div class="stat-card">
+          <div class="skeleton skeleton-text-sm" style="width:45%;"></div>
+          <div class="skeleton" style="height:28px;width:60%;margin-top:12px;"></div>
+        </div>
+        <div class="stat-card">
+          <div class="skeleton skeleton-text-sm" style="width:60%;"></div>
+          <div class="skeleton" style="height:28px;width:75%;margin-top:12px;"></div>
+        </div>
+        <div class="stat-card">
+          <div class="skeleton skeleton-text-sm" style="width:50%;"></div>
+          <div class="skeleton" style="height:28px;width:65%;margin-top:12px;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Table skeleton -->
+    <div class="demo-section">
+      <div class="demo-label">表格骨架</div>
+      <div class="table-wrapper">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>名称</th>
+              <th>类型</th>
+              <th>状态</th>
+              <th>创建时间</th>
+              <th class="col-narrow">操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- 5 skeleton table rows -->
+            <tr>
+              <td><div class="skeleton skeleton-text" style="width:80%;"></div></td>
+              <td><div class="skeleton skeleton-text-sm" style="width:50%;"></div></td>
+              <td><div class="skeleton skeleton-text-sm" style="width:40%;"></div></td>
+              <td><div class="skeleton skeleton-text-sm" style="width:60%;"></div></td>
+              <td><div class="skeleton skeleton-text-sm" style="width:50%;"></div></td>
+            </tr>
+            <tr>
+              <td><div class="skeleton skeleton-text" style="width:70%;"></div></td>
+              <td><div class="skeleton skeleton-text-sm" style="width:45%;"></div></td>
+              <td><div class="skeleton skeleton-text-sm" style="width:35%;"></div></td>
+              <td><div class="skeleton skeleton-text-sm" style="width:55%;"></div></td>
+              <td><div class="skeleton skeleton-text-sm" style="width:50%;"></div></td>
+            </tr>
+            <tr>
+              <td><div class="skeleton skeleton-text" style="width:85%;"></div></td>
+              <td><div class="skeleton skeleton-text-sm" style="width:50%;"></div></td>
+              <td><div class="skeleton skeleton-text-sm" style="width:45%;"></div></td>
+              <td><div class="skeleton skeleton-text-sm" style="width:60%;"></div></td>
+              <td><div class="skeleton skeleton-text-sm" style="width:50%;"></div></td>
+            </tr>
+            <tr>
+              <td><div class="skeleton skeleton-text" style="width:65%;"></div></td>
+              <td><div class="skeleton skeleton-text-sm" style="width:40%;"></div></td>
+              <td><div class="skeleton skeleton-text-sm" style="width:38%;"></div></td>
+              <td><div class="skeleton skeleton-text-sm" style="width:58%;"></div></td>
+              <td><div class="skeleton skeleton-text-sm" style="width:50%;"></div></td>
+            </tr>
+            <tr>
+              <td><div class="skeleton skeleton-text" style="width:75%;"></div></td>
+              <td><div class="skeleton skeleton-text-sm" style="width:48%;"></div></td>
+              <td><div class="skeleton skeleton-text-sm" style="width:42%;"></div></td>
+              <td><div class="skeleton skeleton-text-sm" style="width:56%;"></div></td>
+              <td><div class="skeleton skeleton-text-sm" style="width:50%;"></div></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Card list skeleton -->
+    <div class="demo-section">
+      <div class="demo-label">卡片列表骨架</div>
+      <div class="grid grid-cols-3 gap-4">
+        <!-- 3 skeleton cards -->
+        <div class="card">
+          <div class="card-body">
+            <div class="skeleton-row">
+              <div class="skeleton skeleton-avatar"></div>
+              <div style="flex:1;">
+                <div class="skeleton skeleton-title"></div>
+                <div class="skeleton skeleton-text-sm"></div>
+              </div>
+            </div>
+            <div class="skeleton skeleton-text" style="width:90%;margin-bottom:8px;"></div>
+            <div class="skeleton skeleton-text" style="width:100%;margin-bottom:8px;"></div>
+            <div class="skeleton skeleton-text" style="width:75%;margin-bottom:16px;"></div>
+            <div class="skeleton" style="height:36px;width:100%;"></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-body">
+            <div class="skeleton-row">
+              <div class="skeleton skeleton-avatar"></div>
+              <div style="flex:1;">
+                <div class="skeleton skeleton-title"></div>
+                <div class="skeleton skeleton-text-sm"></div>
+              </div>
+            </div>
+            <div class="skeleton skeleton-text" style="width:88%;margin-bottom:8px;"></div>
+            <div class="skeleton skeleton-text" style="width:100%;margin-bottom:8px;"></div>
+            <div class="skeleton skeleton-text" style="width:70%;margin-bottom:16px;"></div>
+            <div class="skeleton" style="height:36px;width:100%;"></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-body">
+            <div class="skeleton-row">
+              <div class="skeleton skeleton-avatar"></div>
+              <div style="flex:1;">
+                <div class="skeleton skeleton-title"></div>
+                <div class="skeleton skeleton-text-sm"></div>
+              </div>
+            </div>
+            <div class="skeleton skeleton-text" style="width:92%;margin-bottom:8px;"></div>
+            <div class="skeleton skeleton-text" style="width:100%;margin-bottom:8px;"></div>
+            <div class="skeleton skeleton-text" style="width:80%;margin-bottom:16px;"></div>
+            <div class="skeleton" style="height:36px;width:100%;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

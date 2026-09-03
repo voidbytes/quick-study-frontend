@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quick Study Web — 设计稿索引</title>
+  <link rel="stylesheet" href="styles/mockup.css">
+  <style>
+    .index-page { max-width: 960px; margin: 0 auto; padding: 48px 24px; }
+    .index-header { text-align: center; margin-bottom: 48px; }
+    .index-header h1 { font-size: 28px; font-weight: 700; color: var(--text-primary); margin-bottom: 8px; }
+    .index-header p { font-size: 14px; color: var(--text-secondary); }
+    .index-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
+    .index-card {
+      display: block; padding: 20px; background: var(--bg-card);
+      border: 1px solid var(--border-default); border-radius: 12px;
+      text-decoration: none; transition: all 200ms ease;
+    }
+    .index-card:hover { border-color: var(--color-primary-300); box-shadow: var(--shadow-sm); transform: translateY(-2px); }
+    .index-card-num { font-size: 12px; font-weight: 600; color: var(--text-brand); margin-bottom: 4px; }
+    .index-card-title { font-size: 16px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px; }
+    .index-card-desc { font-size: 13px; color: var(--text-tertiary); }
+    .index-section-title { font-size: 13px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.05em; margin: 32px 0 12px; }
+    .index-footer { margin-top: 48px; padding-top: 24px; border-top: 1px solid var(--border-default); text-align: center; font-size: 13px; color: var(--text-tertiary); }
+  </style>
+</head>
+<body>
+  <div class="index-page">
+    <div class="index-header">
+      <div style="width:56px;height:56px;border-radius:12px;background:var(--gradient-brand);display:inline-flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:24px;margin-bottom:16px;">QS</div>
+      <h1>Quick Study Web — UI 设计稿</h1>
+      <p>大厂级 UI 重设计 · 15 个核心页面 · AI 可读结构化输出</p>
+    </div>
+
+    <div class="index-section-title">认证</div>
+    <div class="index-grid">
+      <a class="index-card" href="00-login.html">
+        <div class="index-card-num">00</div>
+        <div class="index-card-title">登录 / 注册</div>
+        <div class="index-card-desc">品牌渐变背景 + 居中卡片表单</div>
+      </a>
+    </div>
+
+    <div class="index-section-title">核心页面</div>
+    <div class="index-grid">
+      <a class="index-card" href="01-home.html">
+        <div class="index-card-num">01</div>
+        <div class="index-card-title">首页 / Dashboard</div>
+        <div class="index-card-desc">欢迎横幅 + 快速入口 + 统计概览 + 最近活动</div>
+      </a>
+      <a class="index-card" href="02-bank-list.html">
+        <div class="index-card-num">02</div>
+        <div class="index-card-title">题库列表</div>
+        <div class="index-card-desc">搜索筛选 + 卡片网格 + 分页</div>
+      </a>
+      <a class="index-card" href="03-bank-detail.html">
+        <div class="index-card-num">03</div>
+        <div class="index-card-title">题库详情</div>
+        <div class="index-card-desc">题库信息 + 题目列表 + 标签筛选</div>
+      </a>
+      <a class="index-card" href="04-question-list.html">
+        <div class="index-card-num">04</div>
+        <div class="index-card-title">题目管理</div>
+        <div class="index-card-desc">跨题库题目列表 + 多维筛选</div>
+      </a>
+      <a class="index-card" href="05-paper-list.html">
+        <div class="index-card-num">05</div>
+        <div class="index-card-title">试卷列表</div>
+        <div class="index-card-desc">试卷卡片 + 状态标签 + 操作</div>
+      </a>
+    </div>
+
+    <div class="index-section-title">答题场景</div>
+    <div class="index-grid">
+      <a class="index-card" href="06-exam-page.html">
+        <div class="index-card-num">06</div>
+        <div class="index-card-title">考试答题</div>
+        <div class="index-card-desc">倒计时 + 题目导航 + 答题区</div>
+      </a>
+      <a class="index-card" href="07-practice-page.html">
+        <div class="index-card-num">07</div>
+        <div class="index-card-title">随机练习</div>
+        <div class="index-card-desc">逐题作答 + 即时反馈 + 解析</div>
+      </a>
+      <a class="index-card" href="08-exam-result.html">
+        <div class="index-card-num">08</div>
+        <div class="index-card-title">考试结果</div>
+        <div class="index-card-desc">成绩展示 + 逐题回顾 + 得分明细</div>
+      </a>
+    </div>
+
+    <div class="index-section-title">学习中心</div>
+    <div class="index-grid">
+      <a class="index-card" href="09-statistics.html">
+        <div class="index-card-num">09</div>
+        <div class="index-card-title">统计面板</div>
+        <div class="index-card-desc">数据概览 + 图表 + 题库分布</div>
+      </a>
+      <a class="index-card" href="10-wrong-questions.html">
+        <div class="index-card-num">10</div>
+        <div class="index-card-title">错题本</div>
+        <div class="index-card-desc">错题列表 + 筛选 + 重做入口</div>
+      </a>
+      <a class="index-card" href="11-records.html">
+        <div class="index-card-num">11</div>
+        <div class="index-card-title">做题记录</div>
+        <div class="index-card-desc">记录列表 + 筛选 + 详情查看</div>
+      </a>
+      <a class="index-card" href="12-search.html">
+        <div class="index-card-num">12</div>
+        <div class="index-card-title">搜索</div>
+        <div class="index-card-desc">全局搜索 + 分类结果</div>
+      </a>
+      <a class="index-card" href="13-notifications.html">
+        <div class="index-card-num">13</div>
+        <div class="index-card-title">通知中心</div>
+        <div class="index-card-desc">通知列表 + 已读/未读 + 类型筛选</div>
+      </a>
+      <a class="index-card" href="14-profile.html">
+        <div class="index-card-num">14</div>
+        <div class="index-card-title">个人中心</div>
+        <div class="index-card-desc">用户信息 + AI Key + 密码修改</div>
+      </a>
+    </div>
+
+    <div class="index-section-title">管理后台</div>
+    <div class="index-grid">
+      <a class="index-card" href="15-admin-users.html">
+        <div class="index-card-num">15</div>
+        <div class="index-card-title">用户管理</div>
+        <div class="index-card-desc">用户列表 + 状态管理 + 角色操作</div>
+      </a>
+    </div>
+
+    <div class="index-section-title">通用组件</div>
+    <div class="index-grid">
+      <a class="index-card" href="16-confirm-dialog.html">
+        <div class="index-card-num">16</div>
+        <div class="index-card-title">确认弹窗</div>
+        <div class="index-card-desc">交卷确认 + 删除确认两种场景</div>
+      </a>
+      <a class="index-card" href="17-skeleton-loading.html">
+        <div class="index-card-num">17</div>
+        <div class="index-card-title">骨架屏加载</div>
+        <div class="index-card-desc">统计卡片 + 表格 + 卡片列表骨架</div>
+      </a>
+    </div>
+
+    <div class="index-footer">
+      <p>设计令牌: tokens/design-tokens.css · tokens/design-tokens.json · tokens/tailwind.config.js</p>
+      <p>设计文档: docs/design-system.md · docs/component-specs.md · docs/page-specs.md · docs/ai-implementation-guide.md</p>
+      <p>新增功能: 可折叠侧边栏 · 暗色模式 · 多语言切换 · 键盘快捷键 · 回到顶部 · Toast · 骨架屏 · 确认弹窗 · 移动端适配</p>
+    </div>
+  </div>
+</body>
+</html>

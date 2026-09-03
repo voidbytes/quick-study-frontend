@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quick Study — 搜索</title>
+  <link rel="stylesheet" href="styles/mockup.css">
+  <style>
+    /* --- 搜索页专属样式 --- */
+    .search-hero {
+      background: var(--bg-card);
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius-xl);
+      padding: var(--space-8);
+      margin-bottom: var(--space-6);
+    }
+    .search-bar-wrap {
+      display: flex;
+      gap: var(--space-3);
+      max-width: 720px;
+      margin: 0 auto;
+    }
+    .search-input-box {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      height: 48px;
+      border: 2px solid var(--color-primary-300);
+      border-radius: var(--radius-full);
+      background: var(--bg-card);
+      padding: 0 var(--space-5);
+      gap: var(--space-3);
+      transition: all var(--transition-base);
+    }
+    .search-input-box ion-icon {
+      font-size: 22px;
+      color: var(--text-brand);
+      flex-shrink: 0;
+    }
+    .search-input-box input {
+      flex: 1;
+      border: none;
+      outline: none;
+      font-size: var(--text-base);
+      font-family: var(--font-sans);
+      color: var(--text-primary);
+      background: transparent;
+    }
+    .search-input-box input::placeholder { color: var(--text-tertiary); }
+    .search-btn-lg {
+      height: 48px;
+      padding: 0 var(--space-8);
+      border-radius: var(--radius-full);
+      font-size: var(--text-base);
+      font-weight: var(--font-semibold);
+    }
+    .category-tabs {
+      display: flex;
+      gap: var(--space-2);
+      margin-bottom: var(--space-6);
+      border-bottom: 1px solid var(--border-default);
+      padding-bottom: 0;
+    }
+    .cat-tab {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-2);
+      padding: var(--space-3) var(--space-4);
+      font-size: var(--text-base);
+      font-weight: var(--font-medium);
+      color: var(--text-secondary);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all var(--transition-base);
+      margin-bottom: -1px;
+    }
+    .cat-tab:hover { color: var(--text-primary); }
+    .cat-tab.active {
+      color: var(--text-brand);
+      border-bottom-color: var(--color-primary-500);
+      font-weight: var(--font-semibold);
+    }
+    .cat-tab .count {
+      font-size: var(--text-xs);
+      color: var(--text-tertiary);
+      background: var(--color-neutral-100);
+      border-radius: var(--radius-full);
+      padding: 1px var(--space-2);
+    }
+    .cat-tab.active .count {
+      background: var(--color-primary-50);
+      color: var(--text-brand);
+    }
+    .result-section {
+      margin-bottom: var(--space-6);
+    }
+    .result-section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: var(--space-4);
+    }
+    .result-section-title {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+    }
+    .result-section-title ion-icon {
+      font-size: 20px;
+      color: var(--text-brand);
+    }
+    .result-section-title h3 {
+      font-size: var(--text-lg);
+      font-weight: var(--font-semibold);
+      color: var(--text-primary);
+    }
+    .result-section-title .result-count {
+      font-size: var(--text-sm);
+      color: var(--text-tertiary);
+    }
+    .see-more {
+      font-size: var(--text-sm);
+      font-weight: var(--font-medium);
+      color: var(--text-brand);
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-1);
+      cursor: pointer;
+    }
+    .see-more:hover { color: var(--color-primary-600); }
+    .search-item {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--space-4);
+      padding: var(--space-4);
+      border-bottom: 1px solid var(--border-default);
+      transition: background var(--transition-base);
+      cursor: pointer;
+    }
+    .search-item:last-child { border-bottom: none; }
+    .search-item:hover { background: var(--bg-subtle); }
+    .search-item-icon {
+      width: 40px; height: 40px;
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-size: 22px;
+    }
+    .search-item-body { flex: 1; min-width: 0; }
+    .search-item-title {
+      font-size: var(--text-base);
+      font-weight: var(--font-semibold);
+      color: var(--text-primary);
+      margin-bottom: var(--space-1);
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+    }
+    .search-item-title a { color: var(--text-primary); }
+    .search-item-title a:hover { color: var(--text-brand); }
+    .search-item-desc {
+      font-size: var(--text-sm);
+      color: var(--text-secondary);
+      line-height: var(--leading-normal);
+      margin-bottom: var(--space-2);
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .search-item-meta {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      flex-wrap: wrap;
+    }
+    .search-item-meta-item {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-1);
+      font-size: var(--text-xs);
+      color: var(--text-tertiary);
+    }
+    .search-item-meta-item ion-icon { font-size: 14px; }
+    .keyword-highlight {
+      color: var(--text-brand);
+      font-weight: var(--font-semibold);
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="sidebar-logo">
+        <div class="sidebar-logo-icon">QS</div>
+        <span class="sidebar-logo-text">Quick Study</span>
+      <button class="sidebar-toggle" data-tooltip="折叠侧边栏">
+        <ion-icon name="chevron-back-outline"></ion-icon>
+      </button>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="sidebar-nav-section">
+          <div class="sidebar-nav-item"><ion-icon name="home-outline"></ion-icon><span>首页</span></div>
+          <div class="sidebar-nav-item"><ion-icon name="library-outline"></ion-icon><span>题库</span></div>
+          <div class="sidebar-nav-item"><ion-icon name="document-text-outline"></ion-icon><span>题目</span></div>
+          <div class="sidebar-nav-item"><ion-icon name="file-tray-full-outline"></ion-icon><span>试卷</span></div>
+        </div>
+        <div class="sidebar-nav-label">学习中心</div>
+        <div class="sidebar-nav-item"><ion-icon name="game-controller-outline"></ion-icon><span>练习</span></div>
+        <div class="sidebar-nav-item" data-tooltip="错题本"><ion-icon name="close-circle-outline"></ion-icon><span>错题本</span><span class="sidebar-badge">47</span></div>
+        <div class="sidebar-nav-item"><ion-icon name="time-outline"></ion-icon><span>做题记录</span></div>
+        <div class="sidebar-nav-item active"><ion-icon name="search-outline"></ion-icon><span>搜索</span></div>
+        <div class="sidebar-nav-item"><ion-icon name="bar-chart-outline"></ion-icon><span>统计</span></div>
+        <div class="sidebar-nav-item" data-tooltip="通知"><ion-icon name="notifications-outline"></ion-icon><span>通知</span><span class="sidebar-badge brand">3</span></div>
+        <div class="sidebar-nav-label">管理</div>
+        <div class="sidebar-nav-item"><ion-icon name="people-outline"></ion-icon><span>用户管理</span></div>
+        <div class="sidebar-nav-item"><ion-icon name="checkmark-done-outline"></ion-icon><span>审核列表</span></div>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="sidebar-nav-item"><ion-icon name="log-out-outline"></ion-icon><span>退出登录</span></div>
+      </div>
+    </aside>
+    <div class="main-area">
+      <header class="app-header">
+        <div class="app-header-left">
+          <div class="breadcrumb">
+            <span class="breadcrumb-current">搜索</span>
+          </div>
+        </div>
+        <div class="app-header-right">
+          <button class="mobile-menu-btn" onclick="document.querySelector('.sidebar').classList.toggle('mobile-open')"><ion-icon name="menu-outline"></ion-icon></button>
+          <div class="header-search">
+            <ion-icon name="search-outline"></ion-icon>
+            <input class="input" type="text" placeholder="搜索题库、题目、试卷..." readonly style="cursor:pointer;" onclick="window.location.href='12-search.html'">
+          </div>
+          <button class="header-action-btn" data-tooltip="暗色模式" onclick="var t=document.documentElement.getAttribute('data-theme');document.documentElement.setAttribute('data-theme',t==='dark'?'light':'dark')"><ion-icon name="moon-outline"></ion-icon></button>
+          <div class="lang-switcher" data-tooltip="语言">
+            <ion-icon name="language-outline"></ion-icon>
+            <span>中文</span>
+            <ion-icon name="chevron-down-outline"></ion-icon>
+          </div>
+          <div style="position:relative;cursor:pointer;">
+            <ion-icon name="notifications-outline" style="font-size:22px;color:var(--text-secondary);"></ion-icon>
+            <span class="badge" style="position:absolute;top:-4px;right:-4px;">3</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+            <div class="avatar" style="background:#5B5FE9;">张</div>
+            <span style="font-size:14px;font-weight:500;">张同学</span>
+            <ion-icon name="chevron-down-outline" style="font-size:16px;color:var(--text-tertiary);"></ion-icon>
+          </div>
+        </div>
+      </header>
+      <main class="app-content">
+        <!-- 搜索英雄区 -->
+        <div class="search-hero">
+          <div class="search-bar-wrap">
+            <div class="search-input-box">
+              <ion-icon name="search-outline"></ion-icon>
+              <input type="text" value="Java" placeholder="搜索题库、题目、试卷...">
+            </div>
+            <button class="btn btn-primary search-btn-lg">
+              <ion-icon name="search-outline"></ion-icon>
+              <span>搜索</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 分类标签 -->
+        <div class="category-tabs">
+          <div class="cat-tab active">
+            <span>全部</span>
+            <span class="count">10</span>
+          </div>
+          <div class="cat-tab">
+            <span>题库</span>
+            <span class="count">3</span>
+          </div>
+          <div class="cat-tab">
+            <span>题目</span>
+            <span class="count">5</span>
+          </div>
+          <div class="cat-tab">
+            <span>试卷</span>
+            <span class="count">2</span>
+          </div>
+        </div>
+
+        <!-- 搜索结果 — 题库 -->
+        <div class="result-section">
+          <div class="card">
+            <div class="card-header">
+              <div class="result-section-title">
+                <ion-icon name="library-outline"></ion-icon>
+                <h3>题库</h3>
+                <span class="result-count">3 个结果</span>
+              </div>
+              <a class="see-more">查看更多 <ion-icon name="chevron-forward-outline"></ion-icon></a>
+            </div>
+            <div class="card-body-sm" style="padding:0;">
+              <!-- 题库 1 -->
+              <div class="search-item">
+                <div class="search-item-icon" style="background:var(--color-primary-50);color:var(--text-brand);">
+                  <ion-icon name="library-outline"></ion-icon>
+                </div>
+                <div class="search-item-body">
+                  <div class="search-item-title">
+                    <a>官方<span class="keyword-highlight">Java</span>题库</a>
+                    <span class="tag tag-warning">官方</span>
+                  </div>
+                  <div class="search-item-desc">涵盖 <span class="keyword-highlight">Java</span> 基础语法、面向对象、集合框架、多线程、IO 流、JVM 原理等核心知识点的综合性题库。</div>
+                  <div class="search-item-meta">
+                    <span class="search-item-meta-item"><ion-icon name="document-text-outline"></ion-icon> 1,245 道题</span>
+                    <span class="search-item-meta-item"><ion-icon name="people-outline"></ion-icon> 练习 8,932 次</span>
+                    <span class="search-item-meta-item"><ion-icon name="star-outline"></ion-icon> 4.8 评分</span>
+                  </div>
+                </div>
+              </div>
+              <!-- 题库 2 -->
+              <div class="search-item">
+                <div class="search-item-icon" style="background:var(--color-primary-50);color:var(--text-brand);">
+                  <ion-icon name="library-outline"></ion-icon>
+                </div>
+                <div class="search-item-body">
+                  <div class="search-item-title">
+                    <a><span class="keyword-highlight">Java</span> 高级特性</a>
+                  </div>
+                  <div class="search-item-desc">深入 <span class="keyword-highlight">Java</span> 并发编程、NIO、JVM 调优、设计模式及框架源码分析的高级题库。</div>
+                  <div class="search-item-meta">
+                    <span class="search-item-meta-item"><ion-icon name="document-text-outline"></ion-icon> 568 道题</span>
+                    <span class="search-item-meta-item"><ion-icon name="people-outline"></ion-icon> 练习 2,104 次</span>
+                    <span class="search-item-meta-item"><ion-icon name="star-outline"></ion-icon> 4.6 评分</span>
+                  </div>
+                </div>
+              </div>
+              <!-- 题库 3 -->
+              <div class="search-item">
+                <div class="search-item-icon" style="background:var(--color-primary-50);color:var(--text-brand);">
+                  <ion-icon name="library-outline"></ion-icon>
+                </div>
+                <div class="search-item-body">
+                  <div class="search-item-title">
+                    <a><span class="keyword-highlight">Java</span> 面试精讲</a>
+                    <span class="tag tag-success">推荐</span>
+                  </div>
+                  <div class="search-item-desc">精选 <span class="keyword-highlight">Java</span> 高频面试题，涵盖八股文、算法与系统设计，助你高效备战面试。</div>
+                  <div class="search-item-meta">
+                    <span class="search-item-meta-item"><ion-icon name="document-text-outline"></ion-icon> 320 道题</span>
+                    <span class="search-item-meta-item"><ion-icon name="people-outline"></ion-icon> 练习 5,678 次</span>
+                    <span class="search-item-meta-item"><ion-icon name="star-outline"></ion-icon> 4.9 评分</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 搜索结果 — 题目 -->
+        <div class="result-section">
+          <div class="card">
+            <div class="card-header">
+              <div class="result-section-title">
+                <ion-icon name="document-text-outline"></ion-icon>
+                <h3>题目</h3>
+                <span class="result-count">5 个结果</span>
+              </div>
+              <a class="see-more">查看更多 <ion-icon name="chevron-forward-outline"></ion-icon></a>
+            </div>
+            <div class="card-body-sm" style="padding:0;">
+              <!-- 题目 1 -->
+              <div class="search-item">
+                <div class="search-item-icon" style="background:var(--color-success-50);color:var(--color-success-600);">
+                  <ion-icon name="radio-button-on-outline"></ion-icon>
+                </div>
+                <div class="search-item-body">
+                  <div class="search-item-desc"><span class="keyword-highlight">Java</span> 中以下哪个关键字用于实现继承？</div>
+                  <div class="search-item-meta">
+                    <span class="tag tag-primary">单选</span>
+                    <span class="tag tag-success">简单</span>
+                    <span class="search-item-meta-item">来源：官方<span class="keyword-highlight">Java</span>题库</span>
+                    <span class="tag tag-default">继承</span>
+                    <span class="tag tag-default">OOP</span>
+                  </div>
+                </div>
+              </div>
+              <!-- 题目 2 -->
+              <div class="search-item">
+                <div class="search-item-icon" style="background:var(--color-info-50);color:var(--color-info-600);">
+                  <ion-icon name="checkbox-outline"></ion-icon>
+                </div>
+                <div class="search-item-body">
+                  <div class="search-item-desc">关于 <span class="keyword-highlight">Java</span> 集合框架，以下说法正确的是？ ArrayList 底层基于数组实现，HashMap 是线程安全的...</div>
+                  <div class="search-item-meta">
+                    <span class="tag tag-primary">多选</span>
+                    <span class="tag tag-error">困难</span>
+                    <span class="search-item-meta-item">来源：<span class="keyword-highlight">Java</span> 高级特性</span>
+                    <span class="tag tag-default">集合框架</span>
+                    <span class="tag tag-default">HashMap</span>
+                  </div>
+                </div>
+              </div>
+              <!-- 题目 3 -->
+              <div class="search-item">
+                <div class="search-item-icon" style="background:var(--color-success-50);color:var(--color-success-600);">
+                  <ion-icon name="radio-button-on-outline"></ion-icon>
+                </div>
+                <div class="search-item-body">
+                  <div class="search-item-desc">在 <span class="keyword-highlight">Java</span> 中，以下哪个不是基本数据类型？</div>
+                  <div class="search-item-meta">
+                    <span class="tag tag-primary">单选</span>
+                    <span class="tag tag-success">简单</span>
+                    <span class="search-item-meta-item">来源：官方<span class="keyword-highlight">Java</span>题库</span>
+                    <span class="tag tag-default">基础语法</span>
+                  </div>
+                </div>
+              </div>
+              <!-- 题目 4 -->
+              <div class="search-item">
+                <div class="search-item-icon" style="background:var(--color-warning-50);color:var(--color-warning-600);">
+                  <ion-icon name="create-outline"></ion-icon>
+                </div>
+                <div class="search-item-body">
+                  <div class="search-item-desc">请简述 <span class="keyword-highlight">Java</span> 中 == 和 equals() 方法的区别，并举例说明在什么场景下使用它们。</div>
+                  <div class="search-item-meta">
+                    <span class="tag tag-warning">简答</span>
+                    <span class="tag tag-warning">中等</span>
+                    <span class="search-item-meta-item">来源：<span class="keyword-highlight">Java</span> 面试精讲</span>
+                    <span class="tag tag-default">equals</span>
+                    <span class="tag tag-default">String</span>
+                  </div>
+                </div>
+              </div>
+              <!-- 题目 5 -->
+              <div class="search-item">
+                <div class="search-item-icon" style="background:var(--color-info-50);color:var(--color-info-600);">
+                  <ion-icon name="checkbox-outline"></ion-icon>
+                </div>
+                <div class="search-item-body">
+                  <div class="search-item-desc">关于 <span class="keyword-highlight">Java</span> 多线程，以下哪些方式可以创建线程？ 继承 Thread 类、实现 Runnable 接口、实现 Callable 接口...</div>
+                  <div class="search-item-meta">
+                    <span class="tag tag-primary">多选</span>
+                    <span class="tag tag-warning">中等</span>
+                    <span class="search-item-meta-item">来源：<span class="keyword-highlight">Java</span> 高级特性</span>
+                    <span class="tag tag-default">多线程</span>
+                    <span class="tag tag-default">并发</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 搜索结果 — 试卷 -->
+        <div class="result-section">
+          <div class="card">
+            <div class="card-header">
+              <div class="result-section-title">
+                <ion-icon name="file-tray-full-outline"></ion-icon>
+                <h3>试卷</h3>
+                <span class="result-count">2 个结果</span>
+              </div>
+              <a class="see-more">查看更多 <ion-icon name="chevron-forward-outline"></ion-icon></a>
+            </div>
+            <div class="card-body-sm" style="padding:0;">
+              <!-- 试卷 1 -->
+              <div class="search-item">
+                <div class="search-item-icon" style="background:var(--color-warning-50);color:var(--color-warning-600);">
+                  <ion-icon name="file-tray-full-outline"></ion-icon>
+                </div>
+                <div class="search-item-body">
+                  <div class="search-item-title">
+                    <a><span class="keyword-highlight">Java</span>基础测试卷</a>
+                    <span class="tag tag-success">已发布</span>
+                  </div>
+                  <div class="search-item-desc">覆盖 <span class="keyword-highlight">Java</span> 基础语法、流程控制、数组与字符串的综合测试卷，适合初学者检验学习成果。</div>
+                  <div class="search-item-meta">
+                    <span class="search-item-meta-item"><ion-icon name="document-text-outline"></ion-icon> 50 道题</span>
+                    <span class="search-item-meta-item"><ion-icon name="trophy-outline"></ion-icon> 总分 100 分</span>
+                    <span class="search-item-meta-item"><ion-icon name="time-outline"></ion-icon> 90 分钟</span>
+                  </div>
+                </div>
+              </div>
+              <!-- 试卷 2 -->
+              <div class="search-item">
+                <div class="search-item-icon" style="background:var(--color-warning-50);color:var(--color-warning-600);">
+                  <ion-icon name="file-tray-full-outline"></ion-icon>
+                </div>
+                <div class="search-item-body">
+                  <div class="search-item-title">
+                    <a><span class="keyword-highlight">Java</span>集合框架专项练习</a>
+                    <span class="tag tag-primary">进行中</span>
+                  </div>
+                  <div class="search-item-desc">针对 <span class="keyword-highlight">Java</span> 集合框架的深度练习，涵盖 List、Set、Map 的原理与使用场景。</div>
+                  <div class="search-item-meta">
+                    <span class="search-item-meta-item"><ion-icon name="document-text-outline"></ion-icon> 30 道题</span>
+                    <span class="search-item-meta-item"><ion-icon name="trophy-outline"></ion-icon> 总分 60 分</span>
+                    <span class="search-item-meta-item"><ion-icon name="time-outline"></ion-icon> 60 分钟</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </main>
+    </div>
+  </div>
+  <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
+  <script nomodule src="https://cdn.jsdelivr.net/npm/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
+<button class="back-to-top visible" onclick="window.scrollTo({top:0,behavior:'smooth'})" data-tooltip="回到顶部"><ion-icon name="arrow-up-outline"></ion-icon></button>
+<script>
+    document.querySelector(".sidebar-toggle")?.addEventListener("click", function() {
+      var s=document.querySelector(".sidebar"),m=document.querySelector(".main-area");
+      s.classList.toggle("sidebar-collapsed");m.classList.toggle("main-area-collapsed");
+      var i=this.querySelector("ion-icon");
+      i.setAttribute("name",s.classList.contains("sidebar-collapsed")?"chevron-forward-outline":"chevron-back-outline");
+    });
+    window.addEventListener("scroll",function(){var b=document.querySelector(".back-to-top");if(b)b.classList.toggle("visible",window.scrollY>400)});
+  </script>
+</body>
+</html>

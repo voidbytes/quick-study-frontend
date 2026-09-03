@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quick Study — 个人中心</title>
+  <link rel="stylesheet" href="styles/mockup.css">
+  <style>
+    /* --- 个人中心专属样式 --- */
+    .profile-header-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius-xl);
+      padding: var(--space-8);
+      margin-bottom: var(--space-6);
+      position: relative;
+      overflow: hidden;
+    }
+    .profile-header-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 120px;
+      background: var(--gradient-brand-soft);
+      z-index: 0;
+    }
+    .profile-header-content {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      align-items: center;
+      gap: var(--space-6);
+    }
+    .profile-avatar {
+      width: 88px; height: 88px;
+      border-radius: var(--radius-full);
+      background: var(--gradient-brand);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: var(--text-3xl);
+      font-weight: var(--font-bold);
+      flex-shrink: 0;
+      border: 4px solid var(--bg-card);
+      box-shadow: var(--shadow-md);
+    }
+    .profile-info { flex: 1; }
+    .profile-name-row {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      margin-bottom: var(--space-1);
+    }
+    .profile-name {
+      font-size: var(--text-xl);
+      font-weight: var(--font-bold);
+      color: var(--text-primary);
+    }
+    .profile-username {
+      font-size: var(--text-sm);
+      color: var(--text-secondary);
+    }
+    .profile-stats {
+      display: flex;
+      gap: var(--space-8);
+      margin-top: var(--space-5);
+      padding-top: var(--space-5);
+      border-top: 1px solid var(--border-default);
+    }
+    .profile-stat {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-1);
+    }
+    .profile-stat-label {
+      font-size: var(--text-xs);
+      color: var(--text-tertiary);
+      font-weight: var(--font-medium);
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+    .profile-stat-value {
+      font-size: var(--text-lg);
+      font-weight: var(--font-bold);
+      color: var(--text-primary);
+    }
+    .two-col-layout {
+      display: grid;
+      grid-template-columns: 3fr 2fr;
+      gap: var(--space-6);
+      align-items: start;
+    }
+    .left-col, .right-col {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-6);
+    }
+    .card-section-label {
+      font-size: var(--text-xs);
+      font-weight: var(--font-semibold);
+      color: var(--color-error-600);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: var(--space-3);
+      padding-top: var(--space-4);
+      border-top: 1px solid var(--border-default);
+    }
+    .security-list {
+      display: flex;
+      flex-direction: column;
+    }
+    .security-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: var(--space-3) 0;
+      border-bottom: 1px solid var(--border-default);
+    }
+    .security-item:last-child { border-bottom: none; }
+    .security-label {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      font-size: var(--text-sm);
+      color: var(--text-secondary);
+    }
+    .security-label ion-icon {
+      font-size: 18px;
+      color: var(--text-tertiary);
+    }
+    .security-value {
+      font-size: var(--text-sm);
+      font-weight: var(--font-medium);
+      color: var(--text-primary);
+    }
+    .danger-actions {
+      display: flex;
+      gap: var(--space-3);
+      margin-top: var(--space-4);
+      padding-top: var(--space-4);
+      border-top: 1px solid var(--border-default);
+    }
+    .ai-key-row {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      margin-bottom: var(--space-3);
+    }
+    .ai-key-row .input {
+      font-family: var(--font-mono);
+      flex: 1;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="sidebar-logo">
+        <div class="sidebar-logo-icon">QS</div>
+        <span class="sidebar-logo-text">Quick Study</span>
+      <button class="sidebar-toggle" data-tooltip="折叠侧边栏">
+        <ion-icon name="chevron-back-outline"></ion-icon>
+      </button>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="sidebar-nav-section">
+          <div class="sidebar-nav-item"><ion-icon name="home-outline"></ion-icon><span>首页</span></div>
+          <div class="sidebar-nav-item"><ion-icon name="library-outline"></ion-icon><span>题库</span></div>
+          <div class="sidebar-nav-item"><ion-icon name="document-text-outline"></ion-icon><span>题目</span></div>
+          <div class="sidebar-nav-item"><ion-icon name="file-tray-full-outline"></ion-icon><span>试卷</span></div>
+        </div>
+        <div class="sidebar-nav-label">学习中心</div>
+        <div class="sidebar-nav-item"><ion-icon name="game-controller-outline"></ion-icon><span>练习</span></div>
+        <div class="sidebar-nav-item" data-tooltip="错题本"><ion-icon name="close-circle-outline"></ion-icon><span>错题本</span><span class="sidebar-badge">47</span></div>
+        <div class="sidebar-nav-item"><ion-icon name="time-outline"></ion-icon><span>做题记录</span></div>
+        
+        <div class="sidebar-nav-item"><ion-icon name="bar-chart-outline"></ion-icon><span>统计</span></div>
+        <div class="sidebar-nav-item" data-tooltip="通知"><ion-icon name="notifications-outline"></ion-icon><span>通知</span><span class="sidebar-badge brand">3</span></div>
+        <div class="sidebar-nav-label">管理</div>
+        <div class="sidebar-nav-item"><ion-icon name="people-outline"></ion-icon><span>用户管理</span></div>
+        <div class="sidebar-nav-item"><ion-icon name="checkmark-done-outline"></ion-icon><span>审核列表</span></div>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="sidebar-nav-item"><ion-icon name="log-out-outline"></ion-icon><span>退出登录</span></div>
+      </div>
+    </aside>
+    <div class="main-area">
+      <header class="app-header">
+        <div class="app-header-left">
+          <div class="breadcrumb">
+            <span class="breadcrumb-current">个人中心</span>
+          </div>
+        </div>
+        <div class="app-header-right">
+          <button class="mobile-menu-btn" onclick="document.querySelector('.sidebar').classList.toggle('mobile-open')"><ion-icon name="menu-outline"></ion-icon></button>
+          <div class="header-search">
+            <ion-icon name="search-outline"></ion-icon>
+            <input class="input" type="text" placeholder="搜索题库、题目、试卷..." readonly style="cursor:pointer;" onclick="window.location.href='12-search.html'">
+          </div>
+          <button class="header-action-btn" data-tooltip="暗色模式" onclick="var t=document.documentElement.getAttribute('data-theme');document.documentElement.setAttribute('data-theme',t==='dark'?'light':'dark')"><ion-icon name="moon-outline"></ion-icon></button>
+          <div class="lang-switcher" data-tooltip="语言">
+            <ion-icon name="language-outline"></ion-icon>
+            <span>中文</span>
+            <ion-icon name="chevron-down-outline"></ion-icon>
+          </div>
+          <div style="position:relative;cursor:pointer;">
+            <ion-icon name="notifications-outline" style="font-size:22px;color:var(--text-secondary);"></ion-icon>
+            <span class="badge" style="position:absolute;top:-4px;right:-4px;">3</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+            <div class="avatar" style="background:#5B5FE9;">张</div>
+            <span style="font-size:14px;font-weight:500;">张同学</span>
+            <ion-icon name="chevron-down-outline" style="font-size:16px;color:var(--text-tertiary);"></ion-icon>
+          </div>
+        </div>
+      </header>
+      <main class="app-content">
+        <!-- 个人资料头部卡片 -->
+        <div class="profile-header-card">
+          <div class="profile-header-content">
+            <div class="profile-avatar">张</div>
+            <div class="profile-info">
+              <div class="profile-name-row">
+                <span class="profile-name">张同学</span>
+                <span class="profile-username">@zhangstudent</span>
+                <span class="tag tag-default">普通用户</span>
+              </div>
+              <div style="font-size:var(--text-sm);color:var(--text-secondary);">
+                计算机科学与技术 · 坚持每日刷题，目标全栈工程师
+              </div>
+            </div>
+            <button class="btn btn-secondary">
+              <ion-icon name="create-outline"></ion-icon>
+              <span>编辑资料</span>
+            </button>
+          </div>
+          <div class="profile-stats">
+            <div class="profile-stat">
+              <span class="profile-stat-label">加入时间</span>
+              <span class="profile-stat-value">2024-03-15</span>
+            </div>
+            <div class="profile-stat">
+              <span class="profile-stat-label">题库数</span>
+              <span class="profile-stat-value">5</span>
+            </div>
+            <div class="profile-stat">
+              <span class="profile-stat-label">试卷数</span>
+              <span class="profile-stat-value">8</span>
+            </div>
+            <div class="profile-stat">
+              <span class="profile-stat-label">练习次数</span>
+              <span class="profile-stat-value">128</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 两栏布局 -->
+        <div class="two-col-layout">
+          <!-- 左栏 -->
+          <div class="left-col">
+            <!-- 基本信息 -->
+            <div class="card">
+              <div class="card-header">
+                <span class="card-title">基本信息</span>
+                <ion-icon name="person-outline" style="font-size:22px;color:var(--text-tertiary);"></ion-icon>
+              </div>
+              <div class="card-body">
+                <div class="input-group">
+                  <label class="input-label">昵称</label>
+                  <input class="input" type="text" value="张同学" readonly style="background:var(--bg-subtle);color:var(--text-secondary);">
+                </div>
+                <div class="input-group">
+                  <label class="input-label">用户名</label>
+                  <input class="input" type="text" value="zhangstudent" readonly style="background:var(--bg-subtle);color:var(--text-tertiary);">
+                  <div class="input-hint">用户名设置后不可修改</div>
+                </div>
+                <div class="input-group">
+                  <label class="input-label">邮箱 <span style="color:var(--text-tertiary);font-weight:var(--font-normal);">（选填）</span></label>
+                  <input class="input" type="email" value="zhang@example.com" readonly style="background:var(--bg-subtle);color:var(--text-secondary);">
+                </div>
+                <div class="flex justify-end">
+                  <button class="btn btn-secondary" style="display:none;">
+                    <ion-icon name="close-outline"></ion-icon>
+                    <span>取消</span>
+                  </button>
+                  <button class="btn btn-primary" style="display:none;">
+                    <ion-icon name="save-outline"></ion-icon>
+                    <span>保存修改</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- 修改密码 -->
+            <div class="card">
+              <div class="card-header">
+                <span class="card-title">修改密码</span>
+                <ion-icon name="lock-closed-outline" style="font-size:22px;color:var(--text-tertiary);"></ion-icon>
+              </div>
+              <div class="card-body">
+                <div class="input-group">
+                  <label class="input-label">当前密码 <span class="req">*</span></label>
+                  <input class="input" type="password" value="" placeholder="请输入当前密码">
+                </div>
+                <div class="input-group">
+                  <label class="input-label">新密码 <span class="req">*</span></label>
+                  <input class="input" type="password" value="" placeholder="请输入新密码">
+                  <div class="input-hint">密码长度 8-32 位，需包含字母和数字</div>
+                </div>
+                <div class="input-group">
+                  <label class="input-label">确认新密码 <span class="req">*</span></label>
+                  <input class="input" type="password" value="" placeholder="请再次输入新密码">
+                </div>
+                <div class="flex justify-end">
+                  <button class="btn btn-secondary">
+                    <ion-icon name="key-outline"></ion-icon>
+                    <span>修改密码</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 右栏 -->
+          <div class="right-col">
+            <!-- AI Key 配置 -->
+            <div class="card">
+              <div class="card-header">
+                <span class="card-title">AI Key 配置</span>
+                <ion-icon name="sparkles-outline" style="font-size:22px;color:var(--text-tertiary);"></ion-icon>
+              </div>
+              <div class="card-body">
+                <p class="text-sm text-secondary mb-4">配置你的 AI API Key 以使用 AI 评分建议功能</p>
+                <div class="ai-key-row">
+                  <input class="input" type="text" value="sk-****xYz123" readonly style="font-family:var(--font-mono);">
+                  <span class="tag tag-success">已配置</span>
+                </div>
+                <div class="flex gap-3 mb-4">
+                  <button class="btn btn-secondary btn-sm flex-1">
+                    <ion-icon name="refresh-outline"></ion-icon>
+                    <span>更新 Key</span>
+                  </button>
+                  <button class="btn btn-ghost btn-sm" style="color:var(--color-error-600);">
+                    <ion-icon name="trash-outline"></ion-icon>
+                    <span>删除 Key</span>
+                  </button>
+                </div>
+                <div class="alert alert-info">
+                  <ion-icon name="information-circle-outline" style="font-size:18px;flex-shrink:0;"></ion-icon>
+                  <span>API Key 加密存储，仅用于 AI 评分建议</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 账号安全 -->
+            <div class="card">
+              <div class="card-header">
+                <span class="card-title">账号安全</span>
+                <ion-icon name="shield-checkmark-outline" style="font-size:22px;color:var(--text-tertiary);"></ion-icon>
+              </div>
+              <div class="card-body">
+                <div class="security-list">
+                  <div class="security-item">
+                    <div class="security-label">
+                      <ion-icon name="ellipse-outline"></ion-icon>
+                      <span>账号状态</span>
+                    </div>
+                    <div class="security-value">
+                      <span class="tag tag-success">正常</span>
+                    </div>
+                  </div>
+                  <div class="security-item">
+                    <div class="security-label">
+                      <ion-icon name="time-outline"></ion-icon>
+                      <span>最近登录</span>
+                    </div>
+                    <div class="security-value">2026-09-03 10:30</div>
+                  </div>
+                  <div class="security-item">
+                    <div class="security-label">
+                      <ion-icon name="laptop-outline"></ion-icon>
+                      <span>登录设备</span>
+                    </div>
+                    <div class="security-value">Chrome / macOS</div>
+                  </div>
+                </div>
+                <div class="card-section-label">账号注销</div>
+                <div class="danger-actions">
+                  <button class="btn btn-ghost" style="color:var(--color-error-600);">
+                    <ion-icon name="close-circle-outline"></ion-icon>
+                    <span>注销账号</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </main>
+    </div>
+  </div>
+  <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
+  <script nomodule src="https://cdn.jsdelivr.net/npm/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
+<button class="back-to-top visible" onclick="window.scrollTo({top:0,behavior:'smooth'})" data-tooltip="回到顶部"><ion-icon name="arrow-up-outline"></ion-icon></button>
+<script>
+    document.querySelector(".sidebar-toggle")?.addEventListener("click", function() {
+      var s=document.querySelector(".sidebar"),m=document.querySelector(".main-area");
+      s.classList.toggle("sidebar-collapsed");m.classList.toggle("main-area-collapsed");
+      var i=this.querySelector("ion-icon");
+      i.setAttribute("name",s.classList.contains("sidebar-collapsed")?"chevron-forward-outline":"chevron-back-outline");
+    });
+    window.addEventListener("scroll",function(){var b=document.querySelector(".back-to-top");if(b)b.classList.toggle("visible",window.scrollY>400)});
+  </script>
+</body>
+</html>

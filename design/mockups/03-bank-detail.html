@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>题库详情 — Quick Study</title>
+  <link rel="stylesheet" href="styles/mockup.css">
+  <style>
+    /* Filter chips */
+    .tab-chip {
+      padding: 6px 14px;
+      border-radius: var(--radius-full);
+      border: 1px solid var(--border-default);
+      background: var(--bg-card);
+      color: var(--text-secondary);
+      font-size: var(--text-sm);
+      font-weight: var(--font-medium);
+      cursor: pointer;
+      transition: all var(--transition-base);
+      white-space: nowrap;
+    }
+    .tab-chip:hover { border-color: var(--color-primary-300); color: var(--text-brand); }
+    .tab-chip.active { background: var(--color-primary-500); color: white; border-color: var(--color-primary-500); }
+    .filter-row { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; margin-bottom: var(--space-3); }
+    .filter-row:last-child { margin-bottom: 0; }
+    .filter-label { font-size: var(--text-sm); font-weight: var(--font-medium); color: var(--text-secondary); width: 48px; flex-shrink: 0; }
+    /* Question table truncation */
+    .question-table { table-layout: fixed; }
+    .question-table th.summary-col, .question-table td.summary-col { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .tag-row { display: inline-flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+    .pagination-bar {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: var(--space-2);
+      margin-top: var(--space-6);
+    }
+    .page-info { font-size: var(--text-sm); color: var(--text-tertiary); margin-left: var(--space-3); }
+    .bank-hero { padding: var(--space-6); }
+    .bank-hero-top { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--space-8); flex-wrap: wrap; }
+    .bank-hero-left { flex: 1; min-width: 320px; }
+    .bank-hero-right { display: flex; flex-direction: column; align-items: flex-end; gap: var(--space-4); }
+    .bank-meta-inline { display: flex; align-items: center; gap: var(--space-4); font-size: var(--text-sm); color: var(--text-tertiary); }
+    .bank-meta-inline .item { display: inline-flex; align-items: center; gap: 4px; }
+    .bank-meta-inline .item ion-icon { font-size: 16px; }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-logo">
+        <div class="sidebar-logo-icon">QS</div>
+        <span class="sidebar-logo-text">Quick Study</span>
+      <button class="sidebar-toggle" data-tooltip="折叠侧边栏">
+        <ion-icon name="chevron-back-outline"></ion-icon>
+      </button>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="sidebar-nav-section">
+          <div class="sidebar-nav-item">
+            <ion-icon name="home-outline"></ion-icon>
+            <span>首页</span>
+          </div>
+          <div class="sidebar-nav-item active"><ion-icon name="library-outline"></ion-icon><span>题库</span></div>
+          <div class="sidebar-nav-item"><ion-icon name="document-text-outline"></ion-icon><span>题目</span></div>
+          <div class="sidebar-nav-item"><ion-icon name="file-tray-full-outline"></ion-icon><span>试卷</span></div>
+        </div>
+        <div class="sidebar-nav-label">学习中心</div>
+        <div class="sidebar-nav-item"><ion-icon name="game-controller-outline"></ion-icon><span>练习</span></div>
+        <div class="sidebar-nav-item" data-tooltip="错题本"><ion-icon name="close-circle-outline"></ion-icon><span>错题本</span><span class="sidebar-badge">47</span></div>
+        <div class="sidebar-nav-item"><ion-icon name="time-outline"></ion-icon><span>做题记录</span></div>
+        
+        <div class="sidebar-nav-item"><ion-icon name="bar-chart-outline"></ion-icon><span>统计</span></div>
+        <div class="sidebar-nav-item" data-tooltip="通知"><ion-icon name="notifications-outline"></ion-icon><span>通知</span><span class="sidebar-badge brand">3</span></div>
+        <div class="sidebar-nav-label">管理</div>
+        <div class="sidebar-nav-item"><ion-icon name="people-outline"></ion-icon><span>用户管理</span></div>
+        <div class="sidebar-nav-item"><ion-icon name="checkmark-done-outline"></ion-icon><span>审核列表</span></div>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="sidebar-nav-item"><ion-icon name="log-out-outline"></ion-icon><span>退出登录</span></div>
+      </div>
+    </aside>
+
+    <!-- Main Area -->
+    <div class="main-area">
+      <header class="app-header">
+        <div class="app-header-left">
+          <div class="breadcrumb">
+            <span>题库</span>
+            <ion-icon name="chevron-forward-outline" style="font-size:14px;"></ion-icon>
+            <span class="breadcrumb-current">Java基础与进阶</span>
+          </div>
+        </div>
+        <div class="app-header-right">
+          <button class="mobile-menu-btn" onclick="document.querySelector('.sidebar').classList.toggle('mobile-open')"><ion-icon name="menu-outline"></ion-icon></button>
+          <div class="header-search">
+            <ion-icon name="search-outline"></ion-icon>
+            <input class="input" type="text" placeholder="搜索题库、题目、试卷..." readonly style="cursor:pointer;" onclick="window.location.href='12-search.html'">
+          </div>
+          <button class="header-action-btn" data-tooltip="暗色模式" onclick="var t=document.documentElement.getAttribute('data-theme');document.documentElement.setAttribute('data-theme',t==='dark'?'light':'dark')"><ion-icon name="moon-outline"></ion-icon></button>
+          <div class="lang-switcher" data-tooltip="语言">
+            <ion-icon name="language-outline"></ion-icon>
+            <span>中文</span>
+            <ion-icon name="chevron-down-outline"></ion-icon>
+          </div>
+          <div style="position:relative;cursor:pointer;">
+            <ion-icon name="notifications-outline" style="font-size:22px;color:var(--text-secondary);"></ion-icon>
+            <span class="badge" style="position:absolute;top:-4px;right:-4px;">3</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+            <div class="avatar" style="background:#5B5FE9;">张</div>
+            <span style="font-size:14px;font-weight:500;color:var(--text-primary);">张同学</span>
+            <ion-icon name="chevron-down-outline" style="font-size:16px;color:var(--text-tertiary);"></ion-icon>
+          </div>
+        </div>
+      </header>
+      <main class="app-content">
+
+        <!-- Back button -->
+        <button class="btn btn-ghost btn-sm mb-4" style="padding-left:4px;">
+          <ion-icon name="arrow-back-outline"></ion-icon>
+          返回题库列表
+        </button>
+
+        <!-- Bank info header card -->
+        <div class="card mb-6">
+          <div class="bank-hero">
+            <div class="bank-hero-top">
+              <div class="bank-hero-left">
+                <div class="flex items-center gap-3 mb-3">
+                  <div class="avatar avatar-lg" style="background:var(--gradient-brand);width:56px;height:56px;font-size:24px;border-radius:12px;">J</div>
+                  <div>
+                    <h1 class="text-2xl font-bold" style="margin-bottom:6px;">Java基础与进阶</h1>
+                    <div class="flex items-center gap-2">
+                      <span class="tag tag-warning">官方</span>
+                      <span class="tag tag-success">公开</span>
+                    </div>
+                  </div>
+                </div>
+                <p class="text-sm text-secondary" style="max-width:560px;line-height:1.6;">本题库系统覆盖 Java 语言核心知识，从基础语法、面向对象编程，到集合框架、多线程并发、JVM 原理等进阶内容，适合从入门到精通的全程学习。</p>
+                <div class="bank-meta-inline mt-4">
+                  <span class="item"><ion-icon name="document-text-outline"></ion-icon>156 道题目</span>
+                  <span class="item"><ion-icon name="repeat-outline"></ion-icon>1,234 次练习</span>
+                  <span class="item"><ion-icon name="calendar-outline"></ion-icon>更新于 2026-08-28</span>
+                </div>
+              </div>
+              <div class="bank-hero-right">
+                <div class="flex items-center gap-2">
+                  <div class="avatar avatar-sm" style="background:#5B5FE9;">王</div>
+                  <span class="text-sm font-medium">创建者：王老师</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <button class="btn btn-primary">
+                    <ion-icon name="play-outline"></ion-icon>
+                    开始练习
+                  </button>
+                  <button class="btn btn-secondary">
+                    <ion-icon name="add-outline"></ion-icon>
+                    创建题目
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Filter bar -->
+        <div class="card mb-6">
+          <div class="card-body">
+            <div class="filter-row">
+              <span class="filter-label">题型：</span>
+              <div class="tab-chip active">全部</div>
+              <div class="tab-chip">单选</div>
+              <div class="tab-chip">多选</div>
+              <div class="tab-chip">判断</div>
+              <div class="tab-chip">填空</div>
+              <div class="tab-chip">简答</div>
+            </div>
+            <div class="filter-row">
+              <span class="filter-label">难度：</span>
+              <div class="tab-chip active">全部</div>
+              <div class="tab-chip">简单</div>
+              <div class="tab-chip">中等</div>
+              <div class="tab-chip">困难</div>
+            </div>
+            <div class="filter-row">
+              <span class="filter-label">标签：</span>
+              <div class="tab-chip active">面向对象</div>
+              <div class="tab-chip">集合框架</div>
+              <div class="tab-chip">多线程</div>
+              <div class="tab-chip">JVM</div>
+              <div class="tab-chip">基础语法</div>
+              <div class="tab-chip">字符串</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Question list table -->
+        <div class="table-wrapper">
+          <table class="data-table question-table">
+            <colgroup>
+              <col style="width:60px">
+              <col>
+              <col style="width:72px">
+              <col style="width:72px">
+              <col style="width:170px">
+              <col style="width:110px">
+              <col style="width:88px">
+            </colgroup>
+            <thead>
+              <tr>
+                <th class="col-center">题号</th>
+                <th>题干摘要</th>
+                <th class="col-center">题型</th>
+                <th class="col-center">难度</th>
+                <th>标签</th>
+                <th>创建时间</th>
+                <th class="col-center">操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="col-center">001</td>
+                <td class="summary-col">Java 中哪个关键字用于实现类的继承关系？</td>
+                <td class="col-center"><span class="tag tag-info">单选</span></td>
+                <td class="col-center"><span class="tag tag-success">简单</span></td>
+                <td><span class="tag-row"><span class="tag tag-default">面向对象</span><span class="tag tag-default">继承</span></span></td>
+                <td>2026-08-15</td>
+                <td class="col-center"><button class="btn btn-ghost btn-sm">查看</button></td>
+              </tr>
+              <tr>
+                <td class="col-center">002</td>
+                <td class="summary-col">下列选项中，哪些属于 Java 的基本数据类型？</td>
+                <td class="col-center"><span class="tag tag-warning">多选</span></td>
+                <td class="col-center"><span class="tag tag-success">简单</span></td>
+                <td><span class="tag-row"><span class="tag tag-default">基础语法</span></span></td>
+                <td>2026-08-16</td>
+                <td class="col-center"><button class="btn btn-ghost btn-sm">查看</button></td>
+              </tr>
+              <tr>
+                <td class="col-center">003</td>
+                <td class="summary-col">关于 Java 接口的描述，以下说法正确的是？</td>
+                <td class="col-center"><span class="tag tag-warning">多选</span></td>
+                <td class="col-center"><span class="tag tag-warning">中等</span></td>
+                <td><span class="tag-row"><span class="tag tag-default">面向对象</span><span class="tag tag-default">接口</span></span></td>
+                <td>2026-08-18</td>
+                <td class="col-center"><button class="btn btn-ghost btn-sm">查看</button></td>
+              </tr>
+              <tr>
+                <td class="col-center">004</td>
+                <td class="summary-col">Java 中 String 类的对象一旦创建便不可改变。</td>
+                <td class="col-center"><span class="tag tag-success">判断</span></td>
+                <td class="col-center"><span class="tag tag-success">简单</span></td>
+                <td><span class="tag-row"><span class="tag tag-default">字符串</span></span></td>
+                <td>2026-08-20</td>
+                <td class="col-center"><button class="btn btn-ghost btn-sm">查看</button></td>
+              </tr>
+              <tr>
+                <td class="col-center">005</td>
+                <td class="summary-col">Java 中实现多态需要满足的三个条件是：____、____、____。</td>
+                <td class="col-center"><span class="tag tag-default">填空</span></td>
+                <td class="col-center"><span class="tag tag-warning">中等</span></td>
+                <td><span class="tag-row"><span class="tag tag-default">面向对象</span><span class="tag tag-default">多态</span></span></td>
+                <td>2026-08-22</td>
+                <td class="col-center"><button class="btn btn-ghost btn-sm">查看</button></td>
+              </tr>
+              <tr>
+                <td class="col-center">006</td>
+                <td class="summary-col">简述 Java 中 HashMap 的底层数据结构及其扩容机制。</td>
+                <td class="col-center"><span class="tag tag-primary">简答</span></td>
+                <td class="col-center"><span class="tag tag-error">困难</span></td>
+                <td><span class="tag-row"><span class="tag tag-default">集合框架</span><span class="tag tag-default">HashMap</span></span></td>
+                <td>2026-08-24</td>
+                <td class="col-center"><button class="btn btn-ghost btn-sm">查看</button></td>
+              </tr>
+              <tr>
+                <td class="col-center">007</td>
+                <td class="summary-col">以下哪些 Java 集合类是线程安全的？</td>
+                <td class="col-center"><span class="tag tag-warning">多选</span></td>
+                <td class="col-center"><span class="tag tag-warning">中等</span></td>
+                <td><span class="tag-row"><span class="tag tag-default">集合框架</span><span class="tag tag-default">并发</span></span></td>
+                <td>2026-08-26</td>
+                <td class="col-center"><button class="btn btn-ghost btn-sm">查看</button></td>
+              </tr>
+              <tr>
+                <td class="col-center">008</td>
+                <td class="summary-col">JVM 垃圾回收中，可达性分析算法的 GC Roots 包括哪些？</td>
+                <td class="col-center"><span class="tag tag-primary">简答</span></td>
+                <td class="col-center"><span class="tag tag-error">困难</span></td>
+                <td><span class="tag-row"><span class="tag tag-default">JVM</span><span class="tag tag-default">GC</span></span></td>
+                <td>2026-08-28</td>
+                <td class="col-center"><button class="btn btn-ghost btn-sm">查看</button></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Pagination -->
+        <div class="pagination-bar">
+          <button class="page-btn" disabled><ion-icon name="chevron-back-outline"></ion-icon></button>
+          <button class="page-btn active">1</button>
+          <button class="page-btn">2</button>
+          <button class="page-btn">3</button>
+          <button class="page-btn">...</button>
+          <button class="page-btn"><ion-icon name="chevron-forward-outline"></ion-icon></button>
+          <span class="page-info">共 156 道题目</span>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
+  <script nomodule src="https://cdn.jsdelivr.net/npm/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
+<button class="back-to-top visible" onclick="window.scrollTo({top:0,behavior:'smooth'})" data-tooltip="回到顶部"><ion-icon name="arrow-up-outline"></ion-icon></button>
+<script>
+    document.querySelector(".sidebar-toggle")?.addEventListener("click", function() {
+      var s=document.querySelector(".sidebar"),m=document.querySelector(".main-area");
+      s.classList.toggle("sidebar-collapsed");m.classList.toggle("main-area-collapsed");
+      var i=this.querySelector("ion-icon");
+      i.setAttribute("name",s.classList.contains("sidebar-collapsed")?"chevron-forward-outline":"chevron-back-outline");
+    });
+    window.addEventListener("scroll",function(){var b=document.querySelector(".back-to-top");if(b)b.classList.toggle("visible",window.scrollY>400)});
+  </script>
+</body>
+</html>
