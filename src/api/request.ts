@@ -1,6 +1,6 @@
 import axios from 'axios'
 import type { AxiosInstance, AxiosRequestConfig, InternalAxiosRequestConfig, AxiosResponse } from 'axios'
-import { TOKEN_KEY, REFRESH_TOKEN_KEY } from '@/utils/constants'
+import { TOKEN_KEY, REFRESH_TOKEN_KEY, USER_INFO_KEY } from '@/utils/constants'
 import { createLogger } from '@/utils/logger'
 
 const log = createLogger('http')
@@ -67,6 +67,13 @@ function redirectToLogin() {
   window.location.href = '/login?redirect=' + encodeURIComponent(current)
 }
 
+function clearAuthAndRedirect() {
+  localStorage.removeItem(TOKEN_KEY)
+  localStorage.removeItem(REFRESH_TOKEN_KEY)
+  localStorage.removeItem(USER_INFO_KEY)
+  redirectToLogin()
+}
+
 // 响应拦截器
 request.interceptors.response.use(
   (response: AxiosResponse) => {
@@ -109,31 +116,32 @@ request.interceptors.response.use(
       if (!refreshToken) {
         isRefreshing = false
         log.warn('401 且无 refreshToken，跳转登录页')
-        localStorage.removeItem(TOKEN_KEY)
-        localStorage.removeItem(REFRESH_TOKEN_KEY)
-        localStorage.removeItem('quick-study-user-info')
-        redirectToLogin()
+        clearAuthAndRedirect()
         return Promise.reject(error)
       }
 
       try {
         const res = await axios.post('/api/v1/auth/refresh', { refreshToken })
-        const { token: newToken, refreshToken: newRefreshToken } = res.data.data
-        localStorage.setItem(TOKEN_KEY, newToken)
-        localStorage.setItem(REFRESH_TOKEN_KEY, newRefreshToken)
+        const body = res.data
+        const data = body?.data
+        // 后端业务失败也返回 HTTP 200（如 code=10105 刷新令牌无效），
+        // 裸 axios 不走拦截器，必须手动校验业务码，否则会把 undefined 写入
+        // localStorage 并陷入 401 死循环；成功字段为 accessToken（与登录响应一致）
+        if (body?.code !== 0 || !data?.accessToken || !data?.refreshToken) {
+          throw new Error(body?.message || '刷新令牌无效')
+        }
+        localStorage.setItem(TOKEN_KEY, data.accessToken)
+        localStorage.setItem(REFRESH_TOKEN_KEY, data.refreshToken)
         isRefreshing = false
         log.info('token 刷新成功')
-        onRefreshed(newToken)
-        config.headers.Authorization = `Bearer ${newToken}`
+        onRefreshed(data.accessToken)
+        config.headers.Authorization = `Bearer ${data.accessToken}`
         return request(config)
       } catch (refreshErr) {
         isRefreshing = false
         refreshSubscribers = []
         log.error('token 刷新失败，跳转登录页', refreshErr)
-        localStorage.removeItem(TOKEN_KEY)
-        localStorage.removeItem(REFRESH_TOKEN_KEY)
-        localStorage.removeItem('quick-study-user-info')
-        redirectToLogin()
+        clearAuthAndRedirect()
         return Promise.reject(error)
       }
     }

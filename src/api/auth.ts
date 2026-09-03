@@ -41,7 +41,7 @@ export function register(data: RegisterParams) {
 }
 
 export function refreshToken(refreshToken: string) {
-  return request.post<ApiResponse<{ token: string; refreshToken: string }>>('/auth/refresh', { refreshToken })
+  return request.post<ApiResponse<LoginResult>>('/auth/refresh', { refreshToken })
 }
 
 export function logout() {

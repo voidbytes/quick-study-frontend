@@ -87,7 +87,7 @@ export const useAuthStore = defineStore('auth', () => {
       throw new Error('No refresh token available')
     }
     const res = await authApi.refreshToken(refreshToken.value)
-    const { token: newToken, refreshToken: newRefreshToken } = res.data
+    const { accessToken: newToken, refreshToken: newRefreshToken } = res.data
     token.value = newToken
     refreshToken.value = newRefreshToken
     localStorage.setItem(TOKEN_KEY, newToken)
