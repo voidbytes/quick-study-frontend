@@ -34,6 +34,7 @@
           <n-descriptions-item label="题目数">{{ paper?.questionCount }}</n-descriptions-item>
           <n-descriptions-item label="时间限制">{{ paper?.timeLimit ? paper.timeLimit + '分钟' : '不限' }}</n-descriptions-item>
           <n-descriptions-item label="发布者">{{ paper?.creatorName || '-' }}</n-descriptions-item>
+          <n-descriptions-item label="批改人">{{ paper?.graderName || '暂无' }}</n-descriptions-item>
           <n-descriptions-item label="分享类型">{{ shareTypeLabel(paper?.shareType) }}</n-descriptions-item>
           <n-descriptions-item label="作答次数">
             {{ attemptLimitLabel(paper?.attemptType, paper?.attemptLimit) }}
@@ -46,11 +47,18 @@
       <div v-if="canManage" class="bg-white border border-neutral-200 rounded-lg p-5 mb-6">
         <div class="text-base font-semibold text-neutral-900 mb-4">批改人管理</div>
         <div class="flex items-center gap-2">
-          <n-input v-model:value="newGraderId" placeholder="输入用户ID" style="width: 200px" />
-          <n-button size="small" @click="handleUpdateGrader">更换批改人</n-button>
+          <UserSearchSelect
+            ref="graderSelectRef"
+            v-model:model-value="newGraderId"
+            placeholder="搜索用户名/昵称选择新批改人"
+            class="w-72"
+          />
+          <n-button size="small" type="primary" :disabled="!newGraderId" @click="handleUpdateGrader">
+            更换批改人
+          </n-button>
         </div>
         <div class="mt-2 text-sm text-neutral-500">
-          当前批改人ID：{{ paper?.graderId ?? '未设置' }}
+          当前批改人：{{ paper?.graderName || '未设置' }}
         </div>
       </div>
 
@@ -128,6 +136,7 @@ import LoadError from '@/components/LoadError.vue'
 import PageHeader from '@/components/common/PageHeader.vue'
 import StatCard from '@/components/common/StatCard.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
+import UserSearchSelect from '@/components/common/UserSearchSelect.vue'
 import { DocumentTextOutline } from '@vicons/ionicons5'
 import { useAuthStore } from '@/stores/auth'
 
@@ -141,15 +150,17 @@ const loading = ref(false)
 const loadError = ref('')
 const paper = ref<ExamPaper | null>(null)
 const paperQuestions = ref<PaperQuestion[]>([])
-/** 作答记录行：后端在 GradingSession 基础上返回昵称/提交时间等展示字段 */
+/** 作答记录行：后端 PaperSessionResponse 返回 userName（昵称优先）与提交时间等展示字段 */
 interface SessionRow extends GradingSession {
+  userName?: string
   userNickname?: string
   submittedAt?: string
 }
 const sessions = ref<SessionRow[]>([])
 const sessionsLoading = ref(false)
 const sessionStats = ref<any>(null)
-const newGraderId = ref('')
+const newGraderId = ref<number | null>(null)
+const graderSelectRef = ref<InstanceType<typeof UserSearchSelect> | null>(null)
 
 const paperTitle = computed(() => paper.value?.title || '试卷详情')
 const paperSubtitle = computed(() => (paper.value?.description ? paper.value.description : '查看试卷基本信息与作答情况'))
@@ -207,7 +218,13 @@ const sessionStatusMap: Record<string, { label: string; cls: string }> = {
 }
 
 const sessionColumns: DataTableColumn<SessionRow>[] = [
-  { title: '作答者', key: 'userNickname', width: 140, ellipsis: { tooltip: true } },
+  {
+    title: '作答者',
+    key: 'userName',
+    width: 140,
+    ellipsis: { tooltip: true },
+    render(row) { return row.userName || row.userNickname || '-' }
+  },
   { title: '得分', key: 'totalScore', width: 80, align: 'center' },
   {
     title: '状态',
@@ -224,6 +241,25 @@ const sessionColumns: DataTableColumn<SessionRow>[] = [
     key: 'submittedAt',
     width: 170,
     render(row) { return row.submittedAt ? dayjs(row.submittedAt).format('YYYY-MM-DD HH:mm') : '-' }
+  },
+  {
+    title: '操作',
+    key: 'actions',
+    width: 100,
+    align: 'center',
+    render(row) {
+      // 已提交/批改中的会话可进入详情（后端允许批改人与出卷人只读查看）
+      const viewable = ['SUBMITTED', 'GRADING', 'GRADED'].includes(row.status)
+      if (!viewable) return '-'
+      return h(
+        'a',
+        {
+          class: 'text-primary-500 hover:text-primary-600 text-sm font-medium cursor-pointer',
+          onClick: () => router.push(`/grading/sessions/${row.id}`)
+        },
+        '查看详情'
+      )
+    }
   }
 ]
 
@@ -273,12 +309,14 @@ async function fetchStats() {
 
 async function handleUpdateGrader() {
   if (!newGraderId.value) {
-    message.warning('请输入批改人ID')
+    message.warning('请先搜索并选择新批改人')
     return
   }
   try {
-    await updateGrader(paperId, Number(newGraderId.value))
+    await updateGrader(paperId, newGraderId.value)
     message.success('批改人已更新')
+    newGraderId.value = null
+    await fetchDetail()
   } catch {
     message.error('更新失败')
   }

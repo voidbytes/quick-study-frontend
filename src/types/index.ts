@@ -165,6 +165,8 @@ export interface ExamPaper {
   shareType: PaperShareType
   password?: string
   graderId?: number | null
+  /** 批改人展示名（nickname 优先，后端填充） */
+  graderName?: string | null
   questions?: PaperQuestion[]
   createdAt: string
   updatedAt?: string
@@ -311,7 +313,23 @@ export interface Notification {
   content: string
   isRead: boolean
   relatedId: number
+  /** 前端跳转链接（路由路径），为空表示无可跳转详情 */
+  link?: string | null
   createdAt: string
+}
+
+/** 我的考试记录（历史作答会话） */
+export interface MyExamSession {
+  id: number
+  paperId: number
+  paperTitle?: string | null
+  attemptNumber?: number
+  status: 'IN_PROGRESS' | 'SUBMITTED' | 'GRADING' | 'GRADED' | 'EXPIRED' | 'AUTO_SUBMITTED' | string
+  objectiveScore?: number | null
+  subjectiveScore?: number | null
+  totalScore?: number | null
+  startTime?: string | null
+  submittedAt?: string | null
 }
 
 // 批改

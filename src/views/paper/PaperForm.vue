@@ -27,7 +27,7 @@
               <n-input v-model:value="basicForm.title" placeholder="试卷标题" :maxlength="200" />
             </n-form-item>
             <n-form-item label="描述">
-              <n-input v-model:value="basicForm.description" type="textarea" :rows="3" :maxlength="500" />
+              <n-input v-model:value="basicForm.description" type="textarea" :rows="4" :maxlength="500" />
             </n-form-item>
             <n-grid :cols="2" :x-gap="16">
               <n-grid-item>
@@ -151,6 +151,7 @@
             <n-descriptions-item label="分享类型">{{ shareTypeLabels[basicForm.shareType] }}</n-descriptions-item>
             <n-descriptions-item label="时间限制">{{ basicForm.timeLimit ? basicForm.timeLimit + '分钟' : '不限' }}</n-descriptions-item>
             <n-descriptions-item label="防作弊">{{ basicForm.cheatEnabled ? '开启' : '关闭' }}</n-descriptions-item>
+            <n-descriptions-item label="批改人">{{ graderLabel || '默认（创建者本人）' }}</n-descriptions-item>
           </n-descriptions>
 
           <n-card title="题目列表" size="small">
@@ -185,6 +186,7 @@ import { getBankList } from '@/api/bank'
 import { getQuestionList } from '@/api/question'
 import { QUESTION_TYPE_MAP } from '@/utils/constants'
 import PageHeader from '@/components/common/PageHeader.vue'
+import UserSearchSelect from '@/components/common/UserSearchSelect.vue'
 import { ReorderTwoOutline } from '@vicons/ionicons5'
 
 const route = useRoute()
@@ -199,6 +201,7 @@ const loading = ref(false)
 const saving = ref(false)
 const questionsLoading = ref(false)
 const basicFormRef = ref(null)
+const graderSelectRef = ref<InstanceType<typeof UserSearchSelect> | null>(null)
 
 const basicForm = reactive({
   title: '',
@@ -207,7 +210,7 @@ const basicForm = reactive({
   startTime: null as number | null,
   endTime: null as number | null,
   attemptLimit: null as number | null,
-  graderId: '',
+  graderId: null as number | null,
   shareType: 'PRIVATE',
   password: '',
   cheatEnabled: false
@@ -255,6 +258,9 @@ const totalScore = computed(() =>
   scoredQuestions.value.reduce((sum, q) => sum + (q.score || 0), 0)
 )
 
+/** 确认页展示的批改人名称（预置或搜索选中的 label） */
+const graderLabel = computed(() => graderSelectRef.value?.currentLabel ?? null)
+
 const dragItemIndex = ref<number | null>(null)
 
 async function loadBanks() {
@@ -293,6 +299,11 @@ async function loadPaper() {
     basicForm.attemptLimit = data.attemptLimit ?? null
     basicForm.shareType = data.shareType || 'PRIVATE'
     basicForm.cheatEnabled = data.cheatEnabled || false
+    // 回填批改人：详情接口返回 graderName，直接预置选项，无需用户重新搜索
+    if (data.graderId != null) {
+      basicForm.graderId = data.graderId
+      graderSelectRef.value?.preset(data.graderId, data.graderName || `用户 ${data.graderId}`)
+    }
     if (data.questions) {
       scoredQuestions.value = data.questions.map((q: any) => ({ ...q, score: q.score || 0 }))
     }
@@ -353,6 +364,8 @@ async function handleSave() {
       shareType: basicForm.shareType,
       password: basicForm.password || undefined,
       cheatEnabled: basicForm.cheatEnabled,
+      // 批改人：留空交由后端默认为创建者本人
+      graderId: basicForm.graderId ?? undefined,
       questionItems: scoredQuestions.value.map((q, i) => ({
         questionId: q.id,
         score: q.score || 0,

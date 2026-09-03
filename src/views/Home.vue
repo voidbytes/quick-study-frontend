@@ -90,19 +90,40 @@
         <span class="card-title">最近活动</span>
         <n-button text type="primary" @click="router.push('/records')">全部记录 &rarr;</n-button>
       </div>
-      <EmptyState v-if="recentActivities.length === 0" description="暂无活动记录" :icon="TimeOutline" />
+      <!-- 空态：给出下一步行动引导，而非孤立链接 -->
+      <EmptyState
+        v-if="!loadingActivities && recentActivities.length === 0"
+        title="暂无活动记录"
+        description="去刷几道题或参加一场考试，这里会展示你的最新动态"
+        :icon="TimeOutline"
+      >
+        <template #action>
+          <div class="flex items-center gap-3">
+            <n-button size="small" @click="router.push('/practice')">去练习</n-button>
+            <n-button size="small" type="primary" @click="router.push('/papers')">去考试</n-button>
+          </div>
+        </template>
+      </EmptyState>
       <div v-else>
-        <div v-for="activity in recentActivities" :key="activity.id" class="list-row" style="cursor: default">
+        <div
+          v-for="activity in recentActivities"
+          :key="activity.key"
+          class="list-row"
+          @click="router.push(activity.link)"
+        >
           <span
-            class="text-xs font-semibold px-2 py-1 rounded-sm"
-            :class="activity.type === 'practice' ? 'bg-success-50 text-success-600' : 'bg-info-50 text-info-600'"
+            class="text-xs font-semibold px-2 py-1 rounded-sm flex-shrink-0"
+            :class="activity.kind === 'practice' ? 'bg-success-50 text-success-600' : 'bg-info-50 text-info-600'"
           >
-            {{ activity.type === 'practice' ? '练习' : '考试' }}
+            {{ activity.kind === 'practice' ? '练习' : '考试' }}
           </span>
           <div class="flex-1 min-w-0">
             <div class="list-row-title">{{ activity.title }}</div>
             <div class="list-row-desc">{{ activity.time }}</div>
           </div>
+          <n-icon :size="16" class="text-neutral-300 flex-shrink-0">
+            <ChevronForwardOutline />
+          </n-icon>
         </div>
       </div>
     </div>
@@ -117,6 +138,9 @@ import { getStatisticsOverview } from '@/api/statistics'
 import type { OverviewStats } from '@/types'
 import { getBankList } from '@/api/bank'
 import { getPaperList } from '@/api/paper'
+import { getRecordList } from '@/api/record'
+import { getMyExamSessions } from '@/api/exam'
+import dayjs from 'dayjs'
 import StatCard from '@/components/common/StatCard.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
 import SkeletonList from '@/components/common/SkeletonList.vue'
@@ -126,7 +150,8 @@ import {
   GameControllerOutline,
   CloseCircleOutline,
   TimeOutline,
-  SearchOutline
+  SearchOutline,
+  ChevronForwardOutline
 } from '@vicons/ionicons5'
 
 interface QuickEntry {
@@ -137,11 +162,23 @@ interface QuickEntry {
   iconColor: string
 }
 
+/** 最近活动条目：练习（题目维度）与考试（会话维度）归一化后的展示模型 */
+interface RecentActivity {
+  key: string
+  kind: 'practice' | 'exam'
+  title: string
+  time: string
+  /** 排序时间戳（毫秒） */
+  ts: number
+  link: string
+}
+
 const router = useRouter()
 const authStore = useAuthStore()
 
 const overview = ref<OverviewStats | null>(null)
-const recentActivities = ref<any[]>([])
+const recentActivities = ref<RecentActivity[]>([])
+const loadingActivities = ref(false)
 const loadingBanks = ref(false)
 const loadingPapers = ref(false)
 const publicBanks = ref<any[]>([])
@@ -163,6 +200,73 @@ const quickEntries = computed<QuickEntry[]>(() => {
     { title: '做题记录', path: '/records', icon: TimeOutline, bgColor: '#EEF0FF', iconColor: '#6E75F5' }
   ]
 })
+
+function stripHtml(html?: string | null): string {
+  if (!html) return ''
+  return html.replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim()
+}
+
+/** 快照 JSON 里提取纯文本题干（与记录页口径一致） */
+function snapshotTitle(questionSnapshot?: string | null): string {
+  try {
+    const obj: unknown = questionSnapshot ? JSON.parse(questionSnapshot) : null
+    const content = obj && typeof obj === 'object' ? (obj as Record<string, unknown>).content : null
+    const text = stripHtml(typeof content === 'string' ? content : '')
+    return text || '练习了一道题'
+  } catch {
+    return '练习了一道题'
+  }
+}
+
+/**
+ * 拉取最近活动：练习记录（题目维度）+ 考试会话，按时间倒序合并取前 6 条。
+ * 每条都带跳转目标：练习 → 原题；考试 → 成绩页（未提交则继续作答）。
+ */
+async function fetchRecentActivities() {
+  loadingActivities.value = true
+  try {
+    const [recordRes, examRes] = await Promise.allSettled([
+      getRecordList({ page: 1, size: 10 }),
+      getMyExamSessions({ page: 1, size: 10 })
+    ])
+
+    const items: RecentActivity[] = []
+
+    if (recordRes.status === 'fulfilled') {
+      for (const r of recordRes.value.data.records || []) {
+        const ts = r.createdAt ? dayjs(r.createdAt).valueOf() : 0
+        items.push({
+          key: `p-${r.id}`,
+          kind: 'practice',
+          title: snapshotTitle(r.questionSnapshot),
+          time: r.createdAt ? dayjs(r.createdAt).format('MM-DD HH:mm') : '',
+          ts,
+          link: r.bankId && r.questionId ? `/banks/${r.bankId}/questions/${r.questionId}` : '/records'
+        })
+      }
+    }
+
+    if (examRes.status === 'fulfilled') {
+      for (const s of examRes.value.data.records || []) {
+        const time = s.submittedAt || s.startTime || null
+        const ts = time ? dayjs(time).valueOf() : 0
+        const scoreSuffix = s.totalScore != null ? ` · ${s.totalScore} 分` : ''
+        items.push({
+          key: `e-${s.id}`,
+          kind: 'exam',
+          title: `${s.paperTitle || '未命名试卷'}${scoreSuffix}`,
+          time: time ? dayjs(time).format('MM-DD HH:mm') : '',
+          ts,
+          link: s.status === 'IN_PROGRESS' ? `/papers/${s.paperId}/exam` : `/exam/sessions/${s.id}/result`
+        })
+      }
+    }
+
+    recentActivities.value = items.sort((a, b) => b.ts - a.ts).slice(0, 6)
+  } finally {
+    loadingActivities.value = false
+  }
+}
 
 async function fetchPublicBanks() {
   loadingBanks.value = true
@@ -203,6 +307,7 @@ onMounted(() => {
     fetchPublicPapers()
   } else {
     fetchOverview()
+    fetchRecentActivities()
   }
 })
 </script>

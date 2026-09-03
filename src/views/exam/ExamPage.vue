@@ -136,13 +136,18 @@
             </template>
 
             <!-- 填空题 -->
+            <!-- 注意：naive-ui 输入组件在 value 为 undefined 时会退回非受控内部状态，
+                 导致切题后残留上一题的文字（历史 bug）。这里显式给默认值 '' 并按题目 id
+                 强制重建组件，保证每题作答区完全隔离。 -->
             <template v-if="currentQuestion && currentQuestion.type === 'FILL_BLANK'">
               <label class="block text-sm font-medium text-neutral-700 mb-2">请填写答案</label>
               <n-input
-                v-model:value="fillAnswers[currentQuestion.id]"
+                :key="`fill-${currentQuestion.id}`"
+                :value="fillAnswers[currentQuestion.id] || ''"
                 type="textarea"
                 placeholder="请输入答案"
-                :rows="3"
+                :rows="4"
+                @update:value="(v: string) => { fillAnswers[currentQuestion.id] = v }"
                 @blur="saveFillAnswer"
               />
             </template>
@@ -151,10 +156,12 @@
             <template v-if="currentQuestion && currentQuestion.type === 'SHORT_ANSWER'">
               <label class="block text-sm font-medium text-neutral-700 mb-2">请填写答案</label>
               <n-input
-                v-model:value="fillAnswers[currentQuestion.id]"
+                :key="`short-${currentQuestion.id}`"
+                :value="fillAnswers[currentQuestion.id] || ''"
                 type="textarea"
                 placeholder="请输入答案"
-                :rows="6"
+                :rows="8"
+                @update:value="(v: string) => { fillAnswers[currentQuestion.id] = v }"
                 @blur="saveFillAnswer"
               />
             </template>

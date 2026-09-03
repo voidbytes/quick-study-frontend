@@ -1,5 +1,5 @@
 import request from './request'
-import type { ApiResponse } from '@/types'
+import type { ApiResponse, PageResult, MyExamSession } from '@/types'
 
 export interface StartSessionResponse {
   sessionId: string
@@ -83,4 +83,9 @@ export function reportCheat(sessionId: string) {
 
 export function getResult(sessionId: string) {
   return request.get<ApiResponse<SessionResultResponse>>(`/sessions/${sessionId}/result`)
+}
+
+/** 「我的考试记录」：当前用户的历史作答会话分页列表 */
+export function getMyExamSessions(params?: { page?: number; size?: number }) {
+  return request.get<ApiResponse<PageResult<MyExamSession>>>('/my/exam-sessions', { params })
 }

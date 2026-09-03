@@ -37,10 +37,12 @@
         <div
           v-for="notif in notifications"
           :key="notif.id"
-          class="flex items-start gap-4 px-5 py-4 rounded-lg border transition-colors"
-          :class="notif.isRead
-            ? 'bg-white border-neutral-200'
-            : 'bg-primary-50 border-primary-200'"
+          class="flex items-start gap-4 px-5 py-4 rounded-lg border transition-colors group"
+          :class="[
+            notif.isRead ? 'bg-white border-neutral-200' : 'bg-primary-50 border-primary-200',
+            notif.link ? 'cursor-pointer hover:border-primary-300 hover:shadow-sm' : ''
+          ]"
+          @click="handleOpen(notif)"
         >
           <!-- 类型图标 -->
           <div
@@ -60,10 +62,21 @@
               <span class="text-sm font-medium text-neutral-900">{{ notif.title }}</span>
             </div>
             <p class="text-sm text-neutral-600 leading-relaxed mb-2">{{ notif.content }}</p>
-            <span class="inline-flex items-center gap-1 text-xs text-neutral-500">
-              <n-icon :size="14" :component="TimeOutline" />
-              {{ dayjs(notif.createdAt).format('YYYY-MM-DD HH:mm') }}
-            </span>
+            <div class="flex items-center gap-3">
+              <span class="inline-flex items-center gap-1 text-xs text-neutral-500">
+                <n-icon :size="14" :component="TimeOutline" />
+                {{ dayjs(notif.createdAt).format('YYYY-MM-DD HH:mm') }}
+              </span>
+              <!-- 跳转入口：有链接的通知展示「查看详情」 -->
+              <span
+                v-if="notif.link"
+                class="inline-flex items-center gap-0.5 text-xs font-medium text-primary-500 group-hover:text-primary-600"
+                @click.stop="handleOpen(notif)"
+              >
+                查看详情
+                <n-icon :size="14" :component="ChevronForwardOutline" />
+              </span>
+            </div>
           </div>
 
           <div class="flex flex-col items-end gap-2 flex-shrink-0 pt-0.5">
@@ -73,7 +86,7 @@
               size="tiny"
               quaternary
               type="primary"
-              @click="handleMarkRead(notif)"
+              @click.stop="handleMarkRead(notif)"
             >
               <template #icon>
                 <n-icon :component="CheckmarkCircleOutline" />
@@ -84,7 +97,7 @@
               size="tiny"
               quaternary
               type="error"
-              @click="handleDelete(notif)"
+              @click.stop="handleDelete(notif)"
             >
               <template #icon>
                 <n-icon :component="TrashOutline" />
@@ -110,6 +123,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { useMessage } from 'naive-ui'
 import type { Component } from 'vue'
 import { getNotifications, markRead, markReadAll, deleteNotification } from '@/api/notification'
@@ -126,10 +140,13 @@ import {
   ShieldCheckmarkOutline,
   SwapHorizontalOutline,
   TrashOutline,
-  TimeOutline
+  TimeOutline,
+  ChevronForwardOutline
 } from '@vicons/ionicons5'
 import dayjs from 'dayjs'
+import type { Notification } from '@/types'
 
+const router = useRouter()
 const message = useMessage()
 const { confirmDanger } = useConfirm()
 
@@ -212,6 +229,20 @@ async function handleMarkRead(notif: any) {
   } catch {
     message.error('操作失败')
   }
+}
+
+/** 打开通知：有跳转链接时先标已读再跳转（阅读即消费） */
+async function handleOpen(notif: Notification) {
+  if (!notif.link) return
+  if (!notif.isRead) {
+    try {
+      await markRead(notif.id)
+      notif.isRead = true
+    } catch {
+      // 已读标记失败不阻断跳转
+    }
+  }
+  router.push(notif.link)
 }
 
 async function handleReadAll() {

@@ -1,5 +1,7 @@
 <template>
-  <div class="markdown-editor border rounded">
+  <!-- w-full：组件位于 n-form-item-blank（flex 容器）内，
+       缺省 flex-basis:auto 会收缩到内容固有宽度(~420px)，必须显式撑满 -->
+  <div class="markdown-editor w-full border rounded">
     <v-md-editor
       :model-value="modelValue"
       :height="height"
@@ -69,3 +71,11 @@ async function handleUploadImage(event: any, insertImage: (url: string, alt: str
   }
 }
 </script>
+<style scoped>
+.markdown-editor {
+  width: 100%;
+}
+.markdown-editor :deep(.v-md-editor) {
+  width: 100%;
+}
+</style>

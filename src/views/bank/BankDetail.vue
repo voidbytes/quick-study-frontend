@@ -143,7 +143,7 @@
             type="textarea"
             placeholder="题库描述（可选）"
             :maxlength="500"
-            :rows="3"
+            :rows="4"
           />
         </n-form-item>
         <div class="flex justify-end gap-2">
