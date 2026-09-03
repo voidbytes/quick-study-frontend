@@ -40,7 +40,7 @@
           class="flex items-start gap-4 px-5 py-4 rounded-lg border transition-colors group"
           :class="[
             notif.isRead ? 'bg-white border-neutral-200' : 'bg-primary-50 border-primary-200',
-            notif.link ? 'cursor-pointer hover:border-primary-300 hover:shadow-sm' : ''
+            resolveNotificationRoute(notif) ? 'cursor-pointer hover:border-primary-300 hover:shadow-sm' : ''
           ]"
           @click="handleOpen(notif)"
         >
@@ -67,9 +67,9 @@
                 <n-icon :size="14" :component="TimeOutline" />
                 {{ dayjs(notif.createdAt).format('YYYY-MM-DD HH:mm') }}
               </span>
-              <!-- 跳转入口：有链接的通知展示「查看详情」 -->
+              <!-- 跳转入口：可解析出路由的通知展示「查看详情」 -->
               <span
-                v-if="notif.link"
+                v-if="resolveNotificationRoute(notif)"
                 class="inline-flex items-center gap-0.5 text-xs font-medium text-primary-500 group-hover:text-primary-600"
                 @click.stop="handleOpen(notif)"
               >
@@ -127,6 +127,7 @@ import { useRouter } from 'vue-router'
 import { useMessage } from 'naive-ui'
 import type { Component } from 'vue'
 import { getNotifications, markRead, markReadAll, deleteNotification } from '@/api/notification'
+import { resolveNotificationRoute } from '@/utils/notificationRoute'
 import EmptyState from '@/components/common/EmptyState.vue'
 import { useConfirm } from '@/composables/useConfirm'
 import {
@@ -144,7 +145,6 @@ import {
   ChevronForwardOutline
 } from '@vicons/ionicons5'
 import dayjs from 'dayjs'
-import type { Notification } from '@/types'
 
 const router = useRouter()
 const message = useMessage()
@@ -231,9 +231,10 @@ async function handleMarkRead(notif: any) {
   }
 }
 
-/** 打开通知：有跳转链接时先标已读再跳转（阅读即消费） */
-async function handleOpen(notif: Notification) {
-  if (!notif.link) return
+/** 打开通知：统一路由解析（link 优先，type+relatedId 兜底），先标已读再跳转（阅读即消费） */
+async function handleOpen(notif: any) {
+  const route = resolveNotificationRoute(notif)
+  if (!route) return
   if (!notif.isRead) {
     try {
       await markRead(notif.id)
@@ -242,7 +243,7 @@ async function handleOpen(notif: Notification) {
       // 已读标记失败不阻断跳转
     }
   }
-  router.push(notif.link)
+  router.push(route)
 }
 
 async function handleReadAll() {
