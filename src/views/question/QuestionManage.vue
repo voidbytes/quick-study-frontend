@@ -61,10 +61,28 @@
           @keyup.enter="handleSearch"
         />
         <div class="flex items-center gap-2 ml-auto">
+          <n-button
+            v-if="authStore.isAuthenticated"
+            :disabled="exporting"
+            @click="handleExport"
+          >
+            {{ selectedIds.length > 0 ? `导出选中（${selectedIds.length}）` : '批量导出' }}
+          </n-button>
+          <n-button v-if="authStore.isAdmin" @click="showImportDialog = true">导入题目</n-button>
           <n-button type="primary" @click="handleSearch">搜索</n-button>
           <n-button @click="handleReset">重置</n-button>
         </div>
       </div>
+    </div>
+
+    <!-- 批量操作条 -->
+    <div v-if="questionList.length > 0" class="flex items-center gap-2 mb-3 px-1">
+      <n-checkbox :checked="allCurrentPageSelected" @update:checked="toggleSelectAll">全选本页</n-checkbox>
+      <span class="text-xs text-neutral-400">已选 {{ selectedIds.length }} 题</span>
+      <span v-if="selectedIds.length === 0" class="text-xs text-neutral-400">
+        未勾选时「批量导出」将导出当前筛选条件下的全部题目
+      </span>
+      <span v-else class="text-xs text-primary-500">仅导出勾选的题目</span>
     </div>
 
     <!-- 题目卡片列表 -->
@@ -84,6 +102,12 @@
         :key="q.id"
         class="flex items-start gap-3 px-4 py-4 hover:bg-neutral-50 transition-colors"
       >
+        <!-- 多选 -->
+        <n-checkbox
+          :checked="selectedIds.includes(q.id)"
+          class="mt-1 flex-shrink-0"
+          @update:checked="(v: boolean) => toggleSelect(q.id, v)"
+        />
         <!-- 题号 -->
         <span class="text-sm font-mono text-neutral-400 w-10 flex-shrink-0 pt-0.5">
           #{{ String((pagination.page - 1) * pagination.pageSize + index + 1).padStart(3, '0') }}
@@ -155,11 +179,14 @@
       />
       <span class="text-sm text-neutral-400">共 {{ pagination.itemCount }} 道</span>
     </div>
+
+    <!-- 导入题目弹窗（目标题库在弹窗内选择） -->
+    <QuestionImportDialog v-model:show="showImportDialog" @imported="fetchList" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useMessage } from 'naive-ui'
 import type { SelectOption } from 'naive-ui'
@@ -167,6 +194,8 @@ import type { Question, QuestionType, Difficulty } from '@/types'
 import { getAllQuestions, deleteQuestion } from '@/api/question'
 import { getBankList } from '@/api/bank'
 import { getTagList } from '@/api/tag'
+import { exportQuestions } from '@/api/importExport'
+import { triggerBlobDownload, nowStamp } from '@/utils/download'
 import {
   QUESTION_TYPE_MAP,
   QUESTION_TYPE_OPTIONS,
@@ -181,6 +210,7 @@ import SkeletonList from '@/components/common/SkeletonList.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
 import { DocumentTextOutline } from '@vicons/ionicons5'
 import dayjs from 'dayjs'
+import QuestionImportDialog from '@/components/importExport/QuestionImportDialog.vue'
 
 const router = useRouter()
 const message = useMessage()
@@ -191,6 +221,14 @@ const loading = ref(false)
 const questionList = ref<Question[]>([])
 const bankOptions = ref<SelectOption[]>([])
 const tagOptions = ref<SelectOption[]>([])
+
+/** 勾选（仅当前页范围） */
+const selectedIds = ref<number[]>([])
+const exporting = ref(false)
+const showImportDialog = ref(false)
+const allCurrentPageSelected = computed(() => {
+  return questionList.value.length > 0 && questionList.value.every((q) => selectedIds.value.includes(q.id))
+})
 
 const filter = reactive({
   bankId: null as number | null,
@@ -321,6 +359,7 @@ function handleCreateHint() {
 
 function handleSearch() {
   pagination.page = 1
+  selectedIds.value = []
   fetchList()
 }
 
@@ -332,18 +371,70 @@ function handleReset() {
   filter.tagIds = []
   filter.keyword = ''
   pagination.page = 1
+  selectedIds.value = []
   fetchList()
 }
 
 function handlePageChange(page: number) {
   pagination.page = page
+  selectedIds.value = []
   fetchList()
 }
 
 function handlePageSizeChange(pageSize: number) {
   pagination.pageSize = pageSize
   pagination.page = 1
+  selectedIds.value = []
   fetchList()
+}
+
+function toggleSelect(id: number, checked: boolean) {
+  if (checked) {
+    if (!selectedIds.value.includes(id)) selectedIds.value.push(id)
+  } else {
+    selectedIds.value = selectedIds.value.filter((sid) => sid !== id)
+  }
+}
+
+function toggleSelectAll(checked: boolean) {
+  const currentIds = questionList.value.map((q) => q.id)
+  if (checked) {
+    selectedIds.value = Array.from(new Set([...selectedIds.value, ...currentIds]))
+  } else {
+    const remain = new Set(selectedIds.value.filter((id) => !currentIds.includes(id)))
+    selectedIds.value = Array.from(remain)
+  }
+}
+
+async function handleExport() {
+  const noSelection = selectedIds.value.length === 0
+  const noFilter =
+    !filter.bankId && !filter.type && !filter.difficulty && !filter.status &&
+    filter.tagIds.length === 0 && !filter.keyword
+  if (noSelection && noFilter) {
+    message.warning('请先勾选题目，或设置筛选条件（如选择题库）后再批量导出')
+    return
+  }
+  exporting.value = true
+  try {
+    const blob =
+      selectedIds.value.length > 0
+        ? await exportQuestions({ questionIds: selectedIds.value })
+        : await exportQuestions({
+            bankId: filter.bankId ?? undefined,
+            type: filter.type ?? undefined,
+            difficulty: filter.difficulty ?? undefined,
+            status: filter.status ?? undefined,
+            tagIds: filter.tagIds.length ? filter.tagIds : undefined,
+            keyword: filter.keyword || undefined
+          })
+    triggerBlobDownload(blob, `题目导出_${nowStamp()}.json`)
+    message.success('导出成功')
+  } catch (err: any) {
+    message.error(err?.message || '导出失败')
+  } finally {
+    exporting.value = false
+  }
 }
 
 function handleDelete(q: Question) {

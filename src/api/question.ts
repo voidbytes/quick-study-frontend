@@ -65,21 +65,3 @@ export function updateSort(ids: number[]) {
 export function deleteQuestion(bankId: number | string, questionId: number | string) {
   return request.delete<ApiResponse<null>>(`/banks/${bankId}/questions/${questionId}`)
 }
-
-export function batchImport(bankId: number | string, file: File) {
-  const formData = new FormData()
-  formData.append('file', file)
-  return request.post<ApiResponse<{ success: number; failed: number; errors: string[] }>>(
-    `/questions/batch-import?bankId=${bankId}`,
-    formData,
-    {
-      headers: { 'Content-Type': 'multipart/form-data' }
-    }
-  )
-}
-
-export function downloadTemplate() {
-  return request.get<Blob>('/questions/import-template', {
-    responseType: 'blob'
-  })
-}

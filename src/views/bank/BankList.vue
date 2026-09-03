@@ -3,6 +3,9 @@
     <!-- 页头 -->
     <PageHeader title="题库" subtitle="浏览、搜索并管理题库">
       <template #actions>
+        <n-button v-if="authStore.isAuthenticated" @click="showImportDialog = true">
+          导入题库
+        </n-button>
         <n-button v-if="authStore.isAuthenticated" type="primary" @click="showCreateDialog = true">
           创建题库
         </n-button>
@@ -99,14 +102,22 @@
               {{ formatDate(bank.createdAt) }}
             </span>
           </div>
-          <div v-if="authStore.isAdmin" class="flex items-center gap-4 mt-2" @click.stop>
+          <div v-if="authStore.isAdmin || isCreator(bank)" class="flex items-center gap-4 mt-2" @click.stop>
             <a
+              v-if="authStore.isAdmin"
               class="text-xs text-primary-500 hover:text-primary-600 font-medium cursor-pointer select-none"
               @click="handleToggleVisibility(bank)"
             >
               {{ bank.isPublic ? '设为私有' : '设为公开' }}
             </a>
             <a
+              class="text-xs text-primary-500 hover:text-primary-600 font-medium cursor-pointer select-none"
+              @click="handleExport(bank)"
+            >
+              导出
+            </a>
+            <a
+              v-if="authStore.isAdmin"
               class="text-xs text-error-500 hover:text-error-600 font-medium cursor-pointer select-none"
               @click="handleDelete(bank)"
             >
@@ -132,6 +143,9 @@
 
     <!-- 创建题库弹窗 -->
     <BankCreateDialog v-model:show="showCreateDialog" @created="handleBankCreated" />
+
+    <!-- 导入题库弹窗 -->
+    <BankImportDialog v-model:show="showImportDialog" @imported="handleBankImported" />
   </div>
 </template>
 
@@ -140,6 +154,8 @@ import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useMessage } from 'naive-ui'
 import { getBankList, deleteBank, toggleVisibility } from '@/api/bank'
+import { exportBank } from '@/api/importExport'
+import { triggerBlobDownload, nowStamp } from '@/utils/download'
 import type { QuestionBank } from '@/types'
 import { useAuthStore } from '@/stores/auth'
 import { useConfirm } from '@/composables/useConfirm'
@@ -148,6 +164,7 @@ import FilterBar from '@/components/common/FilterBar.vue'
 import SkeletonList from '@/components/common/SkeletonList.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
 import BankCreateDialog from './BankCreateDialog.vue'
+import BankImportDialog from '@/components/importExport/BankImportDialog.vue'
 import {
   LibraryOutline,
   SearchOutline,
@@ -158,6 +175,7 @@ import dayjs from 'dayjs'
 
 /** 列表接口实际返回的展示字段（后端 BankResponse）在 QuestionBank 基础上扩展 */
 interface BankItem extends QuestionBank {
+  creatorId?: number | string | null
   creatorName?: string | null
   isOfficial?: boolean
   practiceCount?: number
@@ -170,6 +188,7 @@ const authStore = useAuthStore()
 
 const loading = ref(false)
 const showCreateDialog = ref(false)
+const showImportDialog = ref(false)
 const searchKeyword = ref('')
 const filterVisibility = ref<number | null>(null)
 
@@ -199,6 +218,16 @@ function visibilityTagClass(bank: BankItem): string {
 
 function formatDate(time: string | undefined) {
   return time ? dayjs(time).format('YYYY-MM-DD') : '-'
+}
+
+function isCreator(bank: BankItem): boolean {
+  const me = authStore.userInfo?.id
+  if (!me || bank.creatorId === undefined || bank.creatorId === null) return false
+  return String(bank.creatorId) === String(me)
+}
+
+function handleBankImported() {
+  fetchList()
 }
 
 async function fetchList() {
@@ -260,6 +289,17 @@ function handleDelete(row: BankItem) {
       }
     }
   })
+}
+
+async function handleExport(row: BankItem) {
+  try {
+    message.info('正在生成导出文件…')
+    const blob = await exportBank(row.id)
+    triggerBlobDownload(blob, `${row.name || '题库'}_${nowStamp()}.json`)
+    message.success('导出成功')
+  } catch (err: any) {
+    message.error(err?.message || '导出失败')
+  }
 }
 
 onMounted(() => {

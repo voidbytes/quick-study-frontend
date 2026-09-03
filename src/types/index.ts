@@ -87,6 +87,61 @@ export interface QuestionOption {
   content: string
 }
 
+// ============ 导入导出（题库/题目）============
+
+/**
+ * 单题交换结构（与后端 importexport 模块 QuestionExportItem 对应）。
+ * options 必须是 JSON 字符串（如 "[{\"key\":\"A\",\"content\":\"...\"}]"），不能是对象数组
+ * （后端用 JsonNode 接收，能容忍数组，但导出的规范格式是字符串）。
+ */
+export interface QuestionExportItem {
+  type: QuestionType
+  content: string
+  options?: string | null
+  answer: string
+  referenceAnswer?: string | null
+  analysis?: string | null
+  difficulty: Difficulty
+  status: string
+  tags: string[]
+}
+
+export interface BankExportFile {
+  format: 'quick-study-bank'
+  version: number
+  exportedAt: string
+  bank: { name: string; description?: string | null; coverUrl?: string | null }
+  questions: QuestionExportItem[]
+}
+
+export interface QuestionExportFile {
+  format: 'quick-study-questions'
+  version: number
+  exportedAt: string
+  questions: QuestionExportItem[]
+}
+
+export interface ImportSkippedItem {
+  index: number
+  content: string
+  reason: string
+}
+
+export interface ImportErrorItem {
+  index: number
+  message: string
+}
+
+export interface ImportResult {
+  bankId?: number | string
+  bankName?: string
+  successCount: number
+  skipCount: number
+  failCount: number
+  skipped: ImportSkippedItem[]
+  errors: ImportErrorItem[]
+}
+
 // 试卷
 // 字段与后端运行时（PaperResponse）一致：PaperList / PaperDetail / PaperForm 按此消费。
 export type PaperStatus = 'DRAFT' | 'PUBLISHED' | 'CLOSED'

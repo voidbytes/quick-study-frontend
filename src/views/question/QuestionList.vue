@@ -47,13 +47,29 @@
         @update:value="handleSearch"
       />
       <div class="ml-auto flex items-center gap-2">
+        <n-button
+          v-if="authStore.isAuthenticated && questionList.length > 0"
+          :disabled="exporting"
+          @click="handleExport"
+        >
+          {{ selectedIds.length > 0 ? `导出选中（${selectedIds.length}）` : '导出题目' }}
+        </n-button>
+        <n-button v-if="authStore.isAdmin" @click="showImportDialog = true">导入题目</n-button>
         <n-button v-if="authStore.isAdmin" type="primary" @click="router.push(`/banks/${bankId}/questions/create`)">
           创建题目
         </n-button>
-        <n-button v-if="authStore.isAdmin" @click="handleBatchImport">批量导入</n-button>
-        <n-button v-if="authStore.isAdmin" @click="handleDownloadTemplate">下载模板</n-button>
       </div>
     </FilterBar>
+
+    <!-- 批量操作条 -->
+    <div v-if="questionList.length > 0" class="flex items-center gap-2 mb-3 px-1">
+      <n-checkbox :checked="allCurrentPageSelected" @update:checked="toggleSelectAll">全选本页</n-checkbox>
+      <span class="text-xs text-neutral-400">已选 {{ selectedIds.length }} 题</span>
+      <span v-if="selectedIds.length === 0" class="text-xs text-neutral-400">
+        未勾选时「导出题目」将导出当前筛选条件下的全部题目
+      </span>
+      <span v-else class="text-xs text-primary-500">仅导出勾选的题目</span>
+    </div>
 
     <!-- 题目卡片列表 -->
     <SkeletonList v-if="loading" :count="5" :cols="1" />
@@ -72,6 +88,12 @@
         :key="q.id"
         class="flex items-start gap-3 px-4 py-4 hover:bg-neutral-50 transition-colors"
       >
+        <!-- 多选 -->
+        <n-checkbox
+          :checked="selectedIds.includes(q.id)"
+          class="mt-1 flex-shrink-0"
+          @update:checked="(v: boolean) => toggleSelect(q.id, v)"
+        />
         <!-- 题号 -->
         <span class="text-sm font-mono text-neutral-400 w-10 flex-shrink-0 pt-0.5">
           #{{ String((pagination.page - 1) * pagination.pageSize + index + 1).padStart(3, '0') }}
@@ -135,17 +157,27 @@
         @update:page="handlePageChange"
       />
     </div>
+
+    <!-- 导入题目弹窗（目标题库固定为当前题库） -->
+    <QuestionImportDialog
+      v-model:show="showImportDialog"
+      :bank-id="bankId"
+      :bank-name="bankName"
+      @imported="handleImportDone"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useMessage } from 'naive-ui'
 import type { SelectOption } from 'naive-ui'
 import type { Question, QuestionType, Difficulty } from '@/types'
 import { getQuestionList, deleteQuestion } from '@/api/question'
 import { getTagList } from '@/api/tag'
+import { exportQuestions } from '@/api/importExport'
+import { triggerBlobDownload, nowStamp } from '@/utils/download'
 import {
   QUESTION_TYPE_MAP,
   QUESTION_TYPE_OPTIONS,
@@ -160,9 +192,17 @@ import SkeletonList from '@/components/common/SkeletonList.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
 import { SearchOutline, DocumentTextOutline } from '@vicons/ionicons5'
 import dayjs from 'dayjs'
+import QuestionImportDialog from '@/components/importExport/QuestionImportDialog.vue'
 
 const props = defineProps<{
   bankId: string
+  /** 所属题库名称（透传给导入弹窗展示，可选） */
+  bankName?: string
+}>()
+
+const emit = defineEmits<{
+  /** 导入题目成功后通知父级刷新题库统计 */
+  imported: []
 }>()
 
 const router = useRouter()
@@ -178,6 +218,14 @@ const filterStatus = ref<string | null>(null)
 const filterTagIds = ref<number[]>([])
 const tagOptions = ref<SelectOption[]>([])
 const questionList = ref<Question[]>([])
+
+/** 勾选（仅当前页范围） */
+const selectedIds = ref<number[]>([])
+const exporting = ref(false)
+const showImportDialog = ref(false)
+const allCurrentPageSelected = computed(() => {
+  return questionList.value.length > 0 && questionList.value.every((q) => selectedIds.value.includes(q.id))
+})
 
 // 选项统一取自 @/utils/constants（全站唯一字典）
 const typeOptions = QUESTION_TYPE_OPTIONS
@@ -280,11 +328,13 @@ async function fetchTagOptions() {
 
 function handleSearch() {
   pagination.page = 1
+  selectedIds.value = []
   fetchList()
 }
 
 function handlePageChange(page: number) {
   pagination.page = page
+  selectedIds.value = []
   fetchList()
 }
 
@@ -305,12 +355,50 @@ function handleDelete(q: Question) {
   })
 }
 
-function handleBatchImport() {
-  message.info('批量导入功能')
+function toggleSelect(id: number, checked: boolean) {
+  if (checked) {
+    if (!selectedIds.value.includes(id)) selectedIds.value.push(id)
+  } else {
+    selectedIds.value = selectedIds.value.filter((sid) => sid !== id)
+  }
 }
 
-function handleDownloadTemplate() {
-  message.info('下载模板功能')
+function toggleSelectAll(checked: boolean) {
+  const currentIds = questionList.value.map((q) => q.id)
+  if (checked) {
+    selectedIds.value = Array.from(new Set([...selectedIds.value, ...currentIds]))
+  } else {
+    const remain = new Set(selectedIds.value.filter((id) => !currentIds.includes(id)))
+    selectedIds.value = Array.from(remain)
+  }
+}
+
+async function handleExport() {
+  exporting.value = true
+  try {
+    const blob =
+      selectedIds.value.length > 0
+        ? await exportQuestions({ questionIds: selectedIds.value })
+        : await exportQuestions({
+            bankId: props.bankId,
+            type: filterType.value ?? undefined,
+            difficulty: filterDifficulty.value || undefined,
+            status: filterStatus.value || undefined,
+            tagIds: filterTagIds.value.length ? filterTagIds.value : undefined,
+            keyword: searchKeyword.value || undefined
+          })
+    triggerBlobDownload(blob, `题目导出_${nowStamp()}.json`)
+    message.success('导出成功')
+  } catch (err: any) {
+    message.error(err?.message || '导出失败')
+  } finally {
+    exporting.value = false
+  }
+}
+
+function handleImportDone() {
+  fetchList()
+  emit('imported')
 }
 
 onMounted(() => {

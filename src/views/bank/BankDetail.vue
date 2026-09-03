@@ -3,6 +3,9 @@
     <!-- 页头：返回 + 题库名称 + 管理员操作 -->
     <PageHeader :title="bank?.name || '题库详情'" :subtitle="bank?.description || undefined" showBack>
       <template #actions>
+        <n-button v-if="authStore.isAuthenticated && bank" size="small" :loading="exporting" @click="handleExportBank">
+          导出题库
+        </n-button>
         <n-button v-if="authStore.isAdmin && bank" size="small" @click="handleEdit">编辑</n-button>
         <n-button v-if="authStore.isAdmin && bank" size="small" @click="showTransfer = true">转让</n-button>
       </template>
@@ -94,7 +97,7 @@
             <span class="text-base font-semibold text-neutral-900">题目列表</span>
           </div>
           <div class="p-4">
-            <QuestionList :bank-id="bankId" />
+            <QuestionList :bank-id="bankId" :bank-name="bank?.name" @imported="fetchDetail" />
           </div>
         </div>
       </template>
@@ -158,6 +161,8 @@ import { useRoute, useRouter } from 'vue-router'
 import { useMessage, type FormRules, type FormInst } from 'naive-ui'
 import type { QuestionBank, BankCollaborator } from '@/types'
 import { getBankDetail, getCollaborators, addCollaborator, removeCollaborator, transferBank, updateBank } from '@/api/bank'
+import { exportBank } from '@/api/importExport'
+import { triggerBlobDownload, nowStamp } from '@/utils/download'
 import { useAuthStore } from '@/stores/auth'
 import PageHeader from '@/components/common/PageHeader.vue'
 import StatCard from '@/components/common/StatCard.vue'
@@ -184,6 +189,7 @@ const loading = ref(false)
 const loadError = ref('')
 const bank = ref<BankInfo | null>(null)
 const collaborators = ref<BankCollaborator[]>([])
+const exporting = ref(false)
 
 const showTransfer = ref(false)
 const transferUserId = ref('')
@@ -258,6 +264,19 @@ async function fetchCollaborators() {
     collaborators.value = res.data || []
   } catch {
     // ignore
+  }
+}
+
+async function handleExportBank() {
+  exporting.value = true
+  try {
+    const blob = await exportBank(bankId)
+    triggerBlobDownload(blob, `${bank.value?.name || '题库'}_${nowStamp()}.json`)
+    message.success('导出成功')
+  } catch (err: any) {
+    message.error(err?.message || '导出失败')
+  } finally {
+    exporting.value = false
   }
 }
 
