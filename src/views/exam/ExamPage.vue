@@ -98,7 +98,7 @@
                 :selected="currentAnswers[currentQuestion.id] === String.fromCharCode(65 + idx)"
                 @select="selectAnswer(String.fromCharCode(65 + idx))"
               >
-                {{ opt }}
+                <RichText :content="opt" />
               </QuestionOption>
             </template>
 
@@ -111,7 +111,7 @@
                 :selected="isMultipleSelected(String.fromCharCode(65 + idx))"
                 @select="toggleMultipleAnswer(String.fromCharCode(65 + idx))"
               >
-                {{ opt }}
+                <RichText :content="opt" />
               </QuestionOption>
             </template>
 

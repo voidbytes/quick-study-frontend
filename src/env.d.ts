@@ -18,6 +18,25 @@ declare module '@kangc/v-md-editor/lib/style/base-editor.css'
 declare module '@kangc/v-md-editor/lib/plugins/katex/cdn'
 declare module '@kangc/v-md-editor/lib/plugins/line-number/index'
 
+// KaTeX auto-render（katex/dist 的 ESM 构建无内置类型）
+declare module 'katex/dist/contrib/auto-render.mjs' {
+  interface Delimiter {
+    left: string
+    right: string
+    display: boolean
+  }
+  interface AutoRenderOptions {
+    delimiters?: Delimiter[]
+    throwOnError?: boolean
+    ignoredTags?: string[]
+    [key: string]: unknown
+  }
+  export default function renderMathInElement(
+    element: HTMLElement,
+    options?: AutoRenderOptions
+  ): void
+}
+
 interface ImportMetaEnv {
   readonly VITE_APP_TITLE: string
 }

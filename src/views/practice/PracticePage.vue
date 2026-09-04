@@ -119,7 +119,7 @@
                 :disabled="optionDisabled(String.fromCharCode(65 + idx))"
                 @select="selectAnswer(String.fromCharCode(65 + idx))"
               >
-                {{ opt }}
+                <RichText :content="opt" />
               </QuestionOption>
             </template>
 
@@ -134,7 +134,7 @@
                 :disabled="optionDisabled(String.fromCharCode(65 + idx))"
                 @select="toggleMultiple(String.fromCharCode(65 + idx))"
               >
-                {{ opt }}
+                <RichText :content="opt" />
               </QuestionOption>
             </template>
 

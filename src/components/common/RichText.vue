@@ -1,11 +1,14 @@
 <template>
-  <!-- 富文本安全渲染：所有 v-html 都应改用它，统一过 DOMPurify 净化，防 XSS -->
-  <div class="markdown-body" v-html="sanitized" />
+  <!-- 富文本安全渲染：所有 v-html 都应改用它，统一过 DOMPurify 净化，防 XSS。
+       $...$ / $$...$$ 等数学公式由 KaTeX 自动渲染（auto-render）。 -->
+  <div ref="root" class="markdown-body" v-html="sanitized" />
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, watch, nextTick } from 'vue'
 import DOMPurify from 'dompurify'
+import renderMathInElement from 'katex/dist/contrib/auto-render.mjs'
+import 'katex/dist/katex.min.css'
 
 const props = withDefaults(
   defineProps<{
@@ -35,4 +38,29 @@ const sanitized = computed(() =>
     ADD_ATTR: ['target']
   })
 )
+
+const root = ref<HTMLElement | null>(null)
+
+/** 渲染 $...$ 数学公式。失败仅降级为原文展示，不抛出影响页面。 */
+function renderMath() {
+  const el = root.value
+  if (!el) return
+  try {
+    renderMathInElement(el, {
+      throwOnError: false,
+      delimiters: [
+        { left: '$$', right: '$$', display: true },
+        { left: '$', right: '$', display: false },
+        { left: '\\(', right: '\\)', display: false },
+        { left: '\\[', right: '\\]', display: true }
+      ]
+    })
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error('[math] 公式渲染失败，降级为原文展示', err)
+  }
+}
+
+watch(sanitized, () => nextTick(renderMath))
+watch(root, () => nextTick(renderMath))
 </script>

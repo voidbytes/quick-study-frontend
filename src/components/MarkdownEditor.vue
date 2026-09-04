@@ -58,8 +58,13 @@ const emit = defineEmits<{
 
 const message = useMessage()
 
-/** 已插入图片数（@change 输出为编译后 HTML，图片即 <img> 标签） */
-const imageCount = computed(() => (props.modelValue.match(/<img/g) || []).length)
+/**
+ * 已插入图片数。注意 v-model / @change 输出的是 Markdown 源码，
+ * 工具栏插入形如 `![图片](url)`；仅用户手写 HTML 时才出现 `<img>`。
+ */
+const imageCount = computed(
+  () => (props.modelValue.match(/!\[[^\]]*\]\([^)]*\)|<img\b/g) || []).length
+)
 
 function handleChange(text: string) {
   emit('update:modelValue', text)

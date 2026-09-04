@@ -101,8 +101,8 @@
 
         <!-- 题干与元信息 -->
         <div class="flex-1 min-w-0">
-          <div class="text-sm font-medium text-neutral-900 line-clamp-1">
-            {{ stripHtml(q.content) }}
+          <div class="text-sm font-medium text-neutral-900">
+            <RichText :content="q.content" class="question-stem-ellipsis" />
           </div>
           <div class="flex flex-wrap items-center gap-x-4 gap-y-1.5 mt-1.5">
             <n-tag size="small" round :type="typeTagType(q.type)">{{ typeLabel(q.type) }}</n-tag>
@@ -188,6 +188,7 @@ import {
 import { useAuthStore } from '@/stores/auth'
 import { useConfirm } from '@/composables/useConfirm'
 import FilterBar from '@/components/common/FilterBar.vue'
+import RichText from '@/components/common/RichText.vue'
 import SkeletonList from '@/components/common/SkeletonList.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
 import { SearchOutline, DocumentTextOutline } from '@vicons/ionicons5'
@@ -408,11 +409,15 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.line-clamp-1 {
+/* 受限单行展示：题干（含公式）截断为一行 */
+.question-stem-ellipsis {
   display: -webkit-box;
   -webkit-line-clamp: 1;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+.question-stem-ellipsis :deep(p) {
+  margin: 0;
 }
 .tag-chip {
   font-size: var(--text-xs);
