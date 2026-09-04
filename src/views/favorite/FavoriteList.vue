@@ -20,9 +20,6 @@
       <StatCard label="本月练习" :value="stats.thisMonthPractice" tone="warning">
         <template #suffix><n-icon :component="BarChartOutline" /></template>
       </StatCard>
-      <StatCard label="待复习" :value="stats.toReview" tone="error">
-        <template #suffix><n-icon :component="AlertCircleOutline" /></template>
-      </StatCard>
     </div>
 
     <!-- Filter Bar -->
@@ -149,7 +146,6 @@ import {
   Star,
   AddCircleOutline,
   BarChartOutline,
-  AlertCircleOutline,
   LibraryOutline,
   PricetagOutline,
   DownloadOutline
@@ -182,7 +178,7 @@ const favList = ref<FavRow[]>([])
 const bankOptions = ref<{ label: string; value: number }[]>([])
 const tagOptions = ref<{ label: string; value: number }[]>([])
 
-const stats = reactive({ total: 0, thisWeekNew: 0, thisMonthPractice: 0, toReview: 0 })
+const stats = reactive({ total: 0, thisWeekNew: 0, thisMonthPractice: 0 })
 
 const pagination = reactive({
   page: 1,
