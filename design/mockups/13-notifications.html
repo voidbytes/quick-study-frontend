@@ -168,22 +168,20 @@
       </button>
       </div>
       <nav class="sidebar-nav">
-        <div class="sidebar-nav-section">
-          <div class="sidebar-nav-item"><ion-icon name="home-outline"></ion-icon><span>首页</span></div>
-          <div class="sidebar-nav-item"><ion-icon name="library-outline"></ion-icon><span>题库</span></div>
-          <div class="sidebar-nav-item"><ion-icon name="document-text-outline"></ion-icon><span>题目</span></div>
-          <div class="sidebar-nav-item"><ion-icon name="file-tray-full-outline"></ion-icon><span>试卷</span></div>
-        </div>
+        <div class="sidebar-nav-item" onclick="window.location.href='01-home.html'"><ion-icon name="home-outline"></ion-icon><span>首页</span></div>
+        <div class="sidebar-nav-item" onclick="window.location.href='02-bank-list.html'"><ion-icon name="library-outline"></ion-icon><span>题库</span></div>
+        <div class="sidebar-nav-item" onclick="window.location.href='04-question-list.html'"><ion-icon name="document-text-outline"></ion-icon><span>题目</span></div>
+        <div class="sidebar-nav-item" onclick="window.location.href='05-paper-list.html'"><ion-icon name="file-tray-full-outline"></ion-icon><span>试卷</span></div>
         <div class="sidebar-nav-label">学习中心</div>
-        <div class="sidebar-nav-item"><ion-icon name="game-controller-outline"></ion-icon><span>练习</span></div>
-        <div class="sidebar-nav-item" data-tooltip="错题本"><ion-icon name="close-circle-outline"></ion-icon><span>错题本</span><span class="sidebar-badge">47</span></div>
-        <div class="sidebar-nav-item"><ion-icon name="time-outline"></ion-icon><span>做题记录</span></div>
-        
-        <div class="sidebar-nav-item"><ion-icon name="bar-chart-outline"></ion-icon><span>统计</span></div>
-        <div class="sidebar-nav-item active"><ion-icon name="notifications-outline"></ion-icon><span>通知</span></div>
+        <div class="sidebar-nav-item" onclick="window.location.href='24-practice-list.html'"><ion-icon name="game-controller-outline"></ion-icon><span>练习</span></div>
+        <div class="sidebar-nav-item" onclick="window.location.href='10-wrong-questions.html'"><ion-icon name="close-circle-outline"></ion-icon><span>错题本</span></div>
+        <div class="sidebar-nav-item" onclick="window.location.href='11-records.html'"><ion-icon name="time-outline"></ion-icon><span>做题记录</span></div>
+        <div class="sidebar-nav-item" onclick="window.location.href='09-statistics.html'"><ion-icon name="bar-chart-outline"></ion-icon><span>统计</span></div>
+        <div class="sidebar-nav-item active" onclick="window.location.href='13-notifications.html'"><ion-icon name="notifications-outline"></ion-icon><span>通知</span></div>
+        <div class="sidebar-nav-item" onclick="window.location.href='12-search.html'"><ion-icon name="search-outline"></ion-icon><span>搜索</span></div>
         <div class="sidebar-nav-label">管理</div>
-        <div class="sidebar-nav-item"><ion-icon name="people-outline"></ion-icon><span>用户管理</span></div>
-        <div class="sidebar-nav-item"><ion-icon name="checkmark-done-outline"></ion-icon><span>审核列表</span></div>
+        <div class="sidebar-nav-item" onclick="window.location.href='15-admin-users.html'"><ion-icon name="people-outline"></ion-icon><span>用户管理</span></div>
+        <div class="sidebar-nav-item" onclick="window.location.href='28-admin-reviews.html'"><ion-icon name="checkmark-done-outline"></ion-icon><span>审核列表</span></div>
       </nav>
       <div class="sidebar-footer">
         <div class="sidebar-nav-item"><ion-icon name="log-out-outline"></ion-icon><span>退出登录</span></div>
@@ -192,29 +190,24 @@
     <div class="main-area">
       <header class="app-header">
         <div class="app-header-left">
+          <button class="mobile-menu-btn" onclick="document.querySelector('.sidebar').classList.toggle('mobile-open')"><ion-icon name="menu-outline"></ion-icon></button>
+          <button class="mobile-menu-btn" onclick="document.querySelector('.sidebar').classList.toggle('mobile-open')"><ion-icon name="menu-outline"></ion-icon></button>
           <div class="breadcrumb">
             <span class="breadcrumb-current">通知</span>
           </div>
         </div>
         <div class="app-header-right">
-          <button class="mobile-menu-btn" onclick="document.querySelector('.sidebar').classList.toggle('mobile-open')"><ion-icon name="menu-outline"></ion-icon></button>
           <div class="header-search">
             <ion-icon name="search-outline"></ion-icon>
-            <input class="input" type="text" placeholder="搜索题库、题目、试卷..." readonly style="cursor:pointer;" onclick="window.location.href='12-search.html'">
+            <input class="input" type="text" placeholder="搜索题目 / 题库 / 试卷" readonly style="cursor:pointer;" onclick="window.location.href='12-search.html'">
           </div>
-          <button class="header-action-btn" data-tooltip="暗色模式" onclick="var t=document.documentElement.getAttribute('data-theme');document.documentElement.setAttribute('data-theme',t==='dark'?'light':'dark')"><ion-icon name="moon-outline"></ion-icon></button>
-          <div class="lang-switcher" data-tooltip="语言">
-            <ion-icon name="language-outline"></ion-icon>
-            <span>中文</span>
-            <ion-icon name="chevron-down-outline"></ion-icon>
-          </div>
-          <div style="position:relative;cursor:pointer;">
+          <div style="position:relative;cursor:pointer;" onclick="window.location.href='13-notifications.html'">
             <ion-icon name="notifications-outline" style="font-size:22px;color:var(--text-secondary);"></ion-icon>
             <span class="badge" style="position:absolute;top:-4px;right:-4px;">3</span>
           </div>
-          <div style="display:flex;align-items:center;gap:8px;cursor:pointer;">
-            <div class="avatar" style="background:#5B5FE9;">张</div>
-            <span style="font-size:14px;font-weight:500;">张同学</span>
+          <div style="display:flex;align-items:center;gap:8px;cursor:pointer;" onclick="window.location.href='14-profile.html'">
+            <div class="avatar" style="background:var(--gradient-brand);">张</div>
+            <span style="font-size:14px;font-weight:500;color:var(--text-primary);">张同学</span>
             <ion-icon name="chevron-down-outline" style="font-size:16px;color:var(--text-tertiary);"></ion-icon>
           </div>
         </div>
@@ -364,7 +357,6 @@
   </div>
   <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
   <script nomodule src="https://cdn.jsdelivr.net/npm/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
-<button class="back-to-top visible" onclick="window.scrollTo({top:0,behavior:'smooth'})" data-tooltip="回到顶部"><ion-icon name="arrow-up-outline"></ion-icon></button>
 <script>
     document.querySelector(".sidebar-toggle")?.addEventListener("click", function() {
       var s=document.querySelector(".sidebar"),m=document.querySelector(".main-area");
@@ -372,7 +364,6 @@
       var i=this.querySelector("ion-icon");
       i.setAttribute("name",s.classList.contains("sidebar-collapsed")?"chevron-forward-outline":"chevron-back-outline");
     });
-    window.addEventListener("scroll",function(){var b=document.querySelector(".back-to-top");if(b)b.classList.toggle("visible",window.scrollY>400)});
   </script>
 </body>
 </html>
