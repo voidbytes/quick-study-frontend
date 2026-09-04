@@ -266,6 +266,27 @@ export interface PracticeResult {
   duration: number
 }
 
+// 收藏（等待后端 FavoriteController — 以下为前端约定契约）
+export interface FavoriteItem {
+  id: number
+  questionId: number
+  bankId: number
+  bankName: string
+  /** 题目快照 JSON 字符串，展开结构见 QuestionSnapshot */
+  questionSnapshot: string
+  /** 关联的标签名（后端可返回或前端按 tagIds 反查） */
+  tagNames?: string[]
+  favoritedAt: string
+  createdAt: string
+}
+
+export interface FavoriteStats {
+  total: number
+  thisWeekNew: number
+  thisMonthPractice: number
+  toReview: number
+}
+
 // 错题（与后端 WrongQuestionResponse 一致）
 export interface WrongQuestion {
   id: number

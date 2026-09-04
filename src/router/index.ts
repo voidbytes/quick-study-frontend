@@ -147,6 +147,11 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/views/wrongquestion/WrongQuestionSnapshot.vue')
       },
       {
+        path: 'favorites',
+        name: 'FavoriteList',
+        component: () => import('@/views/favorite/FavoriteList.vue')
+      },
+      {
         path: 'records',
         name: 'RecordList',
         component: () => import('@/views/record/RecordList.vue')

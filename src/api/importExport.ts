@@ -9,7 +9,7 @@ import type { ApiResponse, ImportResult } from '@/types'
  * 让调用方 catch 后能拿到后端 message。
  */
 
-async function ensureBlob(promise: Promise<Blob>): Promise<Blob> {
+export async function ensureBlob(promise: Promise<Blob>): Promise<Blob> {
   const blob = await promise
   if (blob.type && blob.type.includes('application/json')) {
     const text = await blob.text()
