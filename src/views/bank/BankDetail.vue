@@ -40,12 +40,11 @@
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           <StatCard label="题目数" :value="bank.questionCount ?? 0" tone="brand" />
           <StatCard label="练习次数" :value="bank.practiceCount ?? 0" />
-          <!-- 协作人：仅管理员可查看/管理（后端接口管理员专属，避免无权限请求报错） -->
-          <div class="stat-card relative">
+          <!-- 协作人：创建者/管理员可查看与管理；其他用户不展示该卡（接口无权访问） -->
+          <div v-if="canManageCollaborators" class="stat-card relative">
             <div class="flex items-start justify-between">
               <div class="stat-label">协作人</div>
               <n-button
-                v-if="authStore.isAdmin"
                 size="tiny"
                 type="primary"
                 secondary
@@ -54,9 +53,7 @@
                 管理
               </n-button>
             </div>
-            <div class="stat-value">
-              {{ authStore.isAdmin ? collaborators.length : '—' }}
-            </div>
+            <div class="stat-value">{{ collaborators.length }}</div>
           </div>
           <StatCard label="创建时间" :value="formatDate(bank.createdAt)" />
         </div>
@@ -151,7 +148,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useMessage, type FormRules, type FormInst } from 'naive-ui'
 import type { QuestionBank, BankCollaborator } from '@/types'
@@ -183,6 +180,13 @@ const loading = ref(false)
 const loadError = ref('')
 const bank = ref<BankInfo | null>(null)
 const collaborators = ref<BankCollaborator[]>([])
+
+/** 协作人管理权限：管理员或题库创建者（与后端校验口径一致） */
+const canManageCollaborators = computed(() => {
+  if (authStore.isAdmin) return true
+  const uid = authStore.userInfo?.id
+  return uid != null && bank.value?.creatorId === uid
+})
 const exporting = ref(false)
 
 const showTransfer = ref(false)
@@ -352,8 +356,8 @@ async function handleSaveEdit() {
 
 onMounted(() => {
   fetchDetail()
-  // 协作人接口为管理员专属，无权限用户不发请求（避免 403 噪音）
-  if (authStore.isAdmin) {
+  // 协作人接口仅创建者/管理员可访问，其他用户不发请求（避免 403 噪音）
+  if (canManageCollaborators.value) {
     fetchCollaborators()
   }
 })

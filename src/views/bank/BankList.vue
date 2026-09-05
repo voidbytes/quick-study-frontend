@@ -175,7 +175,6 @@ import dayjs from 'dayjs'
 
 /** 列表接口实际返回的展示字段（后端 BankResponse）在 QuestionBank 基础上扩展 */
 interface BankItem extends QuestionBank {
-  creatorId?: number | string | null
   creatorName?: string | null
   isOfficial?: boolean
   practiceCount?: number

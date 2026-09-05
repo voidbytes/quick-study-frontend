@@ -32,6 +32,8 @@ export interface QuestionBank {
   name: string
   description: string
   cover: string
+  /** 创建者ID（后端 BankResponse 字段名） */
+  creatorId?: number
   userId: number
   username: string
   isPublic: boolean
