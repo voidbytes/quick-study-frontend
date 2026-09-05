@@ -248,6 +248,8 @@ async function fetchRecentActivities() {
 
     if (examRes.status === 'fulfilled') {
       for (const s of examRes.value.data.records || []) {
+        // 未完成（进行中）的考试不属于「活动记录」，不展示
+        if (s.status === 'IN_PROGRESS') continue
         const time = s.submittedAt || s.startTime || null
         const ts = time ? dayjs(time).valueOf() : 0
         const scoreSuffix = s.totalScore != null ? ` · ${s.totalScore} 分` : ''

@@ -207,6 +207,7 @@ const menuGroups = computed<MenuGroup[]>(() => {
         { label: '错题本', key: '/wrong-questions', icon: CloseCircleOutline },
         { label: '收藏题目', key: '/favorites', icon: StarOutline },
         { label: '做题记录', key: '/records', icon: TimeOutline },
+        { label: '考试记录', key: '/exam-records', icon: DocumentTextOutline },
         { label: '统计', key: '/statistics', icon: BarChartOutline },
         { label: '通知', key: '/notifications', icon: NotificationsOutline },
         { label: '搜索', key: '/search', icon: SearchOutline }

@@ -117,6 +117,12 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/views/exam/ExamResult.vue')
       },
       {
+        path: 'exam-records',
+        name: 'ExamRecords',
+        component: () => import('@/views/exam/ExamRecords.vue'),
+        meta: { requiresAuth: false }
+      },
+      {
         path: 'grading',
         name: 'GradingList',
         component: () => import('@/views/grading/GradingList.vue')
