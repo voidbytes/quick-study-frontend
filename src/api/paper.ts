@@ -3,6 +3,7 @@ import type { ApiResponse, PageResult, ExamPaper, GradingSession } from '@/types
 
 export interface CreatePaperParams {
   title: string
+  passPercent?: number
   description?: string
   timeLimit?: number
   startTime?: string
@@ -21,6 +22,7 @@ export interface CreatePaperParams {
 
 export interface UpdatePaperParams {
   title?: string
+  passPercent?: number
   description?: string
   timeLimit?: number
   startTime?: string

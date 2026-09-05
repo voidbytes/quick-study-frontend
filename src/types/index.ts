@@ -156,6 +156,8 @@ export interface ExamPaper {
   status: PaperStatus
   questionCount?: number
   totalScore?: number
+  /** 及格线（得分率百分比，1-100，默认 60） */
+  passPercent?: number
   timeLimit?: number | null
   startTime?: string | null
   endTime?: string | null

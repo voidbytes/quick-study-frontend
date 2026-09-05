@@ -41,6 +41,11 @@
                 </n-form-item>
               </n-grid-item>
               <n-grid-item>
+                <n-form-item label="及格线（%）">
+                  <n-input-number v-model:value="basicForm.passPercent" :min="1" :max="100" placeholder="默认 60" />
+                </n-form-item>
+              </n-grid-item>
+              <n-grid-item>
                 <n-form-item label="开始时间">
                   <n-date-picker v-model:value="basicForm.startTime" type="datetime" clearable />
                 </n-form-item>
@@ -377,6 +382,7 @@ const basicForm = reactive({
   startTime: null as number | null,
   endTime: null as number | null,
   attemptLimit: null as number | null,
+  passPercent: 60 as number | null,
   graderId: null as number | null,
   shareType: 'PRIVATE',
   password: '',
@@ -595,6 +601,7 @@ async function loadPaper() {
     basicForm.startTime = data.startTime ? new Date(data.startTime).getTime() : null
     basicForm.endTime = data.endTime ? new Date(data.endTime).getTime() : null
     basicForm.attemptLimit = data.attemptLimit ?? null
+    basicForm.passPercent = data.passPercent ?? 60
     basicForm.shareType = data.shareType || 'PRIVATE'
     basicForm.cheatEnabled = data.cheatEnabled || false
     // 回填批改人：详情接口返回 graderName，直接预置选项，无需用户重新搜索
@@ -676,6 +683,7 @@ async function handleSave() {
       startTime: basicForm.startTime ? new Date(basicForm.startTime).toISOString() : undefined,
       endTime: basicForm.endTime ? new Date(basicForm.endTime).toISOString() : undefined,
       attemptLimit: basicForm.attemptLimit || undefined,
+      passPercent: basicForm.passPercent ?? 60,
       // 由次数推导类型，避免后端默认值与"留空=不限次数"的表单语义冲突
       attemptType: !basicForm.attemptLimit || basicForm.attemptLimit <= 0
         ? 'UNLIMITED'
