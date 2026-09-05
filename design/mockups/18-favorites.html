@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>错题本 — Quick Study</title>
+  <title>收藏题目 — Quick Study</title>
   <link rel="stylesheet" href="styles/mockup.css">
   <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
   <script nomodule src="https://cdn.jsdelivr.net/npm/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
@@ -117,7 +117,7 @@
       background: var(--border-default);
     }
 
-    /* --- Wrong Question Card --- */
+    /* --- Favorite Question Card --- */
     .wq-list { display: flex; flex-direction: column; gap: var(--space-3); }
     .wq-card {
       background: var(--bg-card);
@@ -140,17 +140,17 @@
       flex-shrink: 0;
       width: 180px;
     }
+    /* 收藏序号图标：品牌色 star 图标，primary-50 背景 */
     .wq-num {
       width: 32px;
       height: 32px;
       border-radius: var(--radius-md);
-      background: var(--color-error-50);
-      color: var(--color-error-600);
+      background: var(--color-primary-50);
+      color: var(--text-brand);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: var(--text-sm);
-      font-weight: var(--font-bold);
+      font-size: 18px;
       flex-shrink: 0;
     }
     .wq-tags {
@@ -195,19 +195,6 @@
       gap: var(--space-3);
       flex-shrink: 0;
     }
-    .wq-error-count {
-      display: flex;
-      align-items: center;
-      gap: var(--space-1);
-      padding: 4px var(--space-2);
-      border-radius: var(--radius-sm);
-      background: var(--color-error-50);
-      color: var(--color-error-600);
-      font-size: var(--text-xs);
-      font-weight: var(--font-bold);
-      white-space: nowrap;
-    }
-    .wq-error-count ion-icon { font-size: 14px; }
     .wq-date {
       font-size: var(--text-xs);
       color: var(--text-tertiary);
@@ -252,8 +239,8 @@
         <div class="sidebar-nav-item" onclick="window.location.href='05-paper-list.html'"><ion-icon name="file-tray-full-outline"></ion-icon><span>试卷</span></div>
         <div class="sidebar-nav-label">学习中心</div>
         <div class="sidebar-nav-item" onclick="window.location.href='24-practice-list.html'"><ion-icon name="game-controller-outline"></ion-icon><span>练习</span></div>
-        <div class="sidebar-nav-item active" onclick="window.location.href='10-wrong-questions.html'"><ion-icon name="close-circle-outline"></ion-icon><span>错题本</span></div>
-        <div class="sidebar-nav-item" onclick="window.location.href='18-favorites.html'"><ion-icon name="star-outline"></ion-icon><span>收藏题目</span></div>
+        <div class="sidebar-nav-item" onclick="window.location.href='10-wrong-questions.html'"><ion-icon name="close-circle-outline"></ion-icon><span>错题本</span></div>
+        <div class="sidebar-nav-item active" onclick="window.location.href='18-favorites.html'"><ion-icon name="star-outline"></ion-icon><span>收藏题目</span></div>
         <div class="sidebar-nav-item" onclick="window.location.href='11-records.html'"><ion-icon name="time-outline"></ion-icon><span>做题记录</span></div>
         <div class="sidebar-nav-item" onclick="window.location.href='09-statistics.html'"><ion-icon name="bar-chart-outline"></ion-icon><span>统计</span></div>
         <div class="sidebar-nav-item" onclick="window.location.href='13-notifications.html'"><ion-icon name="notifications-outline"></ion-icon><span>通知</span></div>
@@ -272,9 +259,8 @@
       <header class="app-header">
         <div class="app-header-left">
           <button class="mobile-menu-btn" onclick="document.querySelector('.sidebar').classList.toggle('mobile-open')"><ion-icon name="menu-outline"></ion-icon></button>
-          <button class="mobile-menu-btn" onclick="document.querySelector('.sidebar').classList.toggle('mobile-open')"><ion-icon name="menu-outline"></ion-icon></button>
           <div class="breadcrumb">
-            <span class="breadcrumb-current">错题本</span>
+            <span class="breadcrumb-current">收藏题目</span>
           </div>
         </div>
         <div class="app-header-right">
@@ -297,41 +283,41 @@
       <main class="app-content">
         <!-- Page Header -->
         <div class="page-header">
-          <h1 class="page-title">错题本</h1>
-          <button class="btn btn-primary">
-            <ion-icon name="refresh-outline"></ion-icon>
-            <span>错题重做</span>
+          <h1 class="page-title">收藏题目</h1>
+          <button class="btn btn-secondary">
+            <ion-icon name="download-outline"></ion-icon>
+            <span>批量导出</span>
           </button>
         </div>
 
         <!-- Summary Bar -->
         <div class="summary-bar">
           <div class="summary-item">
-            <div class="summary-icon error"><ion-icon name="close-circle-outline"></ion-icon></div>
+            <div class="summary-icon brand"><ion-icon name="star-outline"></ion-icon></div>
             <div class="summary-info">
-              <div class="summary-label">错题总数</div>
-              <div class="summary-value">47</div>
+              <div class="summary-label">收藏总数</div>
+              <div class="summary-value">128</div>
             </div>
           </div>
           <div class="summary-item">
-            <div class="summary-icon warning"><ion-icon name="alert-circle-outline"></ion-icon></div>
-            <div class="summary-info">
-              <div class="summary-label">待重做</div>
-              <div class="summary-value">32</div>
-            </div>
-          </div>
-          <div class="summary-item">
-            <div class="summary-icon success"><ion-icon name="checkmark-circle-outline"></ion-icon></div>
-            <div class="summary-info">
-              <div class="summary-label">已掌握</div>
-              <div class="summary-value">15</div>
-            </div>
-          </div>
-          <div class="summary-item">
-            <div class="summary-icon brand"><ion-icon name="trending-up-outline"></ion-icon></div>
+            <div class="summary-icon success"><ion-icon name="add-circle-outline"></ion-icon></div>
             <div class="summary-info">
               <div class="summary-label">本周新增</div>
-              <div class="summary-value">8</div>
+              <div class="summary-value">12</div>
+            </div>
+          </div>
+          <div class="summary-item">
+            <div class="summary-icon warning"><ion-icon name="bar-chart-outline"></ion-icon></div>
+            <div class="summary-info">
+              <div class="summary-label">本月练习</div>
+              <div class="summary-value">45</div>
+            </div>
+          </div>
+          <div class="summary-item">
+            <div class="summary-icon error"><ion-icon name="alert-circle-outline"></ion-icon></div>
+            <div class="summary-info">
+              <div class="summary-label">待复习</div>
+              <div class="summary-value">23</div>
             </div>
           </div>
         </div>
@@ -363,18 +349,19 @@
           </div>
           <div class="filter-divider"></div>
           <select class="filter-select">
-            <option>最近做错</option>
+            <option>最近收藏</option>
+            <option>收藏时间最早</option>
             <option>错误次数最多</option>
           </select>
         </div>
 
-        <!-- Wrong Question List -->
+        <!-- Favorite Question List -->
         <div class="wq-list">
 
           <!-- Item 1 -->
           <div class="wq-card">
             <div class="wq-left">
-              <div class="wq-num">1</div>
+              <div class="wq-num"><ion-icon name="star"></ion-icon></div>
               <div class="wq-tags">
                 <div class="wq-tags-row">
                   <span class="tag tag-info">单选</span>
@@ -390,14 +377,10 @@
               </div>
             </div>
             <div class="wq-right">
-              <div class="wq-error-count">
-                <ion-icon name="close-outline"></ion-icon>
-                <span>错 3 次</span>
-              </div>
-              <span class="wq-date">2025-09-01</span>
+              <span class="wq-date">2025-09-03</span>
               <div class="wq-actions">
                 <button class="btn-text brand">查看详情</button>
-                <button class="btn-text error">移除</button>
+                <button class="btn-text error">取消收藏</button>
               </div>
             </div>
           </div>
@@ -405,7 +388,7 @@
           <!-- Item 2 -->
           <div class="wq-card">
             <div class="wq-left">
-              <div class="wq-num">2</div>
+              <div class="wq-num"><ion-icon name="star"></ion-icon></div>
               <div class="wq-tags">
                 <div class="wq-tags-row">
                   <span class="tag tag-info">多选</span>
@@ -421,14 +404,10 @@
               </div>
             </div>
             <div class="wq-right">
-              <div class="wq-error-count">
-                <ion-icon name="close-outline"></ion-icon>
-                <span>错 5 次</span>
-              </div>
-              <span class="wq-date">2025-08-30</span>
+              <span class="wq-date">2025-09-01</span>
               <div class="wq-actions">
                 <button class="btn-text brand">查看详情</button>
-                <button class="btn-text error">移除</button>
+                <button class="btn-text error">取消收藏</button>
               </div>
             </div>
           </div>
@@ -436,7 +415,7 @@
           <!-- Item 3 -->
           <div class="wq-card">
             <div class="wq-left">
-              <div class="wq-num">3</div>
+              <div class="wq-num"><ion-icon name="star"></ion-icon></div>
               <div class="wq-tags">
                 <div class="wq-tags-row">
                   <span class="tag tag-warning">判断</span>
@@ -452,14 +431,10 @@
               </div>
             </div>
             <div class="wq-right">
-              <div class="wq-error-count">
-                <ion-icon name="close-outline"></ion-icon>
-                <span>错 2 次</span>
-              </div>
-              <span class="wq-date">2025-08-28</span>
+              <span class="wq-date">2025-08-30</span>
               <div class="wq-actions">
                 <button class="btn-text brand">查看详情</button>
-                <button class="btn-text error">移除</button>
+                <button class="btn-text error">取消收藏</button>
               </div>
             </div>
           </div>
@@ -467,7 +442,7 @@
           <!-- Item 4 -->
           <div class="wq-card">
             <div class="wq-left">
-              <div class="wq-num">4</div>
+              <div class="wq-num"><ion-icon name="star"></ion-icon></div>
               <div class="wq-tags">
                 <div class="wq-tags-row">
                   <span class="tag tag-info">单选</span>
@@ -483,14 +458,10 @@
               </div>
             </div>
             <div class="wq-right">
-              <div class="wq-error-count">
-                <ion-icon name="close-outline"></ion-icon>
-                <span>错 1 次</span>
-              </div>
-              <span class="wq-date">2025-08-27</span>
+              <span class="wq-date">2025-08-28</span>
               <div class="wq-actions">
                 <button class="btn-text brand">查看详情</button>
-                <button class="btn-text error">移除</button>
+                <button class="btn-text error">取消收藏</button>
               </div>
             </div>
           </div>
@@ -498,7 +469,7 @@
           <!-- Item 5 -->
           <div class="wq-card">
             <div class="wq-left">
-              <div class="wq-num">5</div>
+              <div class="wq-num"><ion-icon name="star"></ion-icon></div>
               <div class="wq-tags">
                 <div class="wq-tags-row">
                   <span class="tag tag-info">多选</span>
@@ -514,14 +485,10 @@
               </div>
             </div>
             <div class="wq-right">
-              <div class="wq-error-count">
-                <ion-icon name="close-outline"></ion-icon>
-                <span>错 4 次</span>
-              </div>
               <span class="wq-date">2025-08-25</span>
               <div class="wq-actions">
                 <button class="btn-text brand">查看详情</button>
-                <button class="btn-text error">移除</button>
+                <button class="btn-text error">取消收藏</button>
               </div>
             </div>
           </div>
@@ -529,7 +496,7 @@
           <!-- Item 6 -->
           <div class="wq-card">
             <div class="wq-left">
-              <div class="wq-num">6</div>
+              <div class="wq-num"><ion-icon name="star"></ion-icon></div>
               <div class="wq-tags">
                 <div class="wq-tags-row">
                   <span class="tag tag-info">单选</span>
@@ -545,14 +512,10 @@
               </div>
             </div>
             <div class="wq-right">
-              <div class="wq-error-count">
-                <ion-icon name="close-outline"></ion-icon>
-                <span>错 6 次</span>
-              </div>
               <span class="wq-date">2025-08-22</span>
               <div class="wq-actions">
                 <button class="btn-text brand">查看详情</button>
-                <button class="btn-text error">移除</button>
+                <button class="btn-text error">取消收藏</button>
               </div>
             </div>
           </div>
@@ -562,7 +525,7 @@
         <!-- Pagination -->
         <div class="card mt-5">
           <div class="pagination">
-            <span style="font-size:var(--text-sm);color:var(--text-tertiary);margin-right:auto;">共 47 条，每页 10 条</span>
+            <span style="font-size:var(--text-sm);color:var(--text-tertiary);margin-right:auto;">共 128 条，每页 10 条</span>
             <button class="page-btn" disabled><ion-icon name="chevron-back-outline" style="font-size:16px;"></ion-icon></button>
             <button class="page-btn active">1</button>
             <button class="page-btn">2</button>

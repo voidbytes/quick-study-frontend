@@ -180,6 +180,44 @@
     }
     .practice-actions-left { display: flex; gap: 10px; }
     .practice-actions-right { display: flex; gap: 10px; }
+
+    /* ---- Question Action Buttons (收藏 / 错题本) ---- */
+    .question-actions {
+      display: flex;
+      gap: 8px;
+      margin-left: auto;
+    }
+    .q-action-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      height: 36px;
+      padding: 0 14px;
+      border-radius: var(--radius-md);
+      font-size: var(--text-sm);
+      font-weight: var(--font-medium);
+      border: 1px solid var(--border-default);
+      background: var(--bg-card);
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all var(--transition-base);
+      white-space: nowrap;
+    }
+    .q-action-btn:hover {
+      border-color: var(--color-primary-300);
+      color: var(--text-primary);
+    }
+    .q-action-btn ion-icon { font-size: 18px; }
+    .q-action-btn.active {
+      background: var(--color-primary-50);
+      border-color: var(--color-primary-500);
+      color: var(--text-brand);
+    }
+    .q-action-btn.wrong-active {
+      background: var(--color-error-50);
+      border-color: var(--color-error-500);
+      color: var(--color-error-600);
+    }
   </style>
 </head>
 <body>
@@ -212,6 +250,16 @@
           <div class="question-index">第 5 题 <span class="total">/ 共 20 题</span></div>
           <span class="tag tag-warning">多选</span>
           <span class="tag tag-error">困难</span>
+          <div class="question-actions">
+            <button class="q-action-btn active" title="取消收藏">
+              <ion-icon name="star"></ion-icon>
+              <span>已收藏</span>
+            </button>
+            <button class="q-action-btn wrong-active" title="已在错题本">
+              <ion-icon name="close-circle"></ion-icon>
+              <span>已加入错题本</span>
+            </button>
+          </div>
         </div>
 
         <!-- Progress bar -->
