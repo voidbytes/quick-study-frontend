@@ -35,9 +35,9 @@
           :key="row.id"
           class="bg-white border border-neutral-200 rounded-lg px-5 py-4 flex items-center gap-4 transition-all hover:border-primary-300 hover:shadow-sm"
         >
-          <!-- 序号 -->
+          <!-- 序号（中性：错误语义由元信息行表达） -->
           <div
-            class="w-8 h-8 rounded-lg bg-error-50 text-error-600 flex items-center justify-center text-sm font-bold flex-shrink-0"
+            class="w-8 h-8 rounded-lg bg-neutral-100 text-neutral-500 flex items-center justify-center text-sm font-bold flex-shrink-0"
           >
             {{ (pagination.page - 1) * pagination.pageSize + index + 1 }}
           </div>
@@ -58,30 +58,25 @@
                 <n-icon :size="13"><LibraryOutline /></n-icon>
                 {{ row.bankName }}
               </span>
+              <span class="text-xs" :class="row.errorCount >= 3 ? 'text-warning-600 font-medium' : 'text-neutral-400'">
+                最近错于 {{ formatTime(row.lastWrongTime) }} · 累计错 {{ row.errorCount }} 次
+              </span>
             </div>
           </div>
 
-          <!-- 错误统计 -->
-          <div class="flex flex-col items-end gap-1.5 flex-shrink-0">
-            <span
-              class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-error-50 text-error-600 text-xs font-semibold whitespace-nowrap"
-            >
-              <n-icon :size="13"><CloseCircleOutline /></n-icon>
-              错 {{ row.errorCount }} 次
-            </span>
-            <span class="text-xs text-neutral-400 whitespace-nowrap">
-              最近 {{ formatTime(row.lastWrongTime) }}
-            </span>
-          </div>
-
-          <!-- 操作 -->
-          <div class="flex items-center flex-shrink-0">
+          <!-- 操作：主操作 + 弱化的破坏性操作 -->
+          <div class="flex items-center gap-1 flex-shrink-0">
             <n-button size="small" type="primary" quaternary @click="handleViewSnapshot(row)">
               查看详情
             </n-button>
-            <n-button size="small" type="error" quaternary @click="handleRemove(row)">
+            <n-tooltip trigger="hover">
+              <template #trigger>
+                <n-button size="small" quaternary class="text-neutral-400 hover:text-error-500" @click="handleRemove(row)">
+                  <n-icon :size="16"><TrashOutline /></n-icon>
+                </n-button>
+              </template>
               移除
-            </n-button>
+            </n-tooltip>
           </div>
         </div>
       </div>
@@ -112,7 +107,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useMessage } from 'naive-ui'
-import { CloseCircleOutline, LibraryOutline } from '@vicons/ionicons5'
+import { CloseCircleOutline, LibraryOutline, TrashOutline } from '@vicons/ionicons5'
 import { list as getWrongQuestionList, deleteWrongQuestion } from '@/api/wrongQuestion'
 import { getBankList } from '@/api/bank'
 import { getTagList } from '@/api/tag'
