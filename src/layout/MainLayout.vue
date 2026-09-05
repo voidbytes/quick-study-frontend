@@ -14,18 +14,39 @@
       :class="[mobileMenuVisible ? 'mobile-open' : '', collapsed ? 'sidebar-collapsed' : '']"
     >
 
-      <!-- Logo -->
-      <div class="h-header flex items-center gap-3 px-5 border-b border-neutral-200">
+      <!-- Logo（收起时点击 Logo 也可展开） -->
+      <div
+        class="h-header flex items-center gap-3 border-b border-neutral-200"
+        :class="collapsed ? 'flex-col justify-center gap-2 px-2' : 'px-5'"
+      >
         <div
           class="w-9 h-9 rounded-lg bg-brand-gradient flex items-center justify-center text-white font-bold text-base flex-shrink-0"
+          :class="collapsed ? 'cursor-pointer hover:opacity-80' : ''"
+          :title="collapsed ? '展开菜单' : undefined"
+          @click="collapsed && toggleCollapsed()"
         >
           QS
         </div>
         <span v-if="!collapsed" class="text-base font-bold text-neutral-900 whitespace-nowrap">
           Quick Study
         </span>
-        <div class="ml-auto cursor-pointer text-neutral-400 hover:text-neutral-900 hidden lg:flex" @click="collapsed = !collapsed">
-          <n-icon :size="16"><component :is="collapsed ? ChevronForwardOutline : ChevronBackOutline" /></n-icon>
+        <div
+          v-if="!collapsed"
+          class="ml-auto cursor-pointer text-neutral-400 hover:text-neutral-900 hidden lg:flex"
+          title="收起菜单"
+          @click="toggleCollapsed()"
+        >
+          <n-icon :size="16"><ChevronBackOutline /></n-icon>
+        </div>
+      </div>
+      <!-- 收起态：常驻展开按钮（图标栏模式下不会被裁剪） -->
+      <div v-if="collapsed" class="hidden lg:flex justify-center py-2 border-b border-neutral-200">
+        <div
+          class="w-8 h-8 rounded-lg flex items-center justify-center text-neutral-400 hover:text-neutral-900 hover:bg-neutral-100 cursor-pointer"
+          title="展开菜单"
+          @click="toggleCollapsed()"
+        >
+          <n-icon :size="16"><ChevronForwardOutline /></n-icon>
         </div>
       </div>
 
@@ -42,9 +63,9 @@
             v-for="item in group.items"
             :key="item.key"
             class="flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-colors mb-0.5"
-            :class="activeMenu === item.key
+            :class="[(collapsed ? 'justify-center px-0' : ''), activeMenu === item.key
               ? 'bg-primary-50 text-primary-600 font-semibold'
-              : 'text-neutral-600 font-medium hover:bg-neutral-100 hover:text-neutral-900'"
+              : 'text-neutral-600 font-medium hover:bg-neutral-100 hover:text-neutral-900']"
             :title="collapsed ? item.label : undefined"
             @click="handleMenuSelect(item.key)"
           >
@@ -60,6 +81,7 @@
       <div v-if="authStore.isAuthenticated" class="p-3 border-t border-neutral-200">
         <div
           class="flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-colors text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900"
+          :class="collapsed ? 'justify-center px-0' : ''"
           :title="collapsed ? '退出登录' : undefined"
           @click="handleLogout"
         >
@@ -177,7 +199,13 @@ const route = useRoute()
 const authStore = useAuthStore()
 const message = useMessage()
 
-const collapsed = ref(false)
+const COLLAPSED_KEY = 'sidebar_collapsed'
+const collapsed = ref(localStorage.getItem(COLLAPSED_KEY) === '1')
+
+function toggleCollapsed() {
+  collapsed.value = !collapsed.value
+  localStorage.setItem(COLLAPSED_KEY, collapsed.value ? '1' : '0')
+}
 const mobileMenuVisible = ref(false)
 const unreadCount = ref(0)
 const headerKeyword = ref('')
