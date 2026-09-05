@@ -256,6 +256,10 @@ export interface PracticeSessionSummary {
   sessionId: string
   status: string
   totalCount: number
+  /** 命名摘要：题库/标签名称与题型（后端解析 filterParams） */
+  bankNames?: string[]
+  tagNames?: string[]
+  types?: string[]
   stats?: { accuracy?: number | null; duration?: number | null; correctCount?: number }
   completedAt?: string | null
   createdAt?: string

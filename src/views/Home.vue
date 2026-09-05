@@ -138,7 +138,8 @@ import { getStatisticsOverview } from '@/api/statistics'
 import type { OverviewStats } from '@/types'
 import { getBankList } from '@/api/bank'
 import { getPaperList } from '@/api/paper'
-import { getRecordList } from '@/api/record'
+import { getPracticeSessions } from '@/api/practice'
+import { buildPracticeSessionTitleFromSummary } from '@/utils/practiceTitle'
 import { getMyExamSessions } from '@/api/exam'
 import dayjs from 'dayjs'
 import StatCard from '@/components/common/StatCard.vue'
@@ -201,47 +202,33 @@ const quickEntries = computed<QuickEntry[]>(() => {
   ]
 })
 
-function stripHtml(html?: string | null): string {
-  if (!html) return ''
-  return html.replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim()
-}
-
-/** 快照 JSON 里提取纯文本题干（与记录页口径一致） */
-function snapshotTitle(questionSnapshot?: string | null): string {
-  try {
-    const obj: unknown = questionSnapshot ? JSON.parse(questionSnapshot) : null
-    const content = obj && typeof obj === 'object' ? (obj as Record<string, unknown>).content : null
-    const text = stripHtml(typeof content === 'string' ? content : '')
-    return text || '练习了一道题'
-  } catch {
-    return '练习了一道题'
-  }
-}
-
 /**
- * 拉取最近活动：练习记录（题目维度）+ 考试会话，按时间倒序合并取前 6 条。
- * 每条都带跳转目标：练习 → 原题；考试 → 成绩页（未提交则继续作答）。
+ * 拉取最近活动：练习会话（整块，仅已完成）+ 考试会话（终态），按时间倒序合并取前 6 条。
+ * 每条都带跳转目标：练习 → 练习页；考试 → 成绩页。
  */
 async function fetchRecentActivities() {
   loadingActivities.value = true
   try {
-    const [recordRes, examRes] = await Promise.allSettled([
-      getRecordList({ page: 1, size: 10 }),
+    const [practiceRes, examRes] = await Promise.allSettled([
+      getPracticeSessions({ page: 1, size: 10, status: 'COMPLETED' }),
       getMyExamSessions({ page: 1, size: 10 })
     ])
 
     const items: RecentActivity[] = []
 
-    if (recordRes.status === 'fulfilled') {
-      for (const r of recordRes.value.data.records || []) {
-        const ts = r.createdAt ? dayjs(r.createdAt).valueOf() : 0
+    if (practiceRes.status === 'fulfilled') {
+      for (const p of practiceRes.value.data.records || []) {
+        // 未完成的练习不属于「活动记录」
+        if (p.status !== 'COMPLETED') continue
+        const time = p.completedAt || p.createdAt || null
+        const ts = time ? dayjs(time).valueOf() : 0
         items.push({
-          key: `p-${r.id}`,
+          key: `ps-${p.sessionId}`,
           kind: 'practice',
-          title: snapshotTitle(r.questionSnapshot),
-          time: r.createdAt ? dayjs(r.createdAt).format('MM-DD HH:mm') : '',
+          title: buildPracticeSessionTitleFromSummary(p),
+          time: time ? dayjs(time).format('MM-DD HH:mm') : '',
           ts,
-          link: r.bankId && r.questionId ? `/banks/${r.bankId}/questions/${r.questionId}` : '/records'
+          link: '/practice'
         })
       }
     }

@@ -49,7 +49,7 @@
           <!-- 主要信息 -->
           <div class="flex-1 min-w-0">
             <div class="flex items-center gap-2 flex-wrap">
-              <span class="text-base font-semibold text-neutral-900">共 {{ row.totalCount }} 题</span>
+              <span class="text-base font-semibold text-neutral-900">{{ buildPracticeSessionTitleFromSummary(row) }}</span>
               <n-tag size="small" round :type="statusTagType(row.status)">
                 {{ statusLabel(row.status) }}
               </n-tag>
@@ -110,6 +110,7 @@
 </template>
 
 <script setup lang="ts">
+import { buildPracticeSessionTitleFromSummary } from '@/utils/practiceTitle'
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useMessage } from 'naive-ui'
