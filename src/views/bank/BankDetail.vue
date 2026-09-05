@@ -40,55 +40,25 @@
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           <StatCard label="题目数" :value="bank.questionCount ?? 0" tone="brand" />
           <StatCard label="练习次数" :value="bank.practiceCount ?? 0" />
-          <StatCard label="协作人" :value="collaborators.length" />
-          <StatCard label="创建时间" :value="formatDate(bank.createdAt)" />
-        </div>
-
-        <!-- 协作人列表 -->
-        <div class="bg-white border border-neutral-200 rounded-lg mb-6 overflow-hidden">
-          <div class="flex items-center justify-between px-5 py-4 border-b border-neutral-200">
-            <span class="text-base font-semibold text-neutral-900">协作人</span>
-            <n-button v-if="authStore.isAdmin" size="small" type="primary" secondary @click="showAddCollaborator = true">
-              添加协作人
-            </n-button>
-          </div>
-          <EmptyState
-            v-if="collaborators.length === 0"
-            title="暂无协作人"
-            description="添加协作人后可共同维护题库"
-            :icon="PeopleOutline"
-          />
-          <div v-else>
-            <div
-              v-for="col in collaborators"
-              :key="col.userId"
-              class="flex items-center gap-3 px-5 py-3.5 border-b border-neutral-200 last:border-b-0 hover:bg-neutral-50 transition-colors"
-            >
-              <div
-                class="w-8 h-8 rounded-full bg-brand-gradient flex items-center justify-center text-white text-xs font-semibold flex-shrink-0"
-              >
-                {{ (col.nickname || `用户${col.userId}`).charAt(0).toUpperCase() }}
-              </div>
-              <div class="flex-1 min-w-0">
-                <div class="text-sm font-medium text-neutral-900 truncate">
-                  {{ col.nickname || `用户 #${col.userId}` }}
-                </div>
-                <div class="text-xs text-neutral-500">ID: {{ col.userId }}</div>
-              </div>
-              <n-tag size="small" :type="roleTagType(col.role)" round>
-                {{ roleLabel(col.role) }}
-              </n-tag>
+          <!-- 协作人：仅管理员可查看/管理（后端接口管理员专属，避免无权限请求报错） -->
+          <div class="stat-card relative">
+            <div class="flex items-start justify-between">
+              <div class="stat-label">协作人</div>
               <n-button
                 v-if="authStore.isAdmin"
                 size="tiny"
-                quaternary
-                type="error"
-                @click="handleRemoveCollaborator(col.userId)"
+                type="primary"
+                secondary
+                @click="openCollaboratorManager"
               >
-                移除
+                管理
               </n-button>
             </div>
+            <div class="stat-value">
+              {{ authStore.isAdmin ? collaborators.length : '—' }}
+            </div>
           </div>
+          <StatCard label="创建时间" :value="formatDate(bank.createdAt)" />
         </div>
 
         <!-- 题目列表 -->
@@ -104,6 +74,46 @@
     </n-spin>
     <LoadError v-else :description="loadError" :retrying="loading" @retry="fetchDetail" />
 
+    <!-- 协作人管理弹窗（管理员）：列表 + 添加 -->
+    <n-modal v-model:show="showCollaboratorManager" preset="card" title="协作人管理" style="width: 460px">
+      <div class="mb-4">
+        <div
+          v-for="col in collaborators"
+          :key="col.userId"
+          class="flex items-center gap-3 py-2.5 border-b border-neutral-100 last:border-b-0"
+        >
+          <div
+            class="w-8 h-8 rounded-full bg-brand-gradient flex items-center justify-center text-white text-xs font-semibold flex-shrink-0"
+          >
+            {{ (col.nickname || `用户${col.userId}`).charAt(0).toUpperCase() }}
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="text-sm font-medium text-neutral-900 truncate">
+              {{ col.nickname || `用户 #${col.userId}` }}
+            </div>
+            <div class="text-xs text-neutral-500">ID: {{ col.userId }}</div>
+          </div>
+          <n-tag size="small" :type="roleTagType(col.role)" round>
+            {{ roleLabel(col.role) }}
+          </n-tag>
+          <n-button size="tiny" quaternary type="error" @click="handleRemoveCollaborator(col.userId)">
+            移除
+          </n-button>
+        </div>
+        <div v-if="collaborators.length === 0" class="text-sm text-neutral-400 text-center py-4">
+          暂无协作人
+        </div>
+      </div>
+      <n-form label-placement="top">
+        <n-form-item label="添加协作人（用户ID）">
+          <n-input v-model:value="newCollaboratorUserId" placeholder="输入用户ID" />
+        </n-form-item>
+        <n-button type="primary" block :loading="addColLoading" @click="handleAddCollaborator">
+          添加
+        </n-button>
+      </n-form>
+    </n-modal>
+
     <!-- 转让题库弹窗 -->
     <n-modal v-model:show="showTransfer" preset="card" title="转让题库" style="width: 400px">
       <n-form>
@@ -112,21 +122,6 @@
         </n-form-item>
         <n-button type="primary" block :loading="transferLoading" @click="handleTransfer">
           确认转让
-        </n-button>
-      </n-form>
-    </n-modal>
-
-    <!-- 添加协作人弹窗 -->
-    <n-modal v-model:show="showAddCollaborator" preset="card" title="添加协作人" style="width: 400px">
-      <n-form>
-        <n-form-item label="用户ID">
-          <n-input v-model:value="newCollaboratorUserId" placeholder="输入用户ID" />
-        </n-form-item>
-        <n-form-item label="角色">
-          <n-select v-model:value="newCollaboratorRole" :options="collaboratorRoleOptions" />
-        </n-form-item>
-        <n-button type="primary" block :loading="addColLoading" @click="handleAddCollaborator">
-          添加
         </n-button>
       </n-form>
     </n-modal>
@@ -166,10 +161,9 @@ import { triggerBlobDownload, nowStamp } from '@/utils/download'
 import { useAuthStore } from '@/stores/auth'
 import PageHeader from '@/components/common/PageHeader.vue'
 import StatCard from '@/components/common/StatCard.vue'
-import EmptyState from '@/components/common/EmptyState.vue'
 import QuestionList from '@/views/question/QuestionList.vue'
 import LoadError from '@/components/LoadError.vue'
-import { PeopleOutline, PersonOutline, TimeOutline } from '@vicons/ionicons5'
+import { PersonOutline, TimeOutline } from '@vicons/ionicons5'
 import dayjs from 'dayjs'
 
 /** 后端 BankResponse 实际包含的展示字段（QuestionBank 类型声明滞后，本地补全） */
@@ -195,14 +189,9 @@ const showTransfer = ref(false)
 const transferUserId = ref('')
 const transferLoading = ref(false)
 
-const showAddCollaborator = ref(false)
+const showCollaboratorManager = ref(false)
 const newCollaboratorUserId = ref('')
-const newCollaboratorRole = ref('EDITOR')
 const addColLoading = ref(false)
-const collaboratorRoleOptions = [
-  { label: '编辑者', value: 'EDITOR' },
-  { label: '查看者', value: 'VIEWER' }
-]
 
 const showEditDialog = ref(false)
 const editFormRef = ref<FormInst>()
@@ -263,8 +252,13 @@ async function fetchCollaborators() {
     const res = await getCollaborators(bankId)
     collaborators.value = res.data || []
   } catch {
-    // ignore
+    // ignore：无权限等情况静默
   }
+}
+
+function openCollaboratorManager() {
+  showCollaboratorManager.value = true
+  fetchCollaborators()
 }
 
 async function handleExportBank() {
@@ -307,7 +301,7 @@ async function handleAddCollaborator() {
     // 当前 addCollaborator API 仅接收 userId，角色选择不再随请求提交
     await addCollaborator(bankId, Number(newCollaboratorUserId.value))
     message.success('添加成功')
-    showAddCollaborator.value = false
+    newCollaboratorUserId.value = ''
     fetchCollaborators()
   } catch {
     message.error('添加失败')
@@ -358,6 +352,9 @@ async function handleSaveEdit() {
 
 onMounted(() => {
   fetchDetail()
-  fetchCollaborators()
+  // 协作人接口为管理员专属，无权限用户不发请求（避免 403 噪音）
+  if (authStore.isAdmin) {
+    fetchCollaborators()
+  }
 })
 </script>
