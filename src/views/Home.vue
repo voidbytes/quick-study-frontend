@@ -38,7 +38,7 @@
     <div v-if="!authStore.isAuthenticated" class="card-section mb-6">
       <div class="card-head">
         <span class="card-title">公开题库</span>
-        <n-button text type="primary" @click="router.push('/banks')">查看全部 &rarr;</n-button>
+        <span class="card-more" @click="router.push('/banks')">查看全部</span>
       </div>
       <SkeletonList v-if="loadingBanks" :count="3" :cols="1" />
       <EmptyState v-else-if="publicBanks.length === 0" description="暂无公开题库" :icon="LibraryOutline" />
@@ -57,7 +57,7 @@
     <div v-if="!authStore.isAuthenticated" class="card-section mb-6">
       <div class="card-head">
         <span class="card-title">公开试卷</span>
-        <n-button text type="primary" @click="router.push('/papers')">查看全部 &rarr;</n-button>
+        <span class="card-more" @click="router.push('/papers')">查看全部</span>
       </div>
       <SkeletonList v-if="loadingPapers" :count="3" :cols="1" />
       <EmptyState v-else-if="publicPapers.length === 0" description="暂无公开试卷" :icon="DocumentTextOutline" />
@@ -88,7 +88,7 @@
     <div v-if="authStore.isAuthenticated" class="card-section">
       <div class="card-head">
         <span class="card-title">最近活动</span>
-        <n-button text type="primary" @click="router.push('/records')">全部记录 &rarr;</n-button>
+        <span class="card-more" @click="router.push('/records')">全部记录</span>
       </div>
       <!-- 空态：给出下一步行动引导，而非孤立链接 -->
       <EmptyState
@@ -348,6 +348,16 @@ onMounted(() => {
   font-size: var(--text-base);
   font-weight: var(--font-semibold);
   color: var(--text-primary);
+}
+.card-more {
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  color: var(--text-brand);
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.card-more:hover {
+  opacity: 0.75;
 }
 .list-row {
   display: flex;
