@@ -55,6 +55,10 @@ export interface BankCollaborator {
 export interface Tag {
   id: number
   name: string
+  /** 标签分组名（可空，仅展示层聚合导航用，不参与筛选语义） */
+  groupName?: string | null
+  /** 使用次数（后端返回，管理弹窗展示用） */
+  usageCount?: number
   color: string
 }
 

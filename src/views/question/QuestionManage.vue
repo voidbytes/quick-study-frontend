@@ -3,6 +3,7 @@
     <!-- 页头 -->
     <PageHeader title="题目" subtitle="跨题库管理所有题目，支持按题型、难度、标签筛选">
       <template #actions>
+        <n-button v-if="authStore.isAdmin" @click="showTagManage = true">标签管理</n-button>
         <n-button v-if="authStore.isAdmin" type="primary" disabled @click="handleCreateHint">
           创建题目
         </n-button>
@@ -182,6 +183,9 @@
 
     <!-- 导入题目弹窗（目标题库在弹窗内选择） -->
     <QuestionImportDialog v-model:show="showImportDialog" @imported="fetchList" />
+
+    <!-- 标签管理（分组设置） -->
+    <TagManageModal v-model:show="showTagManage" @updated="fetchTagOptions" />
   </div>
 </template>
 
@@ -195,6 +199,7 @@ import type { Question, QuestionType, Difficulty } from '@/types'
 import { getAllQuestions, deleteQuestion } from '@/api/question'
 import { getBankList } from '@/api/bank'
 import { getTagList } from '@/api/tag'
+import { buildGroupedTagOptions } from '@/utils/tagOptions'
 import { exportQuestions } from '@/api/importExport'
 import { triggerBlobDownload, nowStamp } from '@/utils/download'
 import {
@@ -222,6 +227,7 @@ const loading = ref(false)
 const questionList = ref<Question[]>([])
 const bankOptions = ref<SelectOption[]>([])
 const tagOptions = ref<SelectOption[]>([])
+const showTagManage = ref(false)
 
 /** 勾选（仅当前页范围） */
 const selectedIds = ref<number[]>([])
@@ -322,10 +328,7 @@ async function fetchBankOptions() {
 async function fetchTagOptions() {
   try {
     const res = await getTagList()
-    tagOptions.value = (res.data || []).map((t) => ({
-      label: t.name,
-      value: t.id
-    }))
+    tagOptions.value = buildGroupedTagOptions(res.data || [])
   } catch {
     // 忽略错误
   }

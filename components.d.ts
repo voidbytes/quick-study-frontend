@@ -58,6 +58,7 @@ declare module 'vue' {
     NTab: typeof import('naive-ui')['NTab']
     NTabs: typeof import('naive-ui')['NTabs']
     NTag: typeof import('naive-ui')['NTag']
+    NTooltip: typeof import('naive-ui')['NTooltip']
     NUpload: typeof import('naive-ui')['NUpload']
     PageHeader: typeof import('./src/components/common/PageHeader.vue')['default']
     ProviderBridge: typeof import('./src/components/common/ProviderBridge.vue')['default']
@@ -70,6 +71,7 @@ declare module 'vue' {
     RouterView: typeof import('vue-router')['RouterView']
     SkeletonList: typeof import('./src/components/common/SkeletonList.vue')['default']
     StatCard: typeof import('./src/components/common/StatCard.vue')['default']
+    TagManageModal: typeof import('./src/components/common/TagManageModal.vue')['default']
     UserSearchSelect: typeof import('./src/components/common/UserSearchSelect.vue')['default']
   }
 }

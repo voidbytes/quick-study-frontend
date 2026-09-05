@@ -149,6 +149,9 @@
         </n-form>
       </n-spin>
     </div>
+
+    <!-- 标签管理（分组设置） -->
+    <TagManageModal v-model:show="showTagManage" @updated="loadTags" />
   </div>
 </template>
 
@@ -156,14 +159,16 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useMessage } from 'naive-ui'
-import type { FormInst, FormRules } from 'naive-ui'
+import type { FormInst, FormRules, SelectOption } from 'naive-ui'
 import type { QuestionType, Difficulty, QuestionOption } from '@/types'
 import { createQuestion, updateQuestion, getQuestionDetail } from '@/api/question'
 import type { UpdateQuestionParams } from '@/api/question'
 import { getTagList } from '@/api/tag'
+import { buildGroupedTagOptions } from '@/utils/tagOptions'
 import { QUESTION_TYPE_OPTIONS, DIFFICULTY_OPTIONS, QUESTION_STATUS_OPTIONS } from '@/utils/constants'
 import PageHeader from '@/components/common/PageHeader.vue'
 import MarkdownEditor from '@/components/MarkdownEditor.vue'
+import TagManageModal from '@/components/common/TagManageModal.vue'
 import { ReorderTwoOutline } from '@vicons/ionicons5'
 
 const route = useRoute()
@@ -178,7 +183,8 @@ const formRef = ref<FormInst | null>(null)
 const loading = ref(false)
 const saving = ref(false)
 const paperRefCount = ref(0)
-const tagOptions = ref<{ label: string; value: number }[]>([])
+const tagOptions = ref<SelectOption[]>([])
+const showTagManage = ref(false)
 const dragItemIndex = ref<number | null>(null)
 
 const form = reactive({
@@ -245,7 +251,7 @@ function onDrop(_index?: number) {
 async function loadTags() {
   try {
     const res = await getTagList()
-    tagOptions.value = (res.data || []).map((t) => ({ label: t.name, value: t.id }))
+    tagOptions.value = buildGroupedTagOptions(res.data || [])
   } catch {
     // ignore
   }
