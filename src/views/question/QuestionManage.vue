@@ -116,10 +116,10 @@
         <!-- 题干与元信息 -->
         <div class="flex-1 min-w-0">
           <div
-            class="text-sm font-medium text-neutral-900 hover:text-primary-500 cursor-pointer line-clamp-1"
+            class="text-sm font-medium text-neutral-900 hover:text-primary-500 cursor-pointer"
             @click="router.push(`/banks/${q.bankId}/questions/${q.id}`)"
           >
-            {{ stripHtml(q.content) }}
+            <RichText :content="q.content" class="question-stem-ellipsis" />
           </div>
           <div class="flex flex-wrap items-center gap-x-4 gap-y-1.5 mt-1.5">
             <n-tag size="small" round :type="typeTagType(q.type)">{{ typeLabel(q.type) }}</n-tag>
@@ -190,6 +190,7 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useMessage } from 'naive-ui'
 import type { SelectOption } from 'naive-ui'
+import RichText from '@/components/common/RichText.vue'
 import type { Question, QuestionType, Difficulty } from '@/types'
 import { getAllQuestions, deleteQuestion } from '@/api/question'
 import { getBankList } from '@/api/bank'
@@ -475,5 +476,15 @@ onMounted(() => {
   border-radius: var(--radius-full);
   background: var(--bg-selected);
   color: var(--text-brand);
+}
+/* 受限单行展示：题干（含公式）截断为一行 */
+.question-stem-ellipsis {
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.question-stem-ellipsis :deep(p) {
+  margin: 0;
 }
 </style>
