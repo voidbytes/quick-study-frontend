@@ -27,10 +27,10 @@ export interface PlaygroundRunResponse {
 
 /** 代码运行台：支持的语言列表 */
 export function getPlaygroundLanguages() {
-  return request.get<ApiResponse<PlaygroundLanguage[]>>('/api/v1/playground/languages')
+  return request.get<ApiResponse<PlaygroundLanguage[]>>('/playground/languages')
 }
 
 /** 代码运行台：同步运行代码（不落库、不计分） */
 export function runPlayground(data: PlaygroundRunRequest) {
-  return request.post<ApiResponse<PlaygroundRunResponse>>('/api/v1/playground/run', data)
+  return request.post<ApiResponse<PlaygroundRunResponse>>('/playground/run', data)
 }
