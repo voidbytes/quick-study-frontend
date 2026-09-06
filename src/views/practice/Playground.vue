@@ -279,15 +279,15 @@ const SAMPLES: Record<string, string> = {
   java: '// Java 示例\nimport java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        String name = sc.nextLine();\n        System.out.println("Hello, " + name + "!");\n    }\n}',
   ts: '// TypeScript 示例\nfunction greet(name: string): string {\n  return `Hello, ${name}!`;\n}\n\nconsole.log(greet("Quick Study"));',
   cpp: '// C++ 示例\n#include <iostream>\n#include <string>\nusing namespace std;\n\nint main() {\n    string name;\n    getline(cin, name);\n    cout << "Hello, " << name << "!" << endl;\n    return 0;\n}',
-  go: '// Go 示例\npackage main\n\nimport (\n    "bufio"\n    "fmt"\n    "os"\n    "strings"\n)\n\nfunc main() {\n    reader := bufio.NewReader(os.Stdin)\n    name, _ := reader.ReadString(\'\n\')\n    // ReadString 保留行尾换行，去掉后输出才与其他语言示例一致\n    fmt.Printf("Hello, %s!", strings.TrimSpace(name))\n}'
+  go: '// Go 示例\npackage main\n\nimport (\n    "fmt"\n)\n\nfunc main() {\n    var name string\n    fmt.Scanln(&name)\n    fmt.Printf("Hello, %s!", name)\n}'
 }
 
-/** 各示例配套的默认标准输入（仅读 stdin 的语言需要） */
+/** 各示例配套的默认标准输入（仅读 stdin 的语言需要；第一行为单词，各语言示例输出一致） */
 const SAMPLE_STDIN: Record<string, string> = {
-  py: 'Quick Study\n10 20 30',
-  java: 'Quick Study\n',
-  cpp: 'Quick Study\n',
-  go: 'Quick Study\n'
+  py: 'Quick\n10 20 30',
+  java: 'Quick\n',
+  cpp: 'Quick\n',
+  go: 'Quick\n'
 }
 
 const langOptions = computed(() =>
