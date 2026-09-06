@@ -83,7 +83,7 @@
           v-model="stdin"
           placeholder="输入运行时的标准输入内容（可选）&#10;例如：&#10;123 456&#10;Quick Study"
           spellcheck="false"
-          class="w-full min-h-[68px] px-4 py-3 border-none outline-none resize-y font-mono text-[13px] leading-relaxed text-neutral-900 bg-white"
+          class="w-full min-h-[120px] px-4 py-3 border-none outline-none resize-y font-mono text-[13px] leading-relaxed text-neutral-900 bg-white"
         />
       </div>
 
@@ -99,7 +99,6 @@
         </span>
         <div class="ml-auto flex items-center gap-3 text-xs text-neutral-400">
           <span class="inline-flex items-center gap-1"><n-icon :size="14"><TimeOutline /></n-icon>单次运行 ≤ 30s</span>
-          <span class="inline-flex items-center gap-1"><n-icon :size="14"><ShieldCheckmarkOutline /></n-icon>安全沙箱 · 限流保护</span>
         </div>
       </div>
     </div>
@@ -114,6 +113,7 @@
         <span v-if="status !== 'idle'" class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold" :class="statusClass">
           <n-icon :size="13" v-if="status === 'running'"><HourglassOutline /></n-icon>
           <n-icon :size="13" v-else-if="status === 'success'"><CheckmarkCircleOutline /></n-icon>
+          <n-icon :size="13" v-else-if="status === 'timedout'"><TimeOutline /></n-icon>
           <n-icon :size="13" v-else><CloseCircleOutline /></n-icon>
           <span>{{ statusText }}</span>
         </span>
@@ -250,7 +250,7 @@ const darkTheme = ref(false)
 
 const result = ref<PlaygroundRunResponse | null>(null)
 const compileError = ref('')
-const status = ref<'idle' | 'running' | 'success' | 'error'>('idle')
+const status = ref<'idle' | 'running' | 'success' | 'timedout' | 'error'>('idle')
 
 /** 语言 → CodeMirror mode（JavaScript 覆盖 TS；clike 覆盖 Java/C++） */
 const CM_MODES: Record<string, string> = {
@@ -272,13 +272,22 @@ function greet(name) {
 
 console.log(greet("Quick Study"));`
 
+/** 示例代码（code）与配套默认标准输入（stdin）：读 stdin 的示例带默认输入，开箱即用不阻塞 */
 const SAMPLES: Record<string, string> = {
   js: DEFAULT_SAMPLE_JS,
   py: '# Python 示例\nname = input("请输入姓名: ")\nprint(f"Hello, {name}!")\n\n# 读写 stdin 示例\nnums = input().split()\nprint("输入了", len(nums), "个数字")',
   java: '// Java 示例\nimport java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        String name = sc.nextLine();\n        System.out.println("Hello, " + name + "!");\n    }\n}',
-  ts: '// TypeScript 示例\nfunction greet(name: string): string {\n  return \`Hello, \${name}!\`;\n}\n\nconsole.log(greet("Quick Study"));',
+  ts: '// TypeScript 示例\nfunction greet(name: string): string {\n  return `Hello, ${name}!`;\n}\n\nconsole.log(greet("Quick Study"));',
   cpp: '// C++ 示例\n#include <iostream>\n#include <string>\nusing namespace std;\n\nint main() {\n    string name;\n    getline(cin, name);\n    cout << "Hello, " << name << "!" << endl;\n    return 0;\n}',
   go: '// Go 示例\npackage main\n\nimport (\n    "bufio"\n    "fmt"\n    "os"\n)\n\nfunc main() {\n    reader := bufio.NewReader(os.Stdin)\n    name, _ := reader.ReadString(\'\\n\')\n    fmt.Printf("Hello, %s!", name)\n}'
+}
+
+/** 各示例配套的默认标准输入（仅读 stdin 的语言需要） */
+const SAMPLE_STDIN: Record<string, string> = {
+  py: 'Quick Study\n10 20 30',
+  java: 'Quick Study\n',
+  cpp: 'Quick Study\n',
+  go: 'Quick Study\n'
 }
 
 const langOptions = computed(() =>
@@ -292,12 +301,14 @@ const hasOutput = computed(() => result.value !== null || compileError.value !==
 const statusText = computed(() => {
   if (status.value === 'running') return '正在运行…'
   if (status.value === 'success') return '运行成功'
+  if (status.value === 'timedout') return '运行超时'
   if (status.value === 'error') return '运行失败'
   return ''
 })
 const statusClass = computed(() => {
   if (status.value === 'running') return 'bg-warning-50 text-warning-600'
   if (status.value === 'success') return 'bg-success-50 text-success-600'
+  if (status.value === 'timedout') return 'bg-warning-50 text-warning-600'
   if (status.value === 'error') return 'bg-error-50 text-error-600'
   return ''
 })
@@ -392,16 +403,20 @@ function onLangChange(lang: string) {
   const isSampleOrBlank = trimmed === '' || Object.values(SAMPLES).some(s => s === code.value)
   if (isSampleOrBlank) {
     code.value = SAMPLES[lang] ?? ''
+    // 示例配套默认 stdin（读 stdin 的语言开箱即用，避免空输入阻塞超时）
+    stdin.value = SAMPLE_STDIN[lang] ?? ''
   }
 }
 
 function loadSample() {
   code.value = SAMPLES[langCode.value] ?? ''
+  stdin.value = SAMPLE_STDIN[langCode.value] ?? ''
 }
 
 function insertSample(lang: string) {
   langCode.value = lang
   code.value = SAMPLES[lang] ?? ''
+  stdin.value = SAMPLE_STDIN[lang] ?? ''
 }
 
 function clearAll() {
@@ -441,7 +456,7 @@ async function run() {
     })
     result.value = res.data
     compileError.value = res.data.compileError ?? ''
-    status.value = res.data.success ? 'success' : 'error'
+    status.value = res.data.timedOut ? 'timedout' : (res.data.success ? 'success' : 'error')
   } catch (e: any) {
     result.value = null
     compileError.value = e?.message || '运行请求失败'
