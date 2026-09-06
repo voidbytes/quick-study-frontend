@@ -81,7 +81,7 @@
         </div>
         <textarea
           v-model="stdin"
-          placeholder="输入运行时的标准输入内容（可选）&#10;例如：&#10;123 456&#10;Quick Study"
+          placeholder="标准输入：每行一个输入，行末自带换行&#10;例如：&#10;Quick Study&#10;123 456"
           spellcheck="false"
           class="w-full min-h-[120px] px-4 py-3 border-none outline-none resize-y font-mono text-[13px] leading-relaxed text-neutral-900 bg-white"
         />
@@ -279,7 +279,7 @@ const SAMPLES: Record<string, string> = {
   java: '// Java 示例\nimport java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        String name = sc.nextLine();\n        System.out.println("Hello, " + name + "!");\n    }\n}',
   ts: '// TypeScript 示例\nfunction greet(name: string): string {\n  return `Hello, ${name}!`;\n}\n\nconsole.log(greet("Quick Study"));',
   cpp: '// C++ 示例\n#include <iostream>\n#include <string>\nusing namespace std;\n\nint main() {\n    string name;\n    getline(cin, name);\n    cout << "Hello, " << name << "!" << endl;\n    return 0;\n}',
-  go: '// Go 示例\npackage main\n\nimport (\n    "bufio"\n    "fmt"\n    "os"\n)\n\nfunc main() {\n    reader := bufio.NewReader(os.Stdin)\n    name, _ := reader.ReadString(\'\\n\')\n    fmt.Printf("Hello, %s!", name)\n}'
+  go: '// Go 示例\npackage main\n\nimport (\n    "bufio"\n    "fmt"\n    "os"\n    "strings"\n)\n\nfunc main() {\n    reader := bufio.NewReader(os.Stdin)\n    name, _ := reader.ReadString(\'\n\')\n    // ReadString 保留行尾换行，去掉后输出才与其他语言示例一致\n    fmt.Printf("Hello, %s!", strings.TrimSpace(name))\n}'
 }
 
 /** 各示例配套的默认标准输入（仅读 stdin 的语言需要） */
