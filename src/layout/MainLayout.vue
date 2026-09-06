@@ -170,6 +170,7 @@ import {
   DocumentTextOutline,
   FileTrayFullOutline,
   GameControllerOutline,
+  CodeSlashOutline,
   CloseCircleOutline,
   TimeOutline,
   SearchOutline,
@@ -232,6 +233,7 @@ const menuGroups = computed<MenuGroup[]>(() => {
       label: '学习中心',
       items: [
         { label: '练习', key: '/practice', icon: GameControllerOutline },
+        { label: '代码运行台', key: '/playground', icon: CodeSlashOutline },
         { label: '错题本', key: '/wrong-questions', icon: CloseCircleOutline },
         { label: '收藏题目', key: '/favorites', icon: StarOutline },
         { label: '做题记录', key: '/records', icon: TimeOutline },
@@ -271,6 +273,7 @@ const MENU_TITLES: Record<string, string> = {
   '/questions': '题目',
   '/papers': '试卷',
   '/practice': '练习',
+  '/playground': '代码运行台',
   '/wrong-questions': '错题本',
   '/favorites': '收藏题目',
   '/records': '做题记录',

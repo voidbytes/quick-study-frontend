@@ -143,6 +143,11 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/views/practice/PracticePage.vue')
       },
       {
+        path: 'playground',
+        name: 'Playground',
+        component: () => import('@/views/practice/Playground.vue')
+      },
+      {
         path: 'wrong-questions',
         name: 'WrongQuestionList',
         component: () => import('@/views/wrongquestion/WrongQuestionList.vue')
