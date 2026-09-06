@@ -33,6 +33,7 @@
           :options="langOptions"
           size="small"
           class="w-52"
+          @update:value="onLangChange"
         />
         <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-neutral-200 bg-white font-mono text-sm text-neutral-700">
           <n-icon :size="14" class="text-primary-500"><DocumentTextOutline /></n-icon>
@@ -381,6 +382,18 @@ watch(darkTheme, (val) => {
     editor.setOption('theme', val ? 'material-darker' : 'default')
   }
 })
+
+/**
+ * 语言切换：若当前代码为空白或仍是任意语言的示例模板（未做实际编辑），
+ * 自动填充新语言示例，保证运行的是匹配语言的代码；用户已编辑的内容不覆盖。
+ */
+function onLangChange(lang: string) {
+  const trimmed = code.value.trim()
+  const isSampleOrBlank = trimmed === '' || Object.values(SAMPLES).some(s => s === code.value)
+  if (isSampleOrBlank) {
+    code.value = SAMPLES[lang] ?? ''
+  }
+}
 
 function loadSample() {
   code.value = SAMPLES[langCode.value] ?? ''
