@@ -168,6 +168,20 @@
                 @update:model-value="handleShortAnswerChange"
               />
             </template>
+
+            <!-- 编程题：语言选择（受题目限制）/ 运行样例 / 草稿自动保存 -->
+            <template v-if="currentQuestion && currentQuestion.type === 'PROGRAMMING'">
+              <ProgrammingAnswerPanel
+                :key="`prog-${currentQuestion.id}`"
+                :programming="currentQuestion.programming ?? null"
+                mode="exam"
+                :session-id="sessionId ?? ''"
+                :paper-question-id="currentQuestion.id"
+                :initial-code="progAnswers[currentQuestion.id]?.code"
+                :initial-language-id="progAnswers[currentQuestion.id]?.languageId || undefined"
+                @change="onProgrammingChange"
+              />
+            </template>
           </div>
 
           <!-- 导航按钮 -->
@@ -201,6 +215,8 @@ import QuestionNavGrid from '@/components/common/QuestionNavGrid.vue'
 import QuestionOption from '@/components/common/QuestionOption.vue'
 import RichText from '@/components/common/RichText.vue'
 import MarkdownEditor from '@/components/MarkdownEditor.vue'
+import ProgrammingAnswerPanel from '@/components/programming/ProgrammingAnswerPanel.vue'
+import type { ProgrammingAnswerView } from '@/components/programming/ProgrammingAnswerPanel.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -214,10 +230,16 @@ const paperTitle = ref('')
 interface ExamQuestion extends QuestionItem {
   difficulty?: string
 }
+/** 编程题答案（id → 代码 + 语言），语言为 null 表示尚未选择/不可用 */
+interface ProgAnswer {
+  code: string
+  languageId: number | null
+}
 const questions = ref<ExamQuestion[]>([])
 const currentIndex = ref(0)
 const currentAnswers = reactive<Record<number, string>>({})
 const fillAnswers = reactive<Record<number, string>>({})
+const progAnswers = reactive<Record<number, ProgAnswer>>({})
 const markedForReview = ref<Set<number>>(new Set())
 const timeRemaining = ref(0)
 const timerHandle = ref<ReturnType<typeof setInterval> | null>(null)
@@ -281,6 +303,7 @@ const formattedTime = computed(() => {
 })
 
 function hasAnswer(q: ExamQuestion): boolean {
+  if (q.type === 'PROGRAMMING') return !!progAnswers[q.id]?.code?.trim()
   if (q.type === 'MULTIPLE') return !!currentAnswers[q.id]?.length
   if (q.type === 'FILL_BLANK') return !!fillAnswers[q.id]?.trim()
   if (q.type === 'SHORT_ANSWER') {
@@ -302,7 +325,7 @@ function difficultyLabel(d?: string): string {
 }
 
 function typeTagType(type?: string): 'default' | 'info' | 'primary' {
-  if (type === 'SINGLE' || type === 'MULTIPLE') return 'primary'
+  if (type === 'SINGLE' || type === 'MULTIPLE' || type === 'PROGRAMMING') return 'primary'
   if (type === 'FILL_BLANK' || type === 'SHORT_ANSWER') return 'info'
   return 'default'
 }
@@ -366,6 +389,22 @@ function handleShortAnswerChange(v: string) {
   }, 2000)
 }
 
+/** 编程题草稿自动保存定时器（编辑防抖 2s，与简答题一致） */
+let progSaveTimer: ReturnType<typeof setTimeout> | null = null
+
+/** 编程题编辑：同步内存态 + 本地草稿，防抖自动保存（含语言ID，交卷判题用） */
+function onProgrammingChange(payload: { code: string; languageId: number | null }) {
+  const q = currentQuestion.value
+  if (!q) return
+  progAnswers[q.id] = { code: payload.code, languageId: payload.languageId }
+  saveToLocal()
+  if (progSaveTimer) clearTimeout(progSaveTimer)
+  progSaveTimer = setTimeout(() => {
+    progSaveTimer = null
+    autoSave()
+  }, 2000)
+}
+
 function isMarkedForReview(index: number) {
   return markedForReview.value.has(index)
 }
@@ -398,6 +437,14 @@ async function autoSave() {
 
 function buildAnswerPayload() {
   return questions.value.map((q) => {
+    if (q.type === 'PROGRAMMING') {
+      const prog = progAnswers[q.id]
+      return {
+        paperQuestionId: q.id,
+        answer: prog?.code || '',
+        languageId: prog?.languageId ?? null
+      }
+    }
     const answer = hasAnswer(q)
       ? (q.type === 'MULTIPLE' || q.type === 'FILL_BLANK' || q.type === 'SHORT_ANSWER'
           ? fillAnswers[q.id] || currentAnswers[q.id] || ''
@@ -412,6 +459,7 @@ function saveToLocal() {
   localStorage.setItem(key, JSON.stringify({
     answers: { ...currentAnswers },
     fillAnswers: { ...fillAnswers },
+    progAnswers: { ...progAnswers },
     currentIndex: currentIndex.value,
     markedForReview: Array.from(markedForReview.value)
   }))
@@ -423,6 +471,7 @@ function loadFromLocal() {
     const data = JSON.parse(localStorage.getItem(key) || '{}')
     if (data.answers) Object.assign(currentAnswers, data.answers)
     if (data.fillAnswers) Object.assign(fillAnswers, data.fillAnswers)
+    if (data.progAnswers) Object.assign(progAnswers, data.progAnswers)
     if (data.currentIndex !== undefined) currentIndex.value = data.currentIndex
     if (data.markedForReview) markedForReview.value = new Set(data.markedForReview)
   } catch {
@@ -522,7 +571,9 @@ async function restoreSession() {
       data.currentAnswers.forEach((a: AnswerItem) => {
         const q = questions.value.find((item) => item.id === a.paperQuestionId)
         if (q) {
-          if (q.type === 'FILL_BLANK' || q.type === 'SHORT_ANSWER') {
+          if (q.type === 'PROGRAMMING') {
+            progAnswers[q.id] = { code: a.userAnswer || '', languageId: a.languageId ?? null }
+          } else if (q.type === 'FILL_BLANK' || q.type === 'SHORT_ANSWER') {
             fillAnswers[q.id] = a.userAnswer
           } else {
             currentAnswers[q.id] = a.userAnswer
@@ -547,6 +598,7 @@ onMounted(() => {
 onUnmounted(() => {
   if (timerHandle.value) clearInterval(timerHandle.value)
   if (shortAnswerSaveTimer) clearTimeout(shortAnswerSaveTimer)
+  if (progSaveTimer) clearTimeout(progSaveTimer)
   document.removeEventListener('visibilitychange', handleVisibilityChange)
 })
 </script>

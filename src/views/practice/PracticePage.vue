@@ -138,9 +138,23 @@
               </QuestionOption>
             </template>
 
-            <!-- 提交后判分横幅 -->
+            <!-- 编程题作答（语言选择 / 运行样例 / 提交判题均在面板内） -->
+            <template v-else-if="currentQuestion?.type === 'PROGRAMMING'">
+              <ProgrammingAnswerPanel
+                :programming="currentQuestion?.programming ?? null"
+                mode="practice"
+                :session-id="sessionId"
+                :question-index="currentIndex"
+                :initial-code="currentQuestion?.userAnswer || undefined"
+                :locked="answered"
+                @change="onProgrammingChange"
+                @answered="onProgrammingAnswered"
+              />
+            </template>
+
+            <!-- 提交后判分横幅（编程题不展示：判题结果由面板内展示） -->
             <div
-              v-if="answered"
+              v-if="answered && currentQuestion?.type !== 'PROGRAMMING'"
               class="mt-6 px-4 py-3.5 rounded-lg border flex items-start gap-3"
               :class="currentQuestion?.isCorrect ? 'bg-success-50 border-success-200' : 'bg-error-50 border-error-200'"
             >
@@ -183,7 +197,13 @@
             <div class="flex flex-wrap items-center justify-between gap-3 mt-8 pt-5 border-t border-neutral-200">
               <div class="flex flex-wrap items-center gap-2">
                 <n-button size="small" :disabled="currentIndex === 0" @click="prevQuestion">上一题</n-button>
-                <n-button v-if="!answered" size="small" type="primary" :loading="submitting" @click="submitAnswer">
+                <n-button
+                  v-if="!answered && currentQuestion?.type !== 'PROGRAMMING'"
+                  size="small"
+                  type="primary"
+                  :loading="submitting"
+                  @click="submitAnswer"
+                >
                   提交答案
                 </n-button>
               </div>
@@ -324,7 +344,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useMessage } from 'naive-ui'
 import {
@@ -336,6 +356,8 @@ import {
   DocumentTextOutline
 } from '@vicons/ionicons5'
 import { getPracticeSession, submitPracticeAnswer, completePractice } from '@/api/practice'
+import ProgrammingAnswerPanel from '@/components/programming/ProgrammingAnswerPanel.vue'
+import type { ProgrammingAnswerView } from '@/components/programming/ProgrammingAnswerPanel.vue'
 import type { PracticeQuestion } from '@/types'
 import { QUESTION_TYPE_MAP, DIFFICULTY_MAP } from '@/utils/constants'
 import { useConfirm } from '@/composables/useConfirm'
@@ -354,6 +376,8 @@ const { confirm } = useConfirm()
 interface QuestionRow extends PracticeQuestion {
   userAnswer?: string | null
   isCorrect?: boolean | null
+  /** 编程题配置（答题者视角，脱敏：仅公开样例） */
+  programming?: ProgrammingAnswerView | null
 }
 
 /** filterParams JSON 展开 */
@@ -464,6 +488,7 @@ function typePillClass(type?: string): string {
     case 'MULTIPLE': return 'bg-info-50 text-info-600'
     case 'TRUE_FALSE': return 'bg-success-50 text-success-600'
     case 'FILL_BLANK': return 'bg-warning-50 text-warning-600'
+    case 'PROGRAMMING': return 'bg-primary-50 text-primary-600'
     default: return 'bg-neutral-100 text-neutral-600'
   }
 }
@@ -559,6 +584,7 @@ async function submitAnswer() {
     return
   }
 
+
   submitting.value = true
   try {
     const res = await submitPracticeAnswer(sessionId, {
@@ -576,6 +602,37 @@ async function submitAnswer() {
     message.error('提交答案失败')
   } finally {
     submitting.value = false
+  }
+}
+
+// ==================== 编程题 ====================
+
+/** 编程题草稿自动保存定时器（编辑防抖 1s，切题/退出不丢代码） */
+let progSaveTimer: ReturnType<typeof setTimeout> | null = null
+
+/** 编辑触发：防抖保存草稿（saveAnswer 编程题分支只存代码不判题，isCorrect=null） */
+function onProgrammingChange(payload: { code: string; languageId: number | null }) {
+  if (progSaveTimer) clearTimeout(progSaveTimer)
+  progSaveTimer = setTimeout(async () => {
+    const target = questions.value[currentIndex.value]
+    if (!target || !payload.code) return
+    try {
+      await submitPracticeAnswer(sessionId, { index: currentIndex.value, answer: payload.code })
+      target.userAnswer = payload.code
+    } catch {
+      // 草稿保存失败静默（提交判题时 submit-code 会补建记录）
+    }
+  }, 1000)
+}
+
+/** 提交判题成功：锁定本题，回填 userAnswer（判题结果由面板内展示） */
+function onProgrammingAnswered(payload: { code: string; languageId: number; submissionId: number }) {
+  if (progSaveTimer) clearTimeout(progSaveTimer)
+  answered.value = true
+  const target = questions.value[currentIndex.value]
+  if (target) {
+    target.userAnswer = payload.code
+    target.isCorrect = null // 判题异步回写，完成练习后以最新为准
   }
 }
 
@@ -602,7 +659,8 @@ function resetAnswer() {
   if (q && q.userAnswer) {
     if (q.type === 'MULTIPLE') {
       multipleSelected.value = String(q.userAnswer).split(',').filter(Boolean)
-    } else {
+    } else if (q.type !== 'PROGRAMMING') {
+      // 编程题：代码与语言由面板内部状态承载，此处仅标记已作答
       selectedAnswer.value = String(q.userAnswer)
     }
     answered.value = true
@@ -691,6 +749,10 @@ async function loadSession() {
 }
 
 onMounted(() => { loadSession() })
+
+onBeforeUnmount(() => {
+  if (progSaveTimer) clearTimeout(progSaveTimer)
+})
 </script>
 
 <style scoped>

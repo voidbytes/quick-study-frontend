@@ -14,6 +14,14 @@ export interface QuestionItem {
   options: string | null
   score: number
   sortOrder: number
+  /** 编程题配置（答题者视角，脱敏：仅公开样例、无 answerCode） */
+  programming?: {
+    timeLimitMs?: number
+    memoryLimitKb?: number
+    allowedLanguages?: string[] | null
+    starterCode?: Record<string, string>
+    sampleCases?: { sortOrder: number; input: string; expectedOutput: string }[]
+  } | null
 }
 
 export interface SessionResponse {
@@ -28,11 +36,15 @@ export interface SessionResponse {
 export interface AnswerItem {
   paperQuestionId: number
   userAnswer: string
+  /** 编程题作答语言ID（断点恢复时前端据此回显语言选择） */
+  languageId?: number | null
 }
 
 export interface SaveAnswerItem {
   paperQuestionId: number
   answer: string
+  /** 编程题作答语言ID（交卷判题时后端据此选择语言） */
+  languageId?: number | null
 }
 
 export interface SaveAnswersPayload {
@@ -56,8 +68,21 @@ export interface QuestionResultItem {
   yourAnswer: string
   correctAnswer: string
   analysis: string
-  score: number
+  score: number | null
   isCorrect: boolean | null
+  /** 编程题判题结果（交卷时创建的 submission 快照；非编程题/未提交为 null） */
+  programming?: {
+    submissionId: number
+    /** PENDING / JUDGING / FINISHED / ERROR */
+    status: string
+    /** AC / WA / TLE / MLE / RE / CE / SE（仅 FINISHED 有值） */
+    result: string
+    passCount: number | null
+    totalCount: number | null
+    maxTimeMs: number | null
+    compileMessage?: string | null
+    languageName?: string | null
+  } | null
 }
 
 export function startSession(paperId: string | number, password?: string) {

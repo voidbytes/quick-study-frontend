@@ -78,8 +78,8 @@
               <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-info-50 text-info-600">
                 {{ typeLabel(q.type) }}
               </span>
-              <span class="text-xs font-semibold px-2 py-0.5 rounded-full" :class="judgeBadgeClass(q.isCorrect)">
-                {{ judgeLabel(q.isCorrect) }}
+              <span class="text-xs font-semibold px-2 py-0.5 rounded-full" :class="judgeBadgeClass(q)">
+                {{ judgeLabel(q) }}
               </span>
             </div>
 
@@ -88,17 +88,23 @@
               <RichText :content="parseQuestionContent(q.content)" />
             </div>
 
-            <!-- 答案对比（简答题为富文本 HTML，用 RichText 渲染；客观题保持文本插值） -->
+            <!-- 答案对比（简答题为富文本 HTML，用 RichText 渲染；客观题保持文本插值；编程题为代码块） -->
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
-              <div class="px-4 py-3 rounded-lg" :class="answerBoxClass(q.isCorrect)">
-                <div class="text-xs text-neutral-500 mb-1">你的答案</div>
+              <div class="px-4 py-3 rounded-lg" :class="answerBoxClass(q)">
+                <div class="text-xs text-neutral-500 mb-1">
+                  你的答案<template v-if="q.programming?.languageName">（{{ q.programming.languageName }}）</template>
+                </div>
                 <RichText
                   v-if="q.type === 'SHORT_ANSWER'"
                   :content="formatAnswer(q, q.yourAnswer)"
                   class="answer-rich"
-                  :class="answerTextClass(q.isCorrect)"
+                  :class="answerTextClass(q)"
                 />
-                <div v-else class="text-sm font-semibold" :class="answerTextClass(q.isCorrect)">
+                <pre
+                  v-else-if="q.type === 'PROGRAMMING'"
+                  class="text-xs font-mono whitespace-pre-wrap break-all max-h-64 overflow-auto bg-neutral-50 border border-neutral-200 rounded p-2"
+                >{{ q.yourAnswer || '未作答' }}</pre>
+                <div v-else class="text-sm font-semibold" :class="answerTextClass(q)">
                   {{ formatAnswer(q, q.yourAnswer) }}
                 </div>
               </div>
@@ -115,6 +121,32 @@
               </div>
             </div>
 
+            <!-- 编程题判题详情（用例通过 / 耗时 / 编译错误） -->
+            <div
+              v-if="q.type === 'PROGRAMMING' && q.programming"
+              class="mb-4 px-4 py-3 rounded-lg bg-neutral-50 border border-neutral-200"
+            >
+              <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm mb-1.5">
+                <span class="text-neutral-600">
+                  判题状态：
+                  <b :class="judgeTextClass(q)">{{ judgeLabel(q) }}</b>
+                </span>
+                <span v-if="q.programming.totalCount != null" class="text-neutral-600">
+                  用例通过：{{ q.programming.passCount ?? 0 }} / {{ q.programming.totalCount }}
+                </span>
+                <span v-if="q.programming.maxTimeMs" class="text-neutral-600">
+                  最大耗时：{{ q.programming.maxTimeMs }}ms
+                </span>
+              </div>
+              <pre
+                v-if="q.programming.compileMessage"
+                class="text-xs text-error-600 whitespace-pre-wrap break-all font-mono max-h-40 overflow-auto bg-white border border-error-100 rounded p-2"
+              >{{ q.programming.compileMessage }}</pre>
+              <div v-if="!judgeFinished(q)" class="text-xs text-neutral-400">
+                判题仍在进行，页面会自动刷新结果，请稍候…
+              </div>
+            </div>
+
             <!-- 解析 -->
             <div v-if="q.analysis" class="flex items-start gap-2 px-4 py-3 rounded-lg bg-info-50 text-sm text-info-600 mb-4">
               <RichText :content="q.analysis" class="analysis-rich" />
@@ -124,7 +156,7 @@
             <div class="flex items-center justify-between pt-3 border-t border-neutral-200">
               <span class="text-sm text-neutral-500">得分</span>
               <span class="text-lg font-bold" :class="scoreTextClass(q)">
-                {{ q.score != null ? q.score : '待批改' }}
+                {{ scoreLabel(q) }}
               </span>
             </div>
           </div>
@@ -145,7 +177,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getResult } from '@/api/exam'
 import type { SessionResultResponse, QuestionResultItem } from '@/api/exam'
@@ -195,27 +227,64 @@ function formatAnswer(q: QuestionResultItem, answer: string | null): string {
   return answer
 }
 
-function judgeLabel(isCorrect: boolean | null): string {
-  if (isCorrect === true) return '正确'
-  if (isCorrect === false) return '错误'
+/** 判题结果是否已终态（FINISHED/ERROR） */
+function judgeFinished(q: QuestionResultItem): boolean {
+  if (q.type !== 'PROGRAMMING' || !q.programming) return true
+  return q.programming.status === 'FINISHED' || q.programming.status === 'ERROR'
+}
+
+function judgeLabel(q: QuestionResultItem): string {
+  // 编程题：以判题结果为准（AC/WA/TLE/MLE/RE/CE/SE），判题中单独提示
+  if (q.type === 'PROGRAMMING') {
+    const p = q.programming
+    if (!p) return '未判题'
+    if (p.status === 'FINISHED') return p.result || '未知'
+    if (p.status === 'ERROR') return '判题异常'
+    return '判题中'
+  }
+  if (q.isCorrect === true) return '正确'
+  if (q.isCorrect === false) return '错误'
   return '待批改'
 }
 
-function judgeBadgeClass(isCorrect: boolean | null): string {
-  if (isCorrect === true) return 'bg-success-50 text-success-700'
-  if (isCorrect === false) return 'bg-error-50 text-error-700'
+function judgeBadgeClass(q: QuestionResultItem): string {
+  if (q.type === 'PROGRAMMING') {
+    const p = q.programming
+    if (!p) return 'bg-warning-50 text-warning-700'
+    if (p.status === 'FINISHED') {
+      if (p.result === 'AC') return 'bg-success-50 text-success-700'
+      if (p.result === 'CE') return 'bg-warning-50 text-warning-700'
+      if (p.result === 'TLE' || p.result === 'MLE') return 'bg-warning-50 text-warning-700'
+      return 'bg-error-50 text-error-700'
+    }
+    return 'bg-info-50 text-info-600'
+  }
+  if (q.isCorrect === true) return 'bg-success-50 text-success-700'
+  if (q.isCorrect === false) return 'bg-error-50 text-error-700'
   return 'bg-warning-50 text-warning-700'
 }
 
-function answerBoxClass(isCorrect: boolean | null): string {
-  if (isCorrect === true) return 'bg-success-50'
-  if (isCorrect === false) return 'bg-error-50'
+function judgeTextClass(q: QuestionResultItem): string {
+  if (q.type === 'PROGRAMMING') {
+    const p = q.programming
+    if (p && p.status === 'FINISHED' && p.result === 'AC') return 'text-success-700'
+    if (p && p.status === 'FINISHED') return 'text-error-600'
+    return 'text-info-600'
+  }
+  if (q.isCorrect === true) return 'text-success-700'
+  if (q.isCorrect === false) return 'text-error-700'
+  return 'text-warning-700'
+}
+
+function answerBoxClass(q: QuestionResultItem): string {
+  if (q.isCorrect === true) return 'bg-success-50'
+  if (q.isCorrect === false) return 'bg-error-50'
   return 'bg-warning-50'
 }
 
-function answerTextClass(isCorrect: boolean | null): string {
-  if (isCorrect === true) return 'text-success-700'
-  if (isCorrect === false) return 'text-error-700'
+function answerTextClass(q: QuestionResultItem): string {
+  if (q.isCorrect === true) return 'text-success-700'
+  if (q.isCorrect === false) return 'text-error-700'
   return 'text-warning-700'
 }
 
@@ -223,6 +292,11 @@ function scoreTextClass(q: QuestionResultItem): string {
   if (q.isCorrect === true) return 'text-success-700'
   if (q.isCorrect === false) return 'text-error-700'
   return 'text-warning-700'
+}
+
+function scoreLabel(q: QuestionResultItem): string {
+  if (q.type === 'PROGRAMMING' && q.programming && !judgeFinished(q)) return '判题中'
+  return q.score != null ? String(q.score) : '待批改'
 }
 
 function parseQuestionContent(content?: string): string {
@@ -238,6 +312,27 @@ function parseQuestionContent(content?: string): string {
   }
 }
 
+/** 编程题判题轮询：存在未终态判题时每 5s 刷新，最多 60s（判题 worker 一般秒级完成） */
+let pollTimer: ReturnType<typeof setInterval> | null = null
+let pollCount = 0
+
+function startPollingIfNeeded() {
+  const qs = result.value?.questions || []
+  const pending = qs.some((q) => q.type === 'PROGRAMMING' && q.programming && !judgeFinished(q))
+  if (!pending) return
+  if (pollTimer) return
+  pollTimer = setInterval(async () => {
+    pollCount++
+    await loadResult()
+    const stillPending = (result.value?.questions || []).some(
+      (q) => q.type === 'PROGRAMMING' && q.programming && !judgeFinished(q)
+    )
+    if (!stillPending || pollCount >= 12) {
+      if (pollTimer) { clearInterval(pollTimer); pollTimer = null }
+    }
+  }, 5000)
+}
+
 async function loadResult() {
   try {
     const res = await getResult(sessionId)
@@ -249,8 +344,13 @@ async function loadResult() {
       err?.response?.data?.message || err?.message || '获取考试结果失败，请稍后重试'
   } finally {
     loading.value = false
+    startPollingIfNeeded()
   }
 }
+
+onUnmounted(() => {
+  if (pollTimer) clearInterval(pollTimer)
+})
 
 onMounted(() => {
   loadResult()

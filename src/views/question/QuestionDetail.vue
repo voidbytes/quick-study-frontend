@@ -102,12 +102,63 @@
           </section>
 
           <!-- 解析 -->
-          <section v-if="question.analysis">
-            <h3 class="text-sm font-medium text-neutral-500 mb-2">解析</h3>
-            <div class="bg-warning-50 border border-warning-100 rounded-lg p-4">
-              <RichText :content="question.analysis" />
-            </div>
-          </section>
+                    <section v-if="question.analysis">
+                      <h3 class="text-sm font-medium text-neutral-500 mb-2">解析</h3>
+                      <div class="bg-warning-50 border border-warning-100 rounded-lg p-4">
+                        <RichText :content="question.analysis" />
+                      </div>
+                    </section>
+
+                    <!-- 编程题配置（出题人预览） -->
+                    <section v-if="question.programming" class="border-t border-neutral-200 pt-6">
+                      <h3 class="text-sm font-medium text-neutral-500 mb-3">编程题配置</h3>
+                      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+                        <div class="bg-neutral-50 border border-neutral-200 rounded-lg p-3">
+                          <div class="text-xs text-neutral-400 mb-1">允许语言</div>
+                          <div class="text-sm flex flex-wrap gap-1">
+                            <n-tag v-for="code in programmingLangList" :key="code" size="small" round>
+                              {{ code.toUpperCase() }}
+                            </n-tag>
+                            <span v-if="!programmingLangList.length" class="text-neutral-500">不限制（全部启用语言）</span>
+                          </div>
+                        </div>
+                        <div class="bg-neutral-50 border border-neutral-200 rounded-lg p-3">
+                          <div class="text-xs text-neutral-400 mb-1">时间限制</div>
+                          <div class="text-sm">{{ question.programming.timeLimitMs }} ms</div>
+                        </div>
+                        <div class="bg-neutral-50 border border-neutral-200 rounded-lg p-3">
+                          <div class="text-xs text-neutral-400 mb-1">内存限制</div>
+                          <div class="text-sm">{{ Math.round(question.programming.memoryLimitKb / 1024) }} MB</div>
+                        </div>
+                      </div>
+                      <div class="text-xs font-medium text-neutral-400 mb-2">
+                        测试用例（{{ question.programming.testCases.length }}）
+                      </div>
+                      <div class="space-y-2">
+                        <div
+                          v-for="(tc, i) in question.programming.testCases"
+                          :key="i"
+                          class="border border-neutral-200 rounded-lg p-3"
+                        >
+                          <div class="flex items-center gap-2 mb-2">
+                            <span class="text-sm font-medium">用例 {{ i + 1 }}</span>
+                            <n-tag size="tiny" :type="tc.isSample ? 'info' : 'default'">
+                              {{ tc.isSample ? '公开样例' : '隐藏用例' }}
+                            </n-tag>
+                          </div>
+                          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
+                            <div class="bg-neutral-50 rounded p-2">
+                              <div class="text-xs text-neutral-400 mb-1">标准输入</div>
+                              <pre class="whitespace-pre-wrap break-all font-mono text-xs">{{ tc.input || '（空）' }}</pre>
+                            </div>
+                            <div class="bg-neutral-50 rounded p-2">
+                              <div class="text-xs text-neutral-400 mb-1">期望输出</div>
+                              <pre class="whitespace-pre-wrap break-all font-mono text-xs">{{ tc.expectedOutput || '（空）' }}</pre>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </section>
 
           <!-- 标签 -->
           <section v-if="question.tags && question.tags.length > 0">
@@ -164,6 +215,20 @@ const loadError = ref('')
 interface QuestionDetailData extends Omit<Question, 'options'> {
   options?: string | QuestionOption[] | null
   referenceAnswer?: string | null
+  /** 编程题配置（type=PROGRAMMING 时存在） */
+  programming?: {
+    timeLimitMs: number
+    memoryLimitKb: number
+    allowedLanguages: string[] | null
+    starterCode: Record<string, string>
+    answerCode: Record<string, string>
+    testCases: {
+      input: string
+      expectedOutput: string
+      isSample: boolean
+      sortOrder: number
+    }[]
+  } | null
 }
 
 const question = ref<QuestionDetailData | null>(null)
@@ -177,7 +242,8 @@ const TYPE_TAG: Record<QuestionType, TagColor> = {
   MULTIPLE: 'warning',
   TRUE_FALSE: 'success',
   FILL_BLANK: 'default',
-  SHORT_ANSWER: 'primary'
+  SHORT_ANSWER: 'primary',
+  PROGRAMMING: 'primary'
 }
 
 const DIFFICULTY_TAG: Record<Difficulty, TagColor> = {
@@ -216,6 +282,9 @@ function statusTagType(status?: string): TagColor {
 const showOptions = computed(
   () => question.value?.type === 'SINGLE' || question.value?.type === 'MULTIPLE'
 )
+
+/** 编程题允许语言列表（空 = 不限制） */
+const programmingLangList = computed<string[]>(() => question.value?.programming?.allowedLanguages || [])
 
 const parsedOptions = computed<string[]>(() => {
   const raw = question.value?.options

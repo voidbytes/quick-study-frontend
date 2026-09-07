@@ -144,7 +144,8 @@ const TYPE_TAG: Record<QuestionType, TagColor> = {
   MULTIPLE: 'warning',
   TRUE_FALSE: 'success',
   FILL_BLANK: 'default',
-  SHORT_ANSWER: 'primary'
+  SHORT_ANSWER: 'primary',
+  PROGRAMMING: 'primary'
 }
 
 const DIFFICULTY_TAG: Record<Difficulty, TagColor> = {

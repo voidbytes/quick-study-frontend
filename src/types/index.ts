@@ -64,7 +64,7 @@ export interface Tag {
 
 // 题目
 // 与后端运行时一致的大写枚举（历史上此处曾误写为小写，导致三套枚举并存）
-export type QuestionType = 'SINGLE' | 'MULTIPLE' | 'TRUE_FALSE' | 'FILL_BLANK' | 'SHORT_ANSWER'
+export type QuestionType = 'SINGLE' | 'MULTIPLE' | 'TRUE_FALSE' | 'FILL_BLANK' | 'SHORT_ANSWER' | 'PROGRAMMING'
 
 export type Difficulty = 'EASY' | 'MEDIUM' | 'HARD'
 

@@ -11,6 +11,8 @@ export interface CreateQuestionParams {
   analysis?: string
   tagIds?: number[]
   status?: string
+  /** 编程题配置（type=PROGRAMMING 时必传） */
+  programming?: ProgrammingQuestionConfig
 }
 
 export interface UpdateQuestionParams {
@@ -22,6 +24,31 @@ export interface UpdateQuestionParams {
   analysis?: string
   score?: number
   tags?: number[]
+  status?: string
+  tagIds?: number[]
+  referenceAnswer?: string
+  /** 编程题配置（type=PROGRAMMING 时全量回传，未传则后端保留原配置） */
+  programming?: ProgrammingQuestionConfig
+}
+
+/** 编程题测试用例（出题表单行） */
+export interface ProgrammingTestCase {
+  input: string
+  expectedOutput: string
+  isSample: boolean
+  sortOrder: number
+}
+
+/** 编程题配置（与后端 QuestionProgrammingRequest 对齐） */
+export interface ProgrammingQuestionConfig {
+  timeLimitMs: number
+  memoryLimitKb: number
+  /** 允许语言代码数组；null/空 = 全部启用语言 */
+  allowedLanguages: string[] | null
+  starterCode: Record<string, string>
+  answerCode: Record<string, string>
+  judgeStrategy: 'AC_ONLY' | 'PARTIAL'
+  testCases: ProgrammingTestCase[]
 }
 
 export interface QuestionListParams {

@@ -231,7 +231,8 @@ const TYPE_TAG: Record<QuestionType, TagColor> = {
   MULTIPLE: 'warning',
   TRUE_FALSE: 'success',
   FILL_BLANK: 'default',
-  SHORT_ANSWER: 'primary'
+  SHORT_ANSWER: 'primary',
+  PROGRAMMING: 'primary'
 }
 
 function typeKeyOf(raw: string | null | undefined): QuestionType | null {

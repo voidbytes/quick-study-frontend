@@ -11,7 +11,8 @@ export const QUESTION_TYPE_OPTIONS: { label: string; value: QuestionType }[] = [
   { label: '多选题', value: 'MULTIPLE' },
   { label: '判断题', value: 'TRUE_FALSE' },
   { label: '填空题', value: 'FILL_BLANK' },
-  { label: '简答题', value: 'SHORT_ANSWER' }
+  { label: '简答题', value: 'SHORT_ANSWER' },
+  { label: '编程题', value: 'PROGRAMMING' }
 ]
 
 export const QUESTION_TYPE_MAP: Record<QuestionType, string> = {
@@ -19,7 +20,8 @@ export const QUESTION_TYPE_MAP: Record<QuestionType, string> = {
   MULTIPLE: '多选题',
   TRUE_FALSE: '判断题',
   FILL_BLANK: '填空题',
-  SHORT_ANSWER: '简答题'
+  SHORT_ANSWER: '简答题',
+  PROGRAMMING: '编程题'
 }
 
 export const DIFFICULTY_OPTIONS: { label: string; value: Difficulty }[] = [
