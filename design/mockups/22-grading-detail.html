@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-page-node-id="Q7UWM0IHgCAXhCCEr9Dc9e">
+<head data-page-node-id="PRgP28JjQj2FVi7VMEA8Oj">
+  <meta charset="UTF-8" data-page-node-id="jwWq93aFAeG2DigVooJx7l">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" data-page-node-id="GzCc7J6szpSDgtTwABMNdz">
+  <title>批改详情 — Quick Study</title>
+  <link rel="stylesheet" href="styles/mockup.css" data-page-node-id="rz11TOG2MysGDSAEOB62Bi">
+  <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
+  <script nomodule src="https://cdn.jsdelivr.net/npm/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
+  <style>
+    .pill-primary   { background: var(--color-primary-50); color: var(--text-brand); }
+    .pill-info      { background: var(--color-info-50);    color: var(--color-info-600); }
+    .pill-success   { background: var(--color-success-50); color: var(--color-success-600); }
+    .pill-warning   { background: var(--color-warning-50); color: var(--color-warning-600); }
+    .pill-error     { background: var(--color-error-50);    color: var(--color-error-600); }
+    .pill-default   { background: var(--color-neutral-100); color: var(--text-secondary); }
+    .q-index {
+      width: 28px; height: 28px; border-radius: var(--radius-md);
+      background: var(--color-primary-50); color: var(--text-brand);
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: var(--text-sm); font-weight: var(--font-bold); flex-shrink: 0;
+    }
+    .num-box {
+      display: inline-flex; align-items: center; border: 1px solid var(--border-default);
+      border-radius: var(--radius-md); background: var(--bg-card); padding: 0 10px;
+    }
+    .num-box:focus-within { border-color: var(--color-primary-500); box-shadow: 0 0 0 3px rgba(91,95,233,.12); }
+    .num-box input { border: none; outline: none; background: transparent; padding: 6px 0; width: 64px; font-size: var(--text-base); color: var(--text-primary); }
+
+    /* 关键词评分弹窗（n-modal preset=card） */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.4); display: flex; align-items: center; justify-content: center; z-index: var(--z-modal); }
+    .modal-card { background: var(--bg-card); border-radius: var(--radius-xl); box-shadow: var(--shadow-xl); width: 480px; max-width: 90vw; }
+    .modal-head { padding: var(--space-5) var(--space-6); border-bottom: 1px solid var(--border-default); font-size: var(--text-xl); font-weight: var(--font-semibold); color: var(--text-primary); }
+    .modal-body { padding: var(--space-6); }
+    .modal-foot { padding: var(--space-4) var(--space-6); border-top: 1px solid var(--border-default); display: flex; justify-content: flex-end; gap: var(--space-3); }
+
+    /* 加载态（n-spin） */
+    .mock-spinner { width: 28px; height: 28px; border-radius: 50%; border: 3px solid var(--color-primary-100); border-top-color: var(--color-primary-500); animation: mock-spin 0.8s linear infinite; }
+    @keyframes mock-spin { to { transform: rotate(360deg); } }
+
+    /* 错误态（LoadError → n-result status="error"） */
+    .mock-result { display: flex; flex-direction: column; align-items: center; text-align: center; padding: var(--space-10) var(--space-6); }
+    .mock-result-icon { font-size: 48px; color: var(--color-error-500); margin-bottom: var(--space-4); }
+    .mock-result-title { font-size: var(--text-xl); font-weight: var(--font-semibold); color: var(--text-primary); margin-bottom: var(--space-2); }
+    .mock-result-desc { font-size: var(--text-sm); color: var(--text-secondary); }
+
+    /* 文本按钮（n-button quaternary） */
+    .btn-quaternary {
+      display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2);
+      padding: 6px 16px; font-size: var(--text-sm); font-weight: var(--font-semibold);
+      border: none; background: transparent; color: var(--text-brand);
+      border-radius: var(--radius-md); cursor: pointer; transition: all var(--transition-base);
+      white-space: nowrap; line-height: 1;
+    }
+    .btn-quaternary:hover { background: var(--color-primary-50); }
+
+    .state-caption { font-size: var(--text-xs); color: var(--text-tertiary); margin: 24px 0 8px; }
+  </style>
+</head>
+<body data-page-node-id="qeJ16irs1dHj3BmUFwRfej">
+  <div class="app-shell" data-page-node-id="6Ij00ldHBh5ckcu5aOI2aQ">
+    <!-- ===== Sidebar（批改无独立菜单项，无高亮；按 CHROME.md 已登录+管理员完整形态） ===== -->
+    <aside class="sidebar" data-page-node-id="LX00i2pj2NHhrMbXYJ0tYd">
+      <div class="sidebar-logo" data-page-node-id="njjYvNYg4GHDWFpXHjPhq2">
+        <div class="sidebar-logo-icon" data-page-node-id="bMWb5Kk9MHTUroWLo0hiac">QS</div>
+        <span class="sidebar-logo-text" data-page-node-id="dIIm6SoDZJjC4tpgRAGV36">Quick Study</span>
+        <button class="sidebar-toggle" data-tooltip="折叠侧边栏" data-page-node-id="xw1rxUn52JQUleu57qk3Cv"><ion-icon name="chevron-back-outline" data-page-node-id="7IVsg5PBPp2V60fO3EB8HJ"></ion-icon></button>
+      </div>
+      <nav class="sidebar-nav" data-page-node-id="Nr5wOrlOeschg4SCLEhlco">
+        <div class="sidebar-nav-item" onclick="location.href='01-home.html'" data-page-node-id="yqZBO8EtwEG0vaUx2oxeF5"><ion-icon name="home-outline" data-page-node-id="vmQsv9YOGNOmOqsXmbebsQ"></ion-icon><span data-page-node-id="5AFmK3hRltooLt8OSXsFcv">首页</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='02-bank-list.html'" data-page-node-id="WR2BqiGNZLyUHZysEfI3CT"><ion-icon name="library-outline" data-page-node-id="KagznPpnMIsbRDDqj6tF6N"></ion-icon><span data-page-node-id="NmK993LSerKKZP95tbwEZH">题库</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='04-question-list.html'" data-page-node-id="rCpRGJZa1CEGp9BQ7R3CCK"><ion-icon name="document-text-outline" data-page-node-id="GpwDPBBm5Qek5XhBDmCH3Q"></ion-icon><span data-page-node-id="1SrmztiRnzrJXyE5k47K1J">题目</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='05-paper-list.html'" data-page-node-id="kMbEoxCdQy7wdIqKMXAu8V"><ion-icon name="file-tray-full-outline" data-page-node-id="JubPkpmVCE6znfb3LcNQCK"></ion-icon><span data-page-node-id="sNpmA31ewVy7R2uuqd9SIk">试卷</span></div>
+        <div class="sidebar-nav-label" data-page-node-id="5dokcLeEHbETC2FrMdVYVB">学习中心</div>
+        <div class="sidebar-nav-item" onclick="location.href='24-practice-list.html'" data-page-node-id="84VshiyeC325bHho9I12LR"><ion-icon name="game-controller-outline" data-page-node-id="IrdjLrdsBqfDHhi6tcNjFJ"></ion-icon><span data-page-node-id="JaLmEUSGZuFeAEDrC6Rfqf">练习</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='19-playground.html'" data-page-node-id="wWnpuHtcf6GwtwodeFyvvV"><ion-icon name="code-slash-outline" data-page-node-id="76623dQZe7xVdyHvMDu4kF"></ion-icon><span data-page-node-id="uU1SJZ0w8HeF8jE9X57iWO">代码运行台</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='10-wrong-questions.html'" data-page-node-id="MVqIl64UoKVHqtWyWgMsfl"><ion-icon name="close-circle-outline" data-page-node-id="tIwuU35zRxtwcJacyD6ywV"></ion-icon><span data-page-node-id="VB7gxZDkM02BFsteayYqK6">错题本</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='18-favorites.html'" data-page-node-id="OlAopEJOwzuSsluCYJAJfF"><ion-icon name="star-outline" data-page-node-id="zBPjAzy8HOh8NGnZYyGqGx"></ion-icon><span data-page-node-id="Aghty6hd7VPjRPIlOjVWwd">收藏题目</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='11-records.html'" data-page-node-id="2dlJxFaAYGOBFxh4v89Ok9"><ion-icon name="time-outline" data-page-node-id="B3tEPZnuL7e6uaByLflR1B"></ion-icon><span data-page-node-id="2JvgUs7KS0CwODkHsYunB1">做题记录</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='20-exam-records.html'" data-page-node-id="gzTwfrL0HotEEO4plvAKsN"><ion-icon name="document-text-outline" data-page-node-id="i7CR2l3dqBhS0i1eFcXFCL"></ion-icon><span data-page-node-id="1HH2lnPexNwYDBE5ezW4rn">考试记录</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='09-statistics.html'" data-page-node-id="E972rr6HfxPYm8d7n8CMtL"><ion-icon name="bar-chart-outline" data-page-node-id="mGVA3BT3KueNl0buBB6HDP"></ion-icon><span data-page-node-id="fSgRNduUBZwqm4WJRSZ1fE">统计</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='13-notifications.html'" data-page-node-id="LIHxBCOjmYtDR6msd2KTyi"><ion-icon name="notifications-outline" data-page-node-id="lxDFwadFbOgKnVmTW5CwTS"></ion-icon><span data-page-node-id="QhPx8zjy0e42WBhRtuKdyt">通知</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='12-search.html'" data-page-node-id="ahYGWcduioTBTE2z082J7h"><ion-icon name="search-outline" data-page-node-id="BVUZdLdbWIFCr5qAUeUfxM"></ion-icon><span data-page-node-id="fxW8Yo5FZp307xrKuPCrTd">搜索</span></div>
+        <div class="sidebar-nav-label" data-page-node-id="Tyt547cN6vGd0GAwIUitFi">管理</div>
+        <div class="sidebar-nav-item" onclick="location.href='15-admin-users.html'" data-page-node-id="blGCn8OP2HZSFTj7odVGbt"><ion-icon name="people-outline" data-page-node-id="w637zIm1EGlahMo0zzizE6"></ion-icon><span data-page-node-id="RqWRZjOMmfG4PrCDYdVNbN">用户管理</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='31-admin-reviews.html'" data-page-node-id="9jdi1Qp5D4nNo52HOJk76M"><ion-icon name="checkmark-done-outline" data-page-node-id="AS8ZrHAbyTyZ0V1t3ASCqx"></ion-icon><span data-page-node-id="289DJc3AXJjJC47Ax1PicW">审核列表</span></div>
+      </nav>
+      <div class="sidebar-footer" data-page-node-id="O4HhVDoy5PCQxE5hU4DFC2"><div class="sidebar-nav-item" data-page-node-id="C5yhFbVGXB21xRM3f8QDb8"><ion-icon name="log-out-outline" data-page-node-id="fGLyHWlbWTPSki5ninEwkG"></ion-icon><span data-page-node-id="Xku1zxZap1Jq5GJv9hqNkd">退出登录</span></div></div>
+    </aside>
+
+    <div class="main-area" data-page-node-id="Ff3D6lOcUUw1t4JJCTfrMF">
+      <header class="app-header" data-page-node-id="FoQeBhu2znJHLo1OCRMrNB">
+        <div class="app-header-left" data-page-node-id="eTSCrg4s2bfWZ5xj5rsN3k">
+          <button class="mobile-menu-btn" data-page-node-id="bO8NjokXJQCGDSzu0MtQCO"><ion-icon name="menu-outline" data-page-node-id="VgVdBxli6oJXvE02puDHTI"></ion-icon></button>
+          <div class="breadcrumb" data-page-node-id="OFXfNWtPwkCDJFkbUbSEU0"><span class="breadcrumb-current" data-page-node-id="hpwMDRjLzwHDNdTbxIBFRJ">批改</span></div>
+        </div>
+        <div class="app-header-right" data-page-node-id="Z8Tl6fZzjKOGIR99DvoObT">
+          <!-- 全局搜索框（CHROME.md：已登录态必须，placeholder 固定） -->
+          <div class="header-search" data-page-node-id="xhxhqdik0REOgFJ8CNyG5d">
+            <ion-icon name="search-outline" data-page-node-id="0vff5WFouUZJmsnhrZxoAf"></ion-icon>
+            <input class="input" type="text" placeholder="搜索题目 / 题库 / 试卷" readonly style="cursor:pointer;" data-page-node-id="pxe6kWPc8MvuGyb0dAA33M">
+          </div>
+          <div style="position:relative;cursor:pointer;" data-page-node-id="sZJvNPqxIOXhTZtaPkOnsz">
+            <ion-icon name="notifications-outline" style="font-size:22px;color:var(--text-secondary);" data-page-node-id="IHgrCQEmjzIB1vZaQy8V58"></ion-icon>
+            <span class="badge" style="position:absolute;top:-4px;right:-4px;" data-page-node-id="7twe2t2GlBxgRU0hU3RVqA">3</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;cursor:pointer;" data-page-node-id="IS4EBhx1ecZ58un1LbD6fG">
+            <div class="avatar" style="background:var(--gradient-brand);" data-page-node-id="4tVcDxvqXt4YSt2B4xD0D1">王</div>
+            <span style="font-size:14px;font-weight:500;color:var(--text-primary);" data-page-node-id="G9lQJ4YFJqKPpTkSUU6uAR">王老师</span>
+            <ion-icon name="chevron-down-outline" style="font-size:16px;color:var(--text-tertiary);" data-page-node-id="Qmgo2vG6nAhgcg1TvsjYVA"></ion-icon>
+          </div>
+        </div>
+      </header>
+
+      <main class="app-content" data-page-node-id="bmxkfdoVRZ8DVuVhEeBr1K">
+        <!-- ============================================================
+             主视图：加载成功（session 存在、loading=false）
+             n-spin :show="loading" 包裹本区块；loadError 非空时整体替换为 LoadError
+             ============================================================ -->
+
+        <!-- PageHeader(title=paperTitle, subtitle=`${user} 的作答 · ${answers.length} 题`, showBack) -->
+        <div class="page-header" data-page-node-id="BDn7f3fO2AsuK4B9q4BRNl">
+          <div class="page-header-left" data-page-node-id="aXr7PIqhzQV5TNkNZM3ij8">
+            <button class="page-header-back" title="返回" onclick="location.href='21-grading-list.html'" data-page-node-id="113J4kXHveNg9jCyC9Vhdp"><ion-icon name="arrow-back-outline" data-page-node-id="iY9jHak8uU88kSvfBQLOoG"></ion-icon></button>
+            <div data-page-node-id="I4d1HICBzTHwXI3XSVTieq">
+              <h1 class="page-header-title" data-page-node-id="Q2BwSKZBheB8qtO7EWVzcK">Java 基础测试卷 (一)</h1>
+              <p class="page-header-subtitle" data-page-node-id="EyobrclckgY5aDwCeV8Fkg">李同学 的作答 · 10 题</p>
+            </div>
+          </div>
+          <div class="page-header-actions" data-page-node-id="FynzohEwmFIoQZgmSgVDJ0">
+            <!-- 完成批改：:disabled="!session || answers.length===0"，loading=completing，@click=handleComplete → /grading -->
+            <button class="btn btn-primary" style="box-shadow:var(--shadow-brand);" onclick="location.href='21-grading-list.html'" data-page-node-id="1Wf4pb776xtxqMX9ecR9nN">完成批改</button>
+          </div>
+        </div>
+
+        <!-- 会话概览：作答者（user.nickname||'未知用户'） / 试卷（paper.title||'未知试卷'） / 共 N 题 -->
+        <div class="card" style="padding:16px 20px;margin-bottom:16px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;" data-page-node-id="IboKJWHYaGegcWzqNNGuPs">
+          <div style="display:flex;align-items:center;gap:6px;font-size:var(--text-sm);color:var(--text-secondary);" data-page-node-id="iYLDSAHl6Bj8BeEUuIb7Ko">
+            <ion-icon name="person-outline" style="font-size:16px;" data-page-node-id="bANulBtLvvemCi0Hi06RLh"></ion-icon> 作答者 <span style="color:var(--text-primary);font-weight:var(--font-medium);margin-left:4px;" data-page-node-id="sBVHAHMs9zCNaSNCLppmMs">李同学</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;font-size:var(--text-sm);color:var(--text-secondary);" data-page-node-id="4rkiZjuy38ycSrAcVntl0B">
+            <ion-icon name="document-text-outline" style="font-size:16px;" data-page-node-id="wCexg24u7GJxL2N6SU0bNk"></ion-icon> 试卷 <span style="color:var(--text-primary);font-weight:var(--font-medium);margin-left:4px;" data-page-node-id="EUgSdjKTEz8Z2GCl33WMrb">Java 基础测试卷 (一)</span>
+          </div>
+          <div style="margin-left:auto;font-size:var(--text-xs);color:var(--text-tertiary);" data-page-node-id="hZrXqZxaS6MbM9YXrarSFY">共 10 题</div>
+        </div>
+
+        <!-- 逐题批改：v-for answers；answer.id==null 时所有评分按钮 disabled -->
+        <div class="flex flex-col gap-4" data-page-node-id="DmbMWE8H3xlGA3JSmBT0DH">
+
+          <!-- Q1 简答题（已给出 AI/关键词建议，suggestionTexts[key] 存在 → 显示建议理由） -->
+          <div class="card" style="overflow:hidden;" data-page-node-id="lTKju8mzRmDNT7xBOfW8CO">
+            <div class="section-head" style="gap:12px;flex-wrap:wrap;" data-page-node-id="b8VtAyagiJD2vGmGHR6LPi">
+              <div class="q-index" data-page-node-id="wxRMo9OTEun9hIE9miAd0M">1</div>
+              <span class="section-title" style="font-size:var(--text-base);" data-page-node-id="urH92RElBC0v5uj8DuPhB4">第 1 题</span>
+              <span class="pill pill-primary" data-page-node-id="4Bzn0IscomgDEU5eCFp5O4">简答题</span>
+              <span class="text-xs text-tertiary" style="margin-left:auto;" data-page-node-id="voM3QHuDalAFR6jMHGY9g9">满分 10 分</span>
+            </div>
+            <div class="section-body" style="display:flex;flex-direction:column;gap:16px;" data-page-node-id="8Hkgpfgax7GliZeSNLeuMA">
+              <div data-page-node-id="H1Q6DmDnpemZMPgLGBcxgX">
+                <div class="field-label" data-page-node-id="kMJOKlHZnudFhMB0A9LzNt">题干</div>
+                <div class="rich-box" data-page-node-id="yiJbXDddq0DCndV4DcdFJl">简述 Java 中接口（interface）与抽象类（abstract class）的主要区别。</div>
+              </div>
+              <div class="grid grid-cols-2 gap-4" data-page-node-id="nlMZOdAgB07hhtiVQfGDQL">
+                <div data-page-node-id="bCtreQ2uiM37QcyqWn2wST">
+                  <div class="field-label" data-page-node-id="vudh5AhIFYEUaPlkGoDaaj">用户答案</div>
+                  <div class="rich-box" data-page-node-id="uaEHwlF13nYJA9LE6cFGLI">接口只能定义抽象方法和常量，不能包含方法体；抽象类可以有方法实现和构造方法；类可实现多个接口，但只能继承一个抽象类。</div>
+                </div>
+                <div data-page-node-id="qTz2zMxjK5XHNRGsGqK1If">
+                  <div class="field-label" data-page-node-id="grxQrIkbVPAAdxn7h8VXbL">参考答案</div>
+                  <div class="rich-box-success" data-page-node-id="UGvof1uFyBRGXRzsmrxGxA">1. 接口不能有构造方法，抽象类可以有。2. 接口方法默认 abstract，抽象类可有具体实现。3. 类可实现多个接口，但只能继承一个抽象类。</div>
+                </div>
+              </div>
+              <div class="border-t" style="padding-top:16px;" data-page-node-id="FVth6rsij6t15DGcovCJIs">
+                <div class="flex items-end gap-4 flex-wrap" data-page-node-id="zfRBEKulYPfSgObdcjWv4D">
+                  <div style="width:130px;" data-page-node-id="TAlbQvZFTu4SdTvmjBhmDF">
+                    <span class="field-label" style="margin-bottom:4px;" data-page-node-id="eB4xR8FE33eCCVpwuZObNU">得分</span>
+                    <div class="num-box" data-page-node-id="EYny4UKzpmxx1WUFBbbmwJ"><input type="number" value="9" min="0" max="10" data-page-node-id="xz6bfXIdWW7cjDFi08rU75" /></div>
+                  </div>
+                  <div class="flex gap-2" style="margin-left:auto;flex-wrap:wrap;" data-page-node-id="ZDDAPOPCBtkDx0Z4bUxgll">
+                    <button class="btn btn-ghost" style="padding:6px 12px;font-size:var(--text-sm);" data-page-node-id="owGkZ3ij28jyebZI7Zk6xS">AI 评分建议</button>
+                    <button class="btn btn-ghost" style="padding:6px 12px;font-size:var(--text-sm);" data-page-node-id="i8EfbAt1OEjIqbotIC5GtY">关键词评分</button>
+                    <button class="btn btn-primary" style="padding:6px 12px;font-size:var(--text-sm);" data-page-node-id="G7kp9fDPMrpx5E1vmkZIPr">保存得分</button>
+                  </div>
+                </div>
+                <!-- 建议理由：suggestionTexts[key] 存在时渲染；命中关键词 m.found?'✓':'✗' -->
+                <div class="rich-box-brand" style="margin-top:12px;" data-page-node-id="4hbgSmi6OyY9TipyNua335">
+                  <div class="flex flex-wrap gap-2" style="margin-bottom:8px;" data-page-node-id="ir9sVmZqLipWrha2FA7PqR">
+                    <span class="tag tag-success" data-page-node-id="inA5n1q8XxenOGaQFXzPUP">组合式 API ✓</span>
+                    <span class="tag tag-success" data-page-node-id="Klf53vWlfcjHaOMypoRveG">setup ✓</span>
+                    <span class="tag tag-success" data-page-node-id="E8ywnrgsGKZkUQliMl3dWm">响应式 ✓</span>
+                    <span class="tag tag-default" data-page-node-id="0Uum4lZkF01S5KE4lkW57P">多实现 ✗</span>
+                  </div>
+                  要点齐全，仅缺少对“单继承 vs 多实现”的对比说明，建议得分 9/10。
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Q2 单选题（未评分） -->
+          <div class="card" style="overflow:hidden;" data-page-node-id="7nSJWJPjmvs6cLALCwfQDS">
+            <div class="section-head" style="gap:12px;flex-wrap:wrap;" data-page-node-id="uErzN9TGbnZaH4amjpCL2t">
+              <div class="q-index" data-page-node-id="NhbQ6v7AA0BAMi2aOL4lr5">2</div>
+              <span class="section-title" style="font-size:var(--text-base);" data-page-node-id="HZfENshJENumgONWbPFE7T">第 2 题</span>
+              <span class="pill pill-info" data-page-node-id="H7cXZ04Jv6MyaItYjbZoNU">单选题</span>
+              <span class="text-xs text-tertiary" style="margin-left:auto;" data-page-node-id="VmeQLiDVu3lCBCQh3grE3S">满分 5 分</span>
+            </div>
+            <div class="section-body" style="display:flex;flex-direction:column;gap:16px;" data-page-node-id="5bg3YarajxgpssjKrcf6J0">
+              <div data-page-node-id="9lodAPze3opIwYyGcmioem">
+                <div class="field-label" data-page-node-id="sygkPSWBD628WGeymmCYwV">题干</div>
+                <div class="rich-box" data-page-node-id="rfID2QVvTGnYCl7JklgqAP">在 Java 中，以下哪个关键字用于实现继承？</div>
+              </div>
+              <div class="grid grid-cols-2 gap-4" data-page-node-id="fZu306melheMVLYwQOKM3D">
+                <div data-page-node-id="uD6DHSbtIJpEfGEI8ErYgQ">
+                  <div class="field-label" data-page-node-id="cbV9EQ8QDt1x3fq4LYZYEt">用户答案</div>
+                  <div class="rich-box" data-page-node-id="AdDnivgtisrqccRmIBCThu">C. extends</div>
+                </div>
+                <div data-page-node-id="hoFVE0B5AkB8Vm12Ci4eNk">
+                  <div class="field-label" data-page-node-id="2yH3oE9aoBlibvpnfeUOO9">参考答案</div>
+                  <div class="rich-box-success" data-page-node-id="IhcyCJPBja0FqSrUXn23cI">extends</div>
+                </div>
+              </div>
+              <div class="border-t" style="padding-top:16px;" data-page-node-id="nBiV9wMm0RE8K6hG9mFDzc">
+                <div class="flex items-end gap-4 flex-wrap" data-page-node-id="ZwILVQUhgA8KlhuaDjfxEK">
+                  <div style="width:130px;" data-page-node-id="VlyKwkKdH1DG046ViEGKHb">
+                    <span class="field-label" style="margin-bottom:4px;" data-page-node-id="Lci4w4G2z6m4qGCCTxe4lE">得分</span>
+                    <div class="num-box" data-page-node-id="VExOVWaxjtc3OisdthlZJ7"><input type="number" placeholder="未评分" min="0" max="5" data-page-node-id="fyZkDxBhzUAmKJJxuFYRFK" /></div>
+                  </div>
+                  <div class="flex gap-2" style="margin-left:auto;flex-wrap:wrap;" data-page-node-id="SudFgmosHHl3S2fTFh8Pyg">
+                    <button class="btn btn-ghost" style="padding:6px 12px;font-size:var(--text-sm);" data-page-node-id="YO8MhvxI5ObuyEbymyYKqy">AI 评分建议</button>
+                    <button class="btn btn-ghost" style="padding:6px 12px;font-size:var(--text-sm);" data-page-node-id="34VgyPn9cw0MmXHDLLJVA0">关键词评分</button>
+                    <button class="btn btn-primary" style="padding:6px 12px;font-size:var(--text-sm);" data-page-node-id="pAHtUomIF7xPALbHpglEPV">保存得分</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Q3 填空题（未作答：用户答案显示“未作答”） -->
+          <div class="card" style="overflow:hidden;" data-page-node-id="IXB3u4w7ZfWDVMVRDN3wOL">
+            <div class="section-head" style="gap:12px;flex-wrap:wrap;" data-page-node-id="95dhE7dtEMT04slHp1Cf4Q">
+              <div class="q-index" data-page-node-id="lMIxKMnNcSWYiXXOY7j8Zi">3</div>
+              <span class="section-title" style="font-size:var(--text-base);" data-page-node-id="VtPKtJXJMZ7oSprxRd6Lih">第 3 题</span>
+              <span class="pill pill-default" data-page-node-id="Qp7EBR5P3kOCGHmEZ5PAob">填空题</span>
+              <span class="text-xs text-tertiary" style="margin-left:auto;" data-page-node-id="qBsD1fIwjsOl4ACwLe8O8s">满分 5 分</span>
+            </div>
+            <div class="section-body" style="display:flex;flex-direction:column;gap:16px;" data-page-node-id="EpDvDcJlwLR8Jyad7W56DD">
+              <div data-page-node-id="leBGukTsu1xgvhdtEoFDVz">
+                <div class="field-label" data-page-node-id="qvRRHWlq79WmnTd885qscs">题干</div>
+                <div class="rich-box" data-page-node-id="EvQ38tMuerx7mDMQfPy92A">Java 中用于定义常量的关键字是 ______。</div>
+              </div>
+              <div class="grid grid-cols-2 gap-4" data-page-node-id="dkgdzoD2n3j7DtMksOC7dG">
+                <div data-page-node-id="64H62EFdbBBzXg9PAebc2D">
+                  <div class="field-label" data-page-node-id="AsuqOwqyHdpBi5zLhsCeVo">用户答案</div>
+                  <div class="rich-box" data-page-node-id="tJWKQ8b7PrblgEjAMHkIcF"><span style="color:var(--text-tertiary);font-size:var(--text-sm);" data-page-node-id="Bt8CGx7afhxntM19Urw2we">未作答</span></div>
+                </div>
+                <div data-page-node-id="CSwcrDDRTSfQrEHEuH1gC7">
+                  <div class="field-label" data-page-node-id="nbYvzyQpM4YRfEAhlIMcvX">参考答案</div>
+                  <div class="rich-box-success" data-page-node-id="ddVgOG2N6Hqnitulm6ut3O">final</div>
+                </div>
+              </div>
+              <div class="border-t" style="padding-top:16px;" data-page-node-id="AKckPsE54lQZgTyiOfZjKe">
+                <div class="flex items-end gap-4 flex-wrap" data-page-node-id="Cn8DRHlAFIb4yOBuPxbDKu">
+                  <div style="width:130px;" data-page-node-id="S2jsEC7Z0rOo6OCae0isF2">
+                    <span class="field-label" style="margin-bottom:4px;" data-page-node-id="64x69NUick3a6i6ZS3nrWw">得分</span>
+                    <div class="num-box" data-page-node-id="F7by8fYyuGyCAlaitI6ii0"><input type="number" value="0" min="0" max="5" data-page-node-id="xjJEFwGHejFiPdKZJx0Aam" /></div>
+                  </div>
+                  <div class="flex gap-2" style="margin-left:auto;flex-wrap:wrap;" data-page-node-id="CP5XMCUq4MqMIC0D9HD75g">
+                    <button class="btn btn-ghost" style="padding:6px 12px;font-size:var(--text-sm);" data-page-node-id="IUIArTyMahgHqonZ1UQ53a">AI 评分建议</button>
+                    <button class="btn btn-ghost" style="padding:6px 12px;font-size:var(--text-sm);" data-page-node-id="OHi0bVVfQ6LyEuinkUD4bk">关键词评分</button>
+                    <button class="btn btn-primary" style="padding:6px 12px;font-size:var(--text-sm);" data-page-node-id="CJVkWT3gFaBgKxJaldA3nw">保存得分</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ============================================================
+             关键词评分弹窗（n-modal v-model:show=kwDialogShow preset=card
+             title="关键词评分" style="width:480px"）点击「关键词评分」打开
+             ============================================================ -->
+        <div class="card" style="max-width:480px;margin:24px auto 0;" data-page-node-id="lwO3pd4gIeUyB8UviY06WY">
+          <div class="section-head" data-page-node-id="mRtLZYDiUYFtPZTeBGqLFA"><span class="section-title" data-page-node-id="7NgMLe3ip0TCzCvlCUA7mZ">关键词评分</span></div>
+          <div class="section-body" style="display:flex;flex-direction:column;gap:16px;" data-page-node-id="4x0tWS1kAxiAmUmvCaC4vR">
+            <p style="font-size:var(--text-sm);color:var(--text-secondary);line-height:var(--leading-relaxed);margin:0;" data-page-node-id="NaJDmHiIGGMzWF2lL5ndes">
+              填写关键词（逗号、顿号或空格分隔），系统按命中比例给出建议分。<br  data-page-node-id="VqKtpxyDxN7dY68uUH8gLT"/>留空则自动从参考答案中抽取关键词。
+            </p>
+            <textarea class="textarea" rows="3" placeholder="例：组合式 API，setup，响应式"></textarea>
+            <div class="flex justify-end gap-2" data-page-node-id="ovkmUtBOIoCPmL735cVqs6">
+              <button class="btn btn-secondary" style="padding:8px 20px;font-size:var(--text-sm);" data-page-node-id="I57aecOFvzQACYsRbtleNJ">取消</button>
+              <button class="btn btn-primary" style="padding:8px 20px;font-size:var(--text-sm);box-shadow:var(--shadow-brand);" data-page-node-id="4TDsLaNQSbA8CxSCPaElDt">开始匹配</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ============================================================
+             以下为运行时互斥的其它状态（仅其一可见），供设计参考
+             ============================================================ -->
+        <p class="state-caption" data-page-node-id="tle75VS8oh0VHiL8FarOYx">— 以下为加载态 / 错误态示意（真实运行时与上方主视图互斥） —</p>
+
+        <!-- 加载态：n-spin :show="loading"（loading=true 时显示，覆盖主视图） -->
+        <div class="card" style="padding:48px 24px;display:flex;flex-direction:column;align-items:center;gap:16px;" data-page-node-id="RXA5zMdUJ8bC1BWA5UGKZd">
+          <div class="mock-spinner" data-page-node-id="daLafu7Ssx6zD4hHScfDuj"></div>
+          <span style="font-size:var(--text-sm);color:var(--text-tertiary);" data-page-node-id="WdZDPDrHIe5oRaNfs3qcrG">加载中…</span>
+        </div>
+
+        <!-- 错误态：loadError 非空时渲染 LoadError(:description="loadError" @retry="fetchDetail") -->
+        <div class="card mock-result" style="margin-top:16px;" data-page-node-id="slEf7RiPaJI6CUzrmVyXFR">
+          <ion-icon name="alert-circle-outline" class="mock-result-icon" data-page-node-id="mmknSYQnJAjsv6QoYA6YWx"></ion-icon>
+          <h3 class="mock-result-title" data-page-node-id="7BsSq1plgsVCEE9TPPesSX">加载失败</h3>
+          <p class="mock-result-desc" data-page-node-id="kItpT7ZipNdbAACk8fSbY5">加载批改详情失败</p>
+          <div class="flex justify-center gap-3" style="margin-top:16px;" data-page-node-id="PJFx25amQY5q3hnvcobvGZ">
+            <button class="btn btn-primary" style="padding:6px 16px;font-size:var(--text-sm);" data-page-node-id="HxanvOt3wMpgOMwbAmfv2r">重试</button>
+            <button class="btn btn-quaternary" onclick="location.href='21-grading-list.html'" data-page-node-id="mxOQ4Iml7Psod4hV2yc6s0">返回上一页</button>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    document.querySelector(".sidebar-toggle")?.addEventListener("click", function() {
+      var s=document.querySelector(".sidebar"),m=document.querySelector(".main-area");
+      s.classList.toggle("sidebar-collapsed");m.classList.toggle("main-area-collapsed");
+      var i=this.querySelector("ion-icon");
+      i.setAttribute("name",s.classList.contains("sidebar-collapsed")?"chevron-forward-outline":"chevron-back-outline");
+    });
+  </script>
+</body>
+</html>

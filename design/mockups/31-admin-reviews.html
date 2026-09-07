@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-page-node-id="lFZF3XZF3wqijAGiIDe7js">
+<head data-page-node-id="IKDFaG3UEqtbfPpxfCFm8B">
+  <meta charset="UTF-8" data-page-node-id="KPoBNjItVD6MJyVIQefig7">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" data-page-node-id="dxs1GLCN4vU9uwr8CaUGhr">
+  <title>审核列表 — Quick Study</title>
+  <link rel="stylesheet" href="styles/mockup.css" data-page-node-id="Qy57WpyEDc2k2cnQpKeAje">
+  <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
+  <script nomodule src="https://cdn.jsdelivr.net/npm/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
+  <style>
+    /* ===== 最小补充：对齐 ReviewList.vue ===== */
+    /* n-button type="primary" secondary size="small"（列表行「审核」按钮） */
+    .btn-primary-secondary {
+      display: inline-flex; align-items: center; justify-content: center;
+      gap: var(--space-2); padding: 5px 14px;
+      font-size: var(--text-sm); font-weight: var(--font-semibold);
+      border: none; border-radius: var(--radius-md); cursor: pointer;
+      background: var(--color-primary-50); color: var(--text-brand);
+      transition: all var(--transition-base); white-space: nowrap; line-height: 1; flex-shrink: 0;
+    }
+    .btn-primary-secondary:hover { background: var(--color-primary-100); }
+
+    /* n-spin 包裹的审核卡片：bg-white border rounded-lg p-4 flex items-center gap-4 hover:border-primary-300 */
+    .review-card {
+      display: flex; align-items: center; gap: var(--space-4);
+      background: var(--bg-card); border: 1px solid var(--border-default);
+      border-radius: var(--radius-lg); padding: var(--space-4);
+      transition: border-color var(--transition-base);
+    }
+    .review-card:hover { border-color: var(--color-primary-300); }
+    .review-card-icon {
+      width: 40px; height: 40px; border-radius: var(--radius-lg);
+      background: var(--color-primary-50); color: var(--text-brand);
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+
+    /* n-pagination 简化：页码按钮组 */
+    .pg-btn {
+      min-width: 30px; height: 30px; padding: 0 8px;
+      display: inline-flex; align-items: center; justify-content: center;
+      border: 1px solid var(--border-default); border-radius: var(--radius-md);
+      background: var(--bg-card); color: var(--text-secondary);
+      font-size: var(--text-sm); cursor: pointer; transition: all var(--transition-base);
+    }
+    .pg-btn:hover { color: var(--text-brand); border-color: var(--color-primary-300); }
+    .pg-btn.pg-active { background: var(--color-primary-500); border-color: var(--color-primary-500); color: #fff; cursor: default; }
+
+    /* 弹窗内分区：rounded-lg border p-4 mb-4 */
+    .detail-block {
+      border: 1px solid var(--border-default); border-radius: var(--radius-lg);
+      padding: var(--space-4); margin-bottom: var(--space-4);
+    }
+    .detail-block-label {
+      font-size: var(--text-xs); font-weight: var(--font-semibold);
+      color: var(--color-neutral-400); text-transform: uppercase;
+      letter-spacing: .05em; margin-bottom: var(--space-2);
+    }
+    .detail-option-letter {
+      width: 20px; height: 20px; border-radius: 9999px; flex-shrink: 0;
+      background: var(--color-primary-50); color: var(--color-primary-600);
+      font-size: var(--text-xs); font-weight: var(--font-medium);
+      display: flex; align-items: center; justify-content: center; margin-top: 2px;
+    }
+
+    /* 加载骨架：n-spin 列表态 */
+    .sk-list { display: grid; grid-template-columns: 1fr; gap: var(--space-3); }
+    .sk-item {
+      background: var(--bg-card); border: 1px solid var(--border-default);
+      border-radius: var(--radius-lg); padding: var(--space-4);
+      display: flex; align-items: center; gap: var(--space-4);
+    }
+    .sk-icon { width: 40px; height: 40px; border-radius: var(--radius-lg); flex-shrink: 0; }
+  </style>
+</head>
+<body data-page-node-id="M9IUGV649CxtCQBSHrFck8">
+  <div class="app-shell" data-page-node-id="RDtrWSXP6iiohE4iIfarTC">
+    <!-- ===== Sidebar（按 CHROME.md 已登录+管理员完整形态，高亮「审核列表」） ===== -->
+    <aside class="sidebar" data-page-node-id="fyk3MeJVflDgXy5T5D5fnx">
+      <div class="sidebar-logo" data-page-node-id="g3zKfy4njiKRJ2UXpk7fwM">
+        <div class="sidebar-logo-icon" data-page-node-id="WOlkxMvo2ee6wav0CnfFC4">QS</div>
+        <span class="sidebar-logo-text" data-page-node-id="UHU6j68aYpNukADzsi3BHG">Quick Study</span>
+        <button class="sidebar-toggle" data-tooltip="折叠侧边栏" data-page-node-id="MDATaIJSfYqu4Lh5kg3HY5"><ion-icon name="chevron-back-outline" data-page-node-id="17sAG1CPq7oTeduBWMBwtE"></ion-icon></button>
+      </div>
+      <nav class="sidebar-nav" data-page-node-id="kzHORMtJlFH3TgqsEK1BAb">
+        <div class="sidebar-nav-item" onclick="location.href='01-home.html'" data-page-node-id="21MneymFanSgFC9p3CDklE"><ion-icon name="home-outline" data-page-node-id="rirja5td3SJzwWCMHnwI92"></ion-icon><span data-page-node-id="op0ju1JI6QE9fmK8SyWNn4">首页</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='02-bank-list.html'" data-page-node-id="clhslkfwe8fNUYB6cd6GTW"><ion-icon name="library-outline" data-page-node-id="YCpI2mJl1BvO47VvgMW9z2"></ion-icon><span data-page-node-id="YOWUg5XdfON2ry8KfiJi1C">题库</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='04-question-list.html'" data-page-node-id="y8xA7HdUe456uIeoIbJh0T"><ion-icon name="document-text-outline" data-page-node-id="Na8qkDtwo5m2G5eeq3G5ro"></ion-icon><span data-page-node-id="hJCg3Gc5LPCgvrpPwxdDnk">题目</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='05-paper-list.html'" data-page-node-id="yZC6pCu6SSoHYogdvSXv4W"><ion-icon name="file-tray-full-outline" data-page-node-id="MsBEZL9gpMK2AARrHAUvi6"></ion-icon><span data-page-node-id="wAwuPim7UInJCAT7Ihf1Kj">试卷</span></div>
+        <div class="sidebar-nav-label" data-page-node-id="VqCeQnVUpam1E5BJiABE7D">学习中心</div>
+        <div class="sidebar-nav-item" onclick="location.href='24-practice-list.html'" data-page-node-id="t6h8Jb32WaaFBByO4KvJIN"><ion-icon name="game-controller-outline" data-page-node-id="2YH25g4elIiqUrTHn7Y635"></ion-icon><span data-page-node-id="Eo6nDHjsdNNz0Y2y4fg7Ep">练习</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='19-playground.html'" data-page-node-id="Drf3lYn8vcLKQWS6iCJfCY"><ion-icon name="code-slash-outline" data-page-node-id="NjAJFu7cDGbri16oL4Wxlv"></ion-icon><span data-page-node-id="oabBHpkvfTjNOjs2xXNpVM">代码运行台</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='10-wrong-questions.html'" data-page-node-id="wNtSxZsDArTQ57osHVgg0F"><ion-icon name="close-circle-outline" data-page-node-id="ETnhXmAMhokGZGDflZ1L0Q"></ion-icon><span data-page-node-id="G6jYEWdnggBqz6jWStYHZR">错题本</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='18-favorites.html'" data-page-node-id="mrxOnICJBT4SYjcUDFuG8l"><ion-icon name="star-outline" data-page-node-id="NOhzehddsKJM0LGmyQFRBi"></ion-icon><span data-page-node-id="qBejbPYznfXMmaQJwGaxkK">收藏题目</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='11-records.html'" data-page-node-id="MbcBjNbcbG8VyCWv8XT1Fz"><ion-icon name="time-outline" data-page-node-id="WxMU1obwfEK8yYV1cjfZAP"></ion-icon><span data-page-node-id="I8gu6HZZoAta0nyeLkx5Mi">做题记录</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='20-exam-records.html'" data-page-node-id="mF6a9BLgAs0OEDg7DlAFQn"><ion-icon name="document-text-outline" data-page-node-id="jXu9ytEHQUiGPYu73u2rdK"></ion-icon><span data-page-node-id="ZzXOCwRji5r9V7IexwNsHO">考试记录</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='09-statistics.html'" data-page-node-id="o3XkFEwtFJpTfzmDbM9G3J"><ion-icon name="bar-chart-outline" data-page-node-id="ufO8ADKy7sfvXyk8KphvRM"></ion-icon><span data-page-node-id="jrES9Sw5oLNXjRgtcV2D9d">统计</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='13-notifications.html'" data-page-node-id="tis2evpCE4dqhA1z26wCDU"><ion-icon name="notifications-outline" data-page-node-id="HsYA3XhCJD7ZTAvsHZ10EW"></ion-icon><span data-page-node-id="F5TJC5olS2NYls18qnZutn">通知</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='12-search.html'" data-page-node-id="tfcg7a0IWveJQTN2x0t18r"><ion-icon name="search-outline" data-page-node-id="iz1alxvBPJzUgNOT72HZ60"></ion-icon><span data-page-node-id="L3P1IAyEvy2CphXq1cS9kW">搜索</span></div>
+        <div class="sidebar-nav-label" data-page-node-id="qYxUocUsMQby0DBeeds7Pm">管理</div>
+        <div class="sidebar-nav-item" onclick="location.href='15-admin-users.html'" data-page-node-id="SQd9ctGGHDIKc7n5rkQrX2"><ion-icon name="people-outline" data-page-node-id="HQDuEBG3MapCh7cqAyjJ0F"></ion-icon><span data-page-node-id="ryto8fsizMZIRjU0gLwsxf">用户管理</span></div>
+        <div class="sidebar-nav-item active" onclick="location.href='31-admin-reviews.html'" data-page-node-id="wJQMQKTQ7KKqZcoL6fRn1v"><ion-icon name="checkmark-done-outline" data-page-node-id="kqHFcqIvV9pZH3jWVL7knb"></ion-icon><span data-page-node-id="1idlmi9EV5Kq9nCFCTRRUq">审核列表</span></div>
+      </nav>
+      <div class="sidebar-footer" data-page-node-id="IGElnREHOiV4BRZyxOorqE"><div class="sidebar-nav-item" data-page-node-id="xXK2vGNDpbRy3dbazKjG6E"><ion-icon name="log-out-outline" data-page-node-id="rE73Jdk6h6oLZhXu3kKclc"></ion-icon><span data-page-node-id="HnCVt70qi8ta4fXzkd0hK6">退出登录</span></div></div>
+    </aside>
+
+    <div class="main-area" data-page-node-id="5ElNtwsFk0bAgQOJqcuDWf">
+      <header class="app-header" data-page-node-id="tKVkCajNEq2KAPADaaYiRe">
+        <div class="app-header-left" data-page-node-id="krvPS6DTAlHqFqUCtL9yOH">
+          <button class="mobile-menu-btn" data-page-node-id="V2wbWiTudjqMh8QvUpcjoB"><ion-icon name="menu-outline" data-page-node-id="973v8RQ0SOL4ZIeoFmw9n5"></ion-icon></button>
+          <div class="breadcrumb" data-page-node-id="JmZJurwM5pO39reDQlDJYB"><span class="breadcrumb-current" data-page-node-id="FbTTuEothbwEpP6x6Rvbcn">审核列表</span></div>
+        </div>
+        <div class="app-header-right" data-page-node-id="XMddte2hQiSWIkPx5X96PK">
+          <div class="header-search" data-page-node-id="DWAbwBk4rEh6F8bG0EQjeL">
+            <ion-icon name="search-outline" data-page-node-id="2qrFIqpU0rjuvvq92Pcxj4"></ion-icon>
+            <input class="input" type="text" placeholder="搜索题目 / 题库 / 试卷" readonly style="cursor:pointer;" data-page-node-id="qyhaAaPozJAJFU6HZs1AoF">
+          </div>
+          <div style="position:relative;cursor:pointer;" data-page-node-id="A3iVgxDfVG4L2FcoxxG0da">
+            <ion-icon name="notifications-outline" style="font-size:22px;color:var(--text-secondary);" data-page-node-id="L2QUB5HtxamU2llEY91wwE"></ion-icon>
+            <span class="badge" style="position:absolute;top:-4px;right:-4px;" data-page-node-id="OuzddM0uYzVqbdlIWNmUGi">3</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;cursor:pointer;" data-page-node-id="kKEF2mVdDKlmAHxLs5MOYA">
+            <div class="avatar" style="background:var(--gradient-brand);" data-page-node-id="VHxpg0eHfRG7B0yijXwDTA">王</div>
+            <span style="font-size:14px;font-weight:500;color:var(--text-primary);" data-page-node-id="EthpOpZDQE2V6aV6Jp9NSR">王老师</span>
+            <ion-icon name="chevron-down-outline" style="font-size:16px;color:var(--text-tertiary);" data-page-node-id="9THEQrjJDHhrPLU08KEi8L"></ion-icon>
+          </div>
+        </div>
+      </header>
+
+      <main class="app-content" data-page-node-id="vtjRHvKfxUi6iIH1PDfnRx">
+        <!-- ===== 页面标题区：PageHeader(title="审核管理", subtitle="审核用户提交的题目") ===== -->
+        <div class="page-header" data-page-node-id="MJGCxfr13ki4oAvFIpmlqR">
+          <div data-page-node-id="cepLoFLSb3r68LndMaZcC6">
+            <h1 class="page-header-title" data-page-node-id="RMJzhmPOAZq96FvmzU3clP">审核管理</h1>
+            <p class="page-header-subtitle" data-page-node-id="4EItiFjezsCchM7YOZBLd3">审核用户提交的题目</p>
+          </div>
+        </div>
+
+        <!-- ===== 列表态（reviewList.length > 0，默认渲染；fetchList 固定 status=PENDING，全部为「待审核」） ===== -->
+        <div style="display:flex;flex-direction:column;gap:var(--space-3);" data-page-node-id="1e7Y7dfAjYf2GjHF7Veetm">
+          <div class="review-card" data-page-node-id="9nRTrqD6S8RS2LNOjcLsFU">
+            <div class="review-card-icon" data-page-node-id="PuPfx295ibT8UXuTmmOZkT"><ion-icon name="document-text-outline" style="font-size:20px;" data-page-node-id="7ShoXIDUCUAXtQCCCWCjCw"></ion-icon></div>
+            <div class="flex-1 min-w-0" data-page-node-id="LtyNSz9zKANRNC0j9AAB9m">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;" data-page-node-id="PBsi8e4GEKAKJk0GB86iI5">
+                <span style="font-size:var(--text-sm);font-weight:var(--font-semibold);color:var(--text-primary);" class="truncate" data-page-node-id="qBYGi0rvihpQLPTVoQ88pV">Java 基础题库</span>
+                <span class="tag tag-warning rounded-full" style="flex-shrink:0;" data-page-node-id="ZTECLlcpSoZk7F6LUVdSmX">待审核</span>
+              </div>
+              <div style="display:flex;align-items:center;font-size:var(--text-xs);color:var(--text-secondary);" data-page-node-id="DujfEyK1BKsDof81ta8oXi">
+                <ion-icon name="person-outline" style="font-size:14px;margin-right:4px;flex-shrink:0;" data-page-node-id="q8b1HSrLBW4bF5jHsPwMjT"></ion-icon>
+                <span class="truncate" data-page-node-id="xDAeqlIt0NZPVAQXiOKCCt">李同学</span>
+                <span style="margin:0 8px;color:var(--color-neutral-300);" data-page-node-id="ZHJPKl13XP3mTuwmXf4e1t">·</span>
+                <span style="flex-shrink:0;" data-page-node-id="LTAq5vhM1tZRUTNM6rtXks">2025-09-05 14:32</span>
+              </div>
+            </div>
+            <button class="btn-primary-secondary" onclick="openModal()" data-page-node-id="My0E5IfFZdtAX5lhIjSHqZ">审核</button>
+          </div>
+
+          <div class="review-card" data-page-node-id="A3nkgGkNXFUiX8rZSX9QY4">
+            <div class="review-card-icon" data-page-node-id="C2fZdnQi4wPmADchHAvhh0"><ion-icon name="document-text-outline" style="font-size:20px;" data-page-node-id="ByLbLlNsLrmtzF7KW2tmUO"></ion-icon></div>
+            <div class="flex-1 min-w-0" data-page-node-id="vh284QpfAwkAvCMZN3VOKP">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;" data-page-node-id="zTBT2tzaBI2QAuQDcRY25b">
+                <span style="font-size:var(--text-sm);font-weight:var(--font-semibold);color:var(--text-primary);" class="truncate" data-page-node-id="QyxAZGszM9cHVJu29bdPAK">计算机网络期末复习</span>
+                <span class="tag tag-warning rounded-full" style="flex-shrink:0;" data-page-node-id="RCGxDQQczYAb0aTKwcFPSj">待审核</span>
+              </div>
+              <div style="display:flex;align-items:center;font-size:var(--text-xs);color:var(--text-secondary);" data-page-node-id="jsvUo5qAiaKYmtJFVp1uYz">
+                <ion-icon name="person-outline" style="font-size:14px;margin-right:4px;flex-shrink:0;" data-page-node-id="hCKifWXDo26BCJB0zoR3y7"></ion-icon>
+                <span class="truncate" data-page-node-id="MSVHYE86SqdzddFOct9OPL">张同学</span>
+                <span style="margin:0 8px;color:var(--color-neutral-300);" data-page-node-id="qaBD146iJXpf1fPBhHngmV">·</span>
+                <span style="flex-shrink:0;" data-page-node-id="Tk7ib6Xxsak2wGAe7X413w">2025-09-05 11:08</span>
+              </div>
+            </div>
+            <button class="btn-primary-secondary" onclick="openModal()" data-page-node-id="oKUJFRXE5oAvu83PT11iPI">审核</button>
+          </div>
+
+          <div class="review-card" data-page-node-id="6W1FQbQQot33fBsBaMXKVX">
+            <div class="review-card-icon" data-page-node-id="LMGnTE70eHdWQIa3IJmjLP"><ion-icon name="document-text-outline" style="font-size:20px;" data-page-node-id="qc5hRnmazpOTCbe3Bvaq8p"></ion-icon></div>
+            <div class="flex-1 min-w-0" data-page-node-id="sF5nmnHsmBFJpV4YBIXABU">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;" data-page-node-id="m7EACTHl5bEykUxSeo4rnk">
+                <span style="font-size:var(--text-sm);font-weight:var(--font-semibold);color:var(--text-primary);" class="truncate" data-page-node-id="U7NDRlBsfx47gDq4rNLWyu">Python 入门练习</span>
+                <span class="tag tag-warning rounded-full" style="flex-shrink:0;" data-page-node-id="So8EvThpoSkWeADs21Zyha">待审核</span>
+              </div>
+              <div style="display:flex;align-items:center;font-size:var(--text-xs);color:var(--text-secondary);" data-page-node-id="GGrIWGCh2FEAT8X3ljF28a">
+                <ion-icon name="person-outline" style="font-size:14px;margin-right:4px;flex-shrink:0;" data-page-node-id="k0wBsOFtqBFlbrncoaiynm"></ion-icon>
+                <span class="truncate" data-page-node-id="46QlpQoFTKgNwAdDSdm310">王同学</span>
+                <span style="margin:0 8px;color:var(--color-neutral-300);" data-page-node-id="C0GxkUV5HdpRoWPUvKgoxd">·</span>
+                <span style="flex-shrink:0;" data-page-node-id="V3bCbK9hbk4Sv5S0JHgHyu">2025-09-04 20:45</span>
+              </div>
+            </div>
+            <button class="btn-primary-secondary" onclick="openModal()" data-page-node-id="uR2QAhfnXZguVGFxD4drPX">审核</button>
+          </div>
+
+          <div class="review-card" data-page-node-id="ShmJKMLuGRpO7n7B4lGmIM">
+            <div class="review-card-icon" data-page-node-id="IFbC1ocO2POnKUNxQwOYs6"><ion-icon name="document-text-outline" style="font-size:20px;" data-page-node-id="KO2oPuHZ1ChNpwT6c6016j"></ion-icon></div>
+            <div class="flex-1 min-w-0" data-page-node-id="N5KHOjgA6vPBrVuBK3zuSK">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;" data-page-node-id="hoKwm1y7Orsv7iRNAUy8mo">
+                <span style="font-size:var(--text-sm);font-weight:var(--font-semibold);color:var(--text-primary);" class="truncate" data-page-node-id="SOb3FzCA0yS6lYGsjF7l3M">数据结构课后习题</span>
+                <span class="tag tag-warning rounded-full" style="flex-shrink:0;" data-page-node-id="J2LSNCWWFiYgMZ8y7oJyfQ">待审核</span>
+              </div>
+              <div style="display:flex;align-items:center;font-size:var(--text-xs);color:var(--text-secondary);" data-page-node-id="wyR2ParM0eiEGXyxC3vCX3">
+                <ion-icon name="person-outline" style="font-size:14px;margin-right:4px;flex-shrink:0;" data-page-node-id="RpCZ41Bg5HAFjoH9EnSDiK"></ion-icon>
+                <span class="truncate" data-page-node-id="rB9nzMFimS1WXaaEEtlRcl">赵同学</span>
+                <span style="margin:0 8px;color:var(--color-neutral-300);" data-page-node-id="gRHDPIgo2gaKW1vjWBLEbZ">·</span>
+                <span style="flex-shrink:0;" data-page-node-id="txRe8lKph3BpgkEBIll0qJ">2025-09-04 09:17</span>
+              </div>
+            </div>
+            <button class="btn-primary-secondary" onclick="openModal()" data-page-node-id="id9JreVlGXKbAYtmgHESBU">审核</button>
+          </div>
+
+          <!-- ===== 分页：pagination.itemCount > 0 时渲染；左「共 X 条记录」，右 n-pagination ===== -->
+          <div style="display:flex;justify-content:space-between;align-items:center;padding-top:var(--space-2);" data-page-node-id="qDBYanJl1ckqG4Kq64NVdM">
+            <span style="font-size:var(--text-sm);color:var(--text-secondary);" data-page-node-id="GCzL6Uos6adpZabztZrDFw">共 47 条记录</span>
+            <div style="display:flex;gap:6px;align-items:center;" data-page-node-id="bsKzVgl646GfPZYPe8ap0H">
+              <button class="pg-btn" data-page-node-id="tjggAunuMbo1qnLRKT77pv"><ion-icon name="chevron-back-outline" style="font-size:14px;" data-page-node-id="jEKO3uDVIUzFtfTsNRejCu"></ion-icon></button>
+              <button class="pg-btn pg-active" data-page-node-id="UpZCWmgFemBbMA9FseOw7V">1</button>
+              <button class="pg-btn" data-page-node-id="z7z8NFY7AI6A0VY20YlkXb">2</button>
+              <button class="pg-btn" data-page-node-id="29d8fhiIJdY0KGhchv6ZSm">3</button>
+              <span style="font-size:var(--text-sm);color:var(--text-tertiary);" data-page-node-id="UBWHFuqvfx3XJPcVVkpmQu">…</span>
+              <button class="pg-btn" data-page-node-id="hukxdnLWQqbpD1oWDylVqh">5</button>
+              <button class="pg-btn" data-page-node-id="yDDJzMmQdC3AcjvQ75jv5D"><ion-icon name="chevron-forward-outline" style="font-size:14px;" data-page-node-id="TGiI2RcpPiC2y8GCYB9DKK"></ion-icon></button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== 空态（reviewList.length === 0 且 !loading）：EmptyState(title="暂无待审核题目") ===== -->
+        <!-- 生产中与上方列表态互斥；此处为派生状态示意 -->
+        <div class="card" style="margin-top:var(--space-8);" data-page-node-id="E7o8hOd9OOF58s8Jk1ScjH">
+          <div class="empty-state" data-page-node-id="3qFnaWeQFE4GUU5tqcJTxS">
+            <ion-icon name="document-text-outline" class="empty-state-icon" style="font-size:56px;color:var(--color-neutral-300);" data-page-node-id="JwApWEbeLtv5JoFvG78ImW"></ion-icon>
+            <h3 class="empty-state-title" data-page-node-id="4AcuDdU43uwk6uZQQkezM2">暂无待审核题目</h3>
+            <p class="empty-state-desc" data-page-node-id="dfEhuw3andYKLf0Q6pBUmH">当前没有需要审核的题目</p>
+          </div>
+        </div>
+
+        <!-- ===== 加载态（loading=true 时 n-spin 包裹列表） ===== -->
+        <div style="margin-top:var(--space-8);" data-page-node-id="mkZ96N46jjGyu5d3epQ4Ua">
+          <div class="sk-list" data-page-node-id="dFaSKH2P28i6IUbyBkFSdd">
+            <div class="sk-item" data-page-node-id="PdxuL1oYLp8Pj0nVBB2Vnv">
+              <div class="skeleton sk-icon" data-page-node-id="CvQcJwySgM7ncQe7fxh7vM"></div>
+              <div style="flex:1;" data-page-node-id="LRWgDYINV7QWcK46BKJQOq">
+                <div class="skeleton skeleton-text" style="width:35%;" data-page-node-id="A9TnnytAeVtQ4k4RWg0wss"></div>
+                <div class="skeleton skeleton-text-sm" style="width:55%;margin-bottom:0;" data-page-node-id="90gHJVwegHC8Mv6EWfdGSl"></div>
+              </div>
+            </div>
+            <div class="sk-item" data-page-node-id="nl8xURZSG7ICg6q277sg77">
+              <div class="skeleton sk-icon" data-page-node-id="hJK5gdNP2PiLjFa8OtzWIn"></div>
+              <div style="flex:1;" data-page-node-id="TLiokuRQZ6UkoLhNn6zGIT">
+                <div class="skeleton skeleton-text" style="width:28%;" data-page-node-id="ks3YOMNw90KnDtJR3sBb3b"></div>
+                <div class="skeleton skeleton-text-sm" style="width:48%;margin-bottom:0;" data-page-node-id="Sr7ChCNvGHwK5SfWvLUox0"></div>
+              </div>
+            </div>
+            <div class="sk-item" data-page-node-id="oAupb4CS82AZB32TgWGjeV">
+              <div class="skeleton sk-icon" data-page-node-id="bipD4oR6wRcxYFnd5VFUT3"></div>
+              <div style="flex:1;" data-page-node-id="DxFxu6ZqCbUWiP0y8jOEg0">
+                <div class="skeleton skeleton-text" style="width:40%;" data-page-node-id="bud7nEnE0QBEgzg7LMDu2D"></div>
+                <div class="skeleton skeleton-text-sm" style="width:60%;margin-bottom:0;" data-page-node-id="T3sVhoKhsy7uwq3wFBNy6i"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- ===== 审核详情弹窗：n-modal preset="card" title="审核详情" width 720px；点「审核」打开 ===== -->
+  <div class="modal-overlay" id="detail-modal" style="display:none;" data-page-node-id="hO24RZ1ZBvtyqVL5kmu8jF">
+    <div class="modal" style="max-width:720px;" data-page-node-id="AUDMXLAw7QZpVgwGmjx67c">
+      <div class="modal-header" data-page-node-id="fHQrOyFZFyGFtDQ5SNnRq8">
+        <span style="font-size:var(--text-lg);font-weight:var(--font-semibold);color:var(--text-primary);" data-page-node-id="Slcmm32JxZzHTRiMafEMdd">审核详情</span>
+        <button class="btn-ghost btn-sm" onclick="closeModal()" style="border:none;background:transparent;cursor:pointer;" data-page-node-id="uHBABdFD4voitMPz021sBW">
+          <ion-icon name="close-outline" style="font-size:20px;color:var(--text-tertiary);" data-page-node-id="xRo5CyzkpWQAP8YD9AIJz9"></ion-icon>
+        </button>
+      </div>
+      <div class="modal-body" data-page-node-id="McFcDxSh27RJlU5WwIsWG2">
+        <!-- 头部信息：bankName + 提交人/时间 + 状态标签 -->
+        <div style="border-bottom:1px solid var(--border-default);padding-bottom:var(--space-4);margin-bottom:var(--space-4);display:flex;align-items:flex-start;justify-content:space-between;gap:var(--space-4);" data-page-node-id="JRAl51V4Tug7mCoEd9pUI0">
+          <div style="min-width:0;" data-page-node-id="MVagOPRpk4Tq4jG2prHG9M">
+            <h3 style="font-size:var(--text-lg);font-weight:var(--font-semibold);color:var(--text-primary);margin-bottom:4px;" class="truncate" data-page-node-id="gUKMP0EJMesj6ZN1ovDqHg">Java 基础题库</h3>
+            <p style="display:flex;align-items:center;font-size:var(--text-xs);color:var(--text-secondary);" data-page-node-id="ADWtRhV4kfvxDnsjlvTgfn">
+              <ion-icon name="person-outline" style="font-size:14px;margin-right:4px;" data-page-node-id="gb0C1Hry2sGFG43zueDcFc"></ion-icon>
+              <span data-page-node-id="bif9ZLJW5NP8WuXELSs3Hv">李同学</span>
+              <span style="margin:0 8px;color:var(--color-neutral-300);" data-page-node-id="ek7HsvpQGlK363nPmAjJ9S">·</span>
+              <span data-page-node-id="zjPzDC8HJ5S5KTFShx7Ydg">2025-09-05 14:32</span>
+            </p>
+          </div>
+          <span class="tag tag-warning rounded-full" style="flex-shrink:0;" data-page-node-id="yAOhwfEXH2BpOQvf9gPad1">待审核</span>
+        </div>
+
+        <!-- 题目内容：RichText -->
+        <div class="detail-block" data-page-node-id="uvfVVzCvR24tjgWudljGIJ">
+          <div class="detail-block-label" data-page-node-id="L9EnCps8vShfMkDzzFyyQp">题目内容</div>
+          <p style="font-size:var(--text-sm);color:var(--text-primary);line-height:1.7;" data-page-node-id="VmT4QWcHeZUmc5I9NYmyfh">Java 中，以下关于 String、StringBuilder 与 StringBuffer 的说法，哪一项是正确的？</p>
+        </div>
+
+        <!-- 选项：questionOptionList，字母 A/B/C… -->
+        <div class="detail-block" data-page-node-id="QljFlxgEaouXoa24QIwR17">
+          <div class="detail-block-label" data-page-node-id="ADaC64Uoyj2Y9M38eu9Ezs">选项</div>
+          <div style="display:flex;align-items:flex-start;gap:8px;padding:4px 0;" data-page-node-id="7TE4ULj49xSCunhwy2CcYi">
+            <span class="detail-option-letter" data-page-node-id="rRKQjpc57G0r69HVDO8TBB">A</span>
+            <span style="font-size:var(--text-sm);color:var(--text-secondary);" data-page-node-id="IcKJ5Lvj6MKxkrdPm6UP4w">String 是可变字符串，适合频繁拼接</span>
+          </div>
+          <div style="display:flex;align-items:flex-start;gap:8px;padding:4px 0;" data-page-node-id="YFdLfYPg4dAyfDCCYk31Hb">
+            <span class="detail-option-letter" data-page-node-id="YleAjnFHZnYWrbjaC57JKx">B</span>
+            <span style="font-size:var(--text-sm);color:var(--text-secondary);" data-page-node-id="2keJ109xmpQNCyvLBXS25y">StringBuilder 线程安全，StringBuffer 非线程安全</span>
+          </div>
+          <div style="display:flex;align-items:flex-start;gap:8px;padding:4px 0;" data-page-node-id="IRumR9jmH5EYBjpjpbuR3T">
+            <span class="detail-option-letter" data-page-node-id="d6TeLuEuO4oBcCnTiTpsXY">C</span>
+            <span style="font-size:var(--text-sm);color:var(--text-secondary);" data-page-node-id="m5cMiHz4vwJMhu9sC521Z9">StringBuffer 线程安全，StringBuilder 非线程安全但性能更高</span>
+          </div>
+          <div style="display:flex;align-items:flex-start;gap:8px;padding:4px 0;" data-page-node-id="H8GmGSsZHquz7Mfp1v89Zj">
+            <span class="detail-option-letter" data-page-node-id="Gdzi2Mwg1HZ0CSQ1GHd7Om">D</span>
+            <span style="font-size:var(--text-sm);color:var(--text-secondary);" data-page-node-id="WjDW5D7XjHbUgZowMt57qU">三者底层存储结构完全相同</span>
+          </div>
+        </div>
+
+        <!-- 参考答案：question.answer || '无' -->
+        <div class="detail-block" data-page-node-id="tjFjCMF76RhDfjimyNiOg8">
+          <div class="detail-block-label" data-page-node-id="K5V8obYsYtzkjbGS0vVDSx">参考答案</div>
+          <p style="font-size:var(--text-sm);color:var(--text-primary);" data-page-node-id="GPrwOfaHsaYCT8T0ebv7pN">C</p>
+        </div>
+
+        <!-- 解析：RichText(question.analysis || '无') -->
+        <div class="detail-block" data-page-node-id="O9PCCLNgWf0I63o6qVGcbl">
+          <div class="detail-block-label" data-page-node-id="mXl1wdbp1APRE9MNoe8aEm">解析</div>
+          <p style="font-size:var(--text-sm);color:var(--text-primary);line-height:1.7;" data-page-node-id="uPVt1IaWziDioFGT8x1uR6">String是不可变对象；StringBuilder非线程安全、性能最高；StringBuffer对其方法加锁，线程安全。故选C。</p>
+        </div>
+
+        <!-- 操作：审核意见输入（驳回必填）+ 审核通过 / 驳回 -->
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:var(--space-3);padding-top:var(--space-2);" data-page-node-id="SNBtWpJU31tW0yU2xPRjGy">
+          <input class="input" type="text" placeholder="审核意见（驳回必填）" clearable style="max-width:420px;flex:1;" data-page-node-id="6DsITXMKTuFZAT9o2HnVuf">
+          <div style="display:flex;gap:8px;flex-shrink:0;" data-page-node-id="J1NoTOcbVP0FDC74tjJriK">
+            <button class="btn btn-success" onclick="alert('mockup：message.success(\'审核通过\')，关闭弹窗并 fetchList 刷新')" data-page-node-id="YrLBtAdWFnrHnN8BpwrlAX">审核通过</button>
+            <button class="btn btn-danger" onclick="alert('mockup：意见为空时 message.warning(\'驳回时请填写审核意见\')；有意见则 message.success(\'已驳回\')')" data-page-node-id="xSjl2mdIybOaV8pXNgyX3W">驳回</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function openModal() {
+      document.getElementById('detail-modal').style.display = 'flex';
+    }
+    function closeModal() {
+      document.getElementById('detail-modal').style.display = 'none';
+    }
+    document.getElementById('detail-modal').addEventListener('click', function(e) {
+      if (e.target === this) closeModal();
+    });
+    document.querySelector(".sidebar-toggle")?.addEventListener("click", function() {
+      var s=document.querySelector(".sidebar"),m=document.querySelector(".main-area");
+      s.classList.toggle("sidebar-collapsed");m.classList.toggle("main-area-collapsed");
+      var i=this.querySelector("ion-icon");
+      i.setAttribute("name",s.classList.contains("sidebar-collapsed")?"chevron-forward-outline":"chevron-back-outline");
+    });
+  </script>
+</body>
+</html>

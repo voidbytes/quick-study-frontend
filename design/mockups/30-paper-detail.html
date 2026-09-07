@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>试卷详情 — Quick Study</title>
+  <link rel="stylesheet" href="styles/mockup.css">
+  <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
+  <script nomodule src="https://cdn.jsdelivr.net/npm/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
+  <style>
+    /* 题目列表只读快照行 */
+    .q-snapshot { display: flex; align-items: flex-start; gap: 12px; padding: 16px 20px; border-bottom: 1px solid var(--border-default); }
+    .q-snapshot:last-child { border-bottom: none; }
+    .q-snapshot:hover { background: var(--bg-subtle); }
+    .q-index { font-size: var(--text-sm); color: var(--text-tertiary); font-family: var(--font-mono); flex-shrink: 0; margin-top: 2px; }
+    .q-snapshot-body { flex: 1; min-width: 0; }
+    .q-snapshot-tags { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+    .q-snapshot-score { font-size: var(--text-sm); color: var(--text-secondary); flex-shrink: 0; }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <!-- Sidebar（MainLayout：已登录 + 管理员完整形态） -->
+    <aside class="sidebar">
+      <div class="sidebar-logo">
+        <div class="sidebar-logo-icon">QS</div>
+        <span class="sidebar-logo-text">Quick Study</span>
+        <button class="sidebar-toggle" data-tooltip="折叠侧边栏"><ion-icon name="chevron-back-outline"></ion-icon></button>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="sidebar-nav-item" onclick="window.location.href='01-home.html'"><ion-icon name="home-outline"></ion-icon><span>首页</span></div>
+        <div class="sidebar-nav-item" onclick="window.location.href='02-bank-list.html'"><ion-icon name="library-outline"></ion-icon><span>题库</span></div>
+        <div class="sidebar-nav-item" onclick="window.location.href='04-question-list.html'"><ion-icon name="document-text-outline"></ion-icon><span>题目</span></div>
+        <div class="sidebar-nav-item active" onclick="window.location.href='05-paper-list.html'"><ion-icon name="file-tray-full-outline"></ion-icon><span>试卷</span></div>
+        <div class="sidebar-nav-label">学习中心</div>
+        <div class="sidebar-nav-item" onclick="window.location.href='24-practice-list.html'"><ion-icon name="game-controller-outline"></ion-icon><span>练习</span></div>
+        <div class="sidebar-nav-item" onclick="window.location.href='19-playground.html'"><ion-icon name="code-slash-outline"></ion-icon><span>代码运行台</span></div>
+        <div class="sidebar-nav-item" onclick="window.location.href='10-wrong-questions.html'"><ion-icon name="close-circle-outline"></ion-icon><span>错题本</span></div>
+        <div class="sidebar-nav-item" onclick="window.location.href='18-favorites.html'"><ion-icon name="star-outline"></ion-icon><span>收藏题目</span></div>
+        <div class="sidebar-nav-item" onclick="window.location.href='11-records.html'"><ion-icon name="time-outline"></ion-icon><span>做题记录</span></div>
+        <div class="sidebar-nav-item" onclick="window.location.href='20-exam-records.html'"><ion-icon name="document-text-outline"></ion-icon><span>考试记录</span></div>
+        <div class="sidebar-nav-item" onclick="window.location.href='09-statistics.html'"><ion-icon name="bar-chart-outline"></ion-icon><span>统计</span></div>
+        <div class="sidebar-nav-item" onclick="window.location.href='13-notifications.html'"><ion-icon name="notifications-outline"></ion-icon><span>通知</span></div>
+        <div class="sidebar-nav-item" onclick="window.location.href='12-search.html'"><ion-icon name="search-outline"></ion-icon><span>搜索</span></div>
+        <div class="sidebar-nav-label">管理</div>
+        <div class="sidebar-nav-item" onclick="window.location.href='15-admin-users.html'"><ion-icon name="people-outline"></ion-icon><span>用户管理</span></div>
+        <div class="sidebar-nav-item" onclick="window.location.href='31-admin-reviews.html'"><ion-icon name="checkmark-done-outline"></ion-icon><span>审核列表</span></div>
+      </nav>
+      <div class="sidebar-footer"><div class="sidebar-nav-item"><ion-icon name="log-out-outline"></ion-icon><span>退出登录</span></div></div>
+    </aside>
+
+    <!-- Main Area（/papers/:id 命中 MENU_TITLES['/papers'] → 顶栏「试卷」） -->
+    <div class="main-area">
+      <header class="app-header">
+        <div class="app-header-left">
+          <button class="mobile-menu-btn" onclick="document.querySelector('.sidebar').classList.toggle('mobile-open')"><ion-icon name="menu-outline"></ion-icon></button>
+          <div class="breadcrumb"><span class="breadcrumb-current">试卷</span></div>
+        </div>
+        <div class="app-header-right">
+          <div class="header-search">
+            <ion-icon name="search-outline"></ion-icon>
+            <input class="input" type="text" placeholder="搜索题目 / 题库 / 试卷" readonly style="cursor:pointer;" onclick="window.location.href='12-search.html'">
+          </div>
+          <div style="position:relative;cursor:pointer;" onclick="window.location.href='13-notifications.html'">
+            <ion-icon name="notifications-outline" style="font-size:22px;color:var(--text-secondary);"></ion-icon>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;cursor:pointer;" onclick="window.location.href='14-profile.html'">
+            <div class="avatar" style="background:var(--gradient-brand);">王</div>
+            <span style="font-size:14px;font-weight:500;color:var(--text-primary);">王老师</span>
+            <ion-icon name="chevron-down-outline" style="font-size:16px;color:var(--text-tertiary);"></ion-icon>
+          </div>
+        </div>
+      </header>
+
+      <main class="app-content">
+        <!-- PageHeader：show-back，title=试卷标题，PUBLISHED 且已登录显示「开始考试」 -->
+        <div class="page-header">
+          <div class="page-header-left">
+            <button class="page-header-back" onclick="window.location.href='05-paper-list.html'"><ion-icon name="chevron-back-outline"></ion-icon></button>
+            <div>
+              <h1 class="page-header-title">Java 基础测试卷 (一)</h1>
+              <p class="page-header-subtitle">本试卷涵盖 Java 基础语法、面向对象、集合框架等核心知识点。</p>
+            </div>
+          </div>
+          <div class="page-header-actions">
+            <button class="btn btn-primary btn-sm" onclick="window.location.href='06-exam-page.html'">开始考试</button>
+          </div>
+        </div>
+
+        <!-- 基本信息 -->
+        <div class="section-card mb-6">
+          <div class="section-head">
+            <span class="section-title">基本信息</span>
+            <span class="tag tag-success">已发布</span>
+          </div>
+          <div class="section-body">
+            <dl class="descriptions">
+              <dt>描述</dt><dd>本试卷涵盖 Java 基础语法、面向对象、集合框架等核心知识点。</dd>
+              <dt>总分</dt><dd>100</dd>
+              <dt>题目数</dt><dd>3</dd>
+              <dt>时间限制</dt><dd>90分钟</dd>
+              <dt>发布者</dt><dd>王老师</dd>
+              <dt>批改人</dt><dd>李老师</dd>
+              <dt>分享类型</dt><dd>公开</dd>
+              <dt>作答次数</dt><dd>3次 <span class="tag tag-warning" style="margin-left:8px;">防作弊开启</span></dd>
+            </dl>
+          </div>
+        </div>
+
+        <!-- 批改人管理（仅出卷人 canManage 可见） -->
+        <div class="section-card mb-6">
+          <div class="section-body">
+            <div class="section-title" style="margin-bottom:16px;">批改人管理</div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <select class="select" style="width:288px;">
+                <option>搜索用户名/昵称选择新批改人</option>
+              </select>
+              <button class="btn btn-primary btn-sm" disabled>更换批改人</button>
+            </div>
+            <div style="margin-top:8px;font-size:var(--text-sm);color:var(--text-tertiary);">当前批改人：李老师</div>
+          </div>
+        </div>
+
+        <!-- 题目列表（只读快照） -->
+        <div class="section-card mb-6">
+          <div class="section-head"><span class="section-title">题目列表</span></div>
+          <div>
+            <div class="q-snapshot">
+              <span class="q-index">#1</span>
+              <div class="q-snapshot-body">
+                <div class="q-snapshot-tags">
+                  <span class="tag tag-info">单选题</span>
+                  <span class="q-snapshot-score">2 分</span>
+                </div>
+                <div style="font-size:var(--text-sm);color:var(--text-primary);white-space:pre-line;">在 Java 中，以下哪个关键字用于实现继承？</div>
+              </div>
+            </div>
+            <div class="q-snapshot">
+              <span class="q-index">#2</span>
+              <div class="q-snapshot-body">
+                <div class="q-snapshot-tags">
+                  <span class="tag tag-primary">多选题</span>
+                  <span class="q-snapshot-score">3 分</span>
+                </div>
+                <div style="font-size:var(--text-sm);color:var(--text-primary);white-space:pre-line;">关于 Java 集合框架，以下说法正确的有？</div>
+              </div>
+            </div>
+            <div class="q-snapshot">
+              <span class="q-index">#3</span>
+              <div class="q-snapshot-body">
+                <div class="q-snapshot-tags">
+                  <span class="tag tag-success">填空题</span>
+                  <span class="q-snapshot-score">5 分</span>
+                </div>
+                <div style="font-size:var(--text-sm);color:var(--text-primary);white-space:pre-line;">Spring Bean 的生命周期包含哪些阶段？</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 作答统计（canManage） -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+          <div class="stat-card">
+            <div class="stat-label">总作答人数</div>
+            <div class="stat-value" style="color:var(--text-brand);">24</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">平均分</div>
+            <div class="stat-value">82.5</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">最高分</div>
+            <div class="stat-value" style="color:var(--color-success-600);">98</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">最低分</div>
+            <div class="stat-value" style="color:var(--color-error-600);">51</div>
+          </div>
+        </div>
+
+        <!-- 作答记录（canManage） -->
+        <div class="section-card">
+          <div class="section-head"><span class="section-title">作答记录</span></div>
+          <div class="table-wrapper">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>作答者</th>
+                  <th class="col-center">得分</th>
+                  <th class="col-center">状态</th>
+                  <th>提交时间</th>
+                  <th class="col-center">操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>张同学</td>
+                  <td class="col-center">92</td>
+                  <td class="col-center"><span class="tag tag-success">已批改</span></td>
+                  <td>2026-08-20 14:35</td>
+                  <td class="col-center"><a class="text-primary-500 hover:text-primary-600 text-sm font-medium cursor-pointer" style="color:var(--text-brand);" onclick="window.location.href='22-grading-detail.html'">查看详情</a></td>
+                </tr>
+                <tr>
+                  <td>李同学</td>
+                  <td class="col-center">-</td>
+                  <td class="col-center"><span class="tag tag-warning">批改中</span></td>
+                  <td>2026-08-20 15:10</td>
+                  <td class="col-center"><a class="text-primary-500 hover:text-primary-600 text-sm font-medium cursor-pointer" style="color:var(--text-brand);" onclick="window.location.href='22-grading-detail.html'">查看详情</a></td>
+                </tr>
+                <tr>
+                  <td>王同学</td>
+                  <td class="col-center">-</td>
+                  <td class="col-center"><span class="tag tag-default">进行中</span></td>
+                  <td>-</td>
+                  <td class="col-center text-neutral-300">-</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+  <script>
+    document.querySelector(".sidebar-toggle")?.addEventListener("click", function() {
+      var s=document.querySelector(".sidebar"),m=document.querySelector(".main-area");
+      s.classList.toggle("sidebar-collapsed");m.classList.toggle("main-area-collapsed");
+      var i=this.querySelector("ion-icon");
+      i.setAttribute("name",s.classList.contains("sidebar-collapsed")?"chevron-forward-outline":"chevron-back-outline");
+    });
+  </script>
+</body>
+</html>

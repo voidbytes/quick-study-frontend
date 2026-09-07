@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>创建试卷 — Quick Study</title>
+  <link rel="stylesheet" href="styles/mockup.css">
+  <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
+  <script nomodule src="https://cdn.jsdelivr.net/npm/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
+  <style>
+    .form-max { max-width: 960px; margin: 0 auto; }
+    .section-card { background: var(--bg-card); border: 1px solid var(--border-default); border-radius: var(--radius-lg); overflow: hidden; margin-bottom: var(--space-6); }
+    .section-head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); padding: var(--space-4) var(--space-5); border-bottom: 1px solid var(--border-default); }
+    .section-title { font-size: var(--text-lg); font-weight: var(--font-semibold); color: var(--text-primary); }
+    .section-body { padding: var(--space-5); }
+
+    /* 选题双栏 */
+    .picker { display: flex; flex-direction: column; gap: var(--space-4); }
+    @media (min-width: 1024px) { .picker { flex-direction: row; } }
+    .picker-left { flex: 1; min-width: 0; }
+    .picker-right { width: 100%; }
+    @media (min-width: 1024px) { .picker-right { width: 300px; flex-shrink: 0; } }
+    .cand-list { border: 1px solid var(--border-default); border-radius: var(--radius-lg); overflow: hidden; max-height: 480px; overflow-y: auto; }
+    .cand-row { display: flex; align-items: flex-start; gap: var(--space-3); padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--border-default); }
+    .cand-row:last-child { border-bottom: none; }
+    .cand-row:hover { background: var(--bg-subtle); }
+    .cand-row.selected { background: var(--bg-selected); }
+    .cand-content { flex: 1; min-width: 0; }
+    .cand-tags { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); margin-top: 4px; }
+    .panel-head { display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border-default); }
+    .selected-list { max-height: 480px; min-height: 160px; overflow-y: auto; }
+    .selected-row { display:flex;align-items:center;gap:8px;padding:10px 16px;border-bottom:1px solid var(--border-default); }
+    .selected-row:last-child{border-bottom:none;}
+
+    /* 设置分值行 */
+    .score-row { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3); background: var(--bg-subtle); border: 1px solid var(--border-default); border-radius: var(--radius-lg); margin-bottom: var(--space-3); }
+    .score-row .drag { cursor: move; color: var(--text-tertiary); }
+    .score-row .idx { color: var(--text-secondary); width: 24px; text-align: right; flex-shrink: 0; }
+
+    .step-nav { display: flex; justify-content: space-between; align-items: center; margin-top: var(--space-4); }
+    .toggle { width: 44px; height: 24px; border-radius: 9999px; background: var(--color-primary-500); position: relative; }
+    .toggle .knob { width: 20px; height: 20px; border-radius: 50%; background: #fff; position: absolute; top: 2px; right: 2px; box-shadow: 0 1px 3px rgba(0,0,0,.2); }
+    .toggle.off { background: var(--color-neutral-200); }
+    .toggle.off .knob { right: auto; left: 2px; }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="sidebar-logo">
+        <div class="sidebar-logo-icon">QS</div>
+        <span class="sidebar-logo-text">Quick Study</span>
+      <button class="sidebar-toggle" data-tooltip="折叠侧边栏"><ion-icon name="chevron-back-outline"></ion-icon></button>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="sidebar-nav-item" onclick="window.location.href='01-home.html'"><ion-icon name="home-outline"></ion-icon><span>首页</span></div>
+        <div class="sidebar-nav-item" onclick="window.location.href='02-bank-list.html'"><ion-icon name="library-outline"></ion-icon><span>题库</span></div>
+        <div class="sidebar-nav-item" onclick="window.location.href='04-question-list.html'"><ion-icon name="document-text-outline"></ion-icon><span>题目</span></div>
+        <div class="sidebar-nav-item active" onclick="window.location.href='05-paper-list.html'"><ion-icon name="file-tray-full-outline"></ion-icon><span>试卷</span></div>
+        <div class="sidebar-nav-label">学习中心</div>
+        <div class="sidebar-nav-item" onclick="window.location.href='24-practice-list.html'"><ion-icon name="game-controller-outline"></ion-icon><span>练习</span></div>
+        <div class="sidebar-nav-item" onclick="window.location.href='19-playground.html'"><ion-icon name="code-slash-outline"></ion-icon><span>代码运行台</span></div>
+        <div class="sidebar-nav-item" onclick="window.location.href='10-wrong-questions.html'"><ion-icon name="close-circle-outline"></ion-icon><span>错题本</span></div>
+        <div class="sidebar-nav-item" onclick="window.location.href='18-favorites.html'"><ion-icon name="star-outline"></ion-icon><span>收藏题目</span></div>
+        <div class="sidebar-nav-item" onclick="window.location.href='11-records.html'"><ion-icon name="time-outline"></ion-icon><span>做题记录</span></div>
+        <div class="sidebar-nav-item" onclick="window.location.href='20-exam-records.html'"><ion-icon name="document-text-outline"></ion-icon><span>考试记录</span></div>
+        <div class="sidebar-nav-item" onclick="window.location.href='09-statistics.html'"><ion-icon name="bar-chart-outline"></ion-icon><span>统计</span></div>
+        <div class="sidebar-nav-item" onclick="window.location.href='13-notifications.html'"><ion-icon name="notifications-outline"></ion-icon><span>通知</span></div>
+        <div class="sidebar-nav-item" onclick="window.location.href='12-search.html'"><ion-icon name="search-outline"></ion-icon><span>搜索</span></div>
+        <div class="sidebar-nav-label">管理</div>
+        <div class="sidebar-nav-item" onclick="window.location.href='15-admin-users.html'"><ion-icon name="people-outline"></ion-icon><span>用户管理</span></div>
+        <div class="sidebar-nav-item" onclick="window.location.href='31-admin-reviews.html'"><ion-icon name="checkmark-done-outline"></ion-icon><span>审核列表</span></div>
+      </nav>
+      <div class="sidebar-footer"><div class="sidebar-nav-item"><ion-icon name="log-out-outline"></ion-icon><span>退出登录</span></div></div>
+    </aside>
+
+    <div class="main-area">
+      <header class="app-header">
+        <div class="app-header-left">
+          <button class="mobile-menu-btn" onclick="document.querySelector('.sidebar').classList.toggle('mobile-open')"><ion-icon name="menu-outline"></ion-icon></button>
+          <!-- /papers/create 命中 MENU_TITLES['/papers']，故顶栏标题为「试卷」 -->
+          <div class="breadcrumb"><span class="breadcrumb-current">试卷</span></div>
+        </div>
+        <div class="app-header-right">
+          <div class="header-search">
+            <ion-icon name="search-outline"></ion-icon>
+            <input class="input" type="text" placeholder="搜索题目 / 题库 / 试卷" readonly style="cursor:pointer;" onclick="window.location.href='12-search.html'">
+          </div>
+          <div style="position:relative;cursor:pointer;" onclick="window.location.href='13-notifications.html'">
+            <ion-icon name="notifications-outline" style="font-size:22px;color:var(--text-secondary);"></ion-icon>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;cursor:pointer;" onclick="window.location.href='14-profile.html'">
+            <div class="avatar" style="background:var(--gradient-brand);">王</div>
+            <span style="font-size:14px;font-weight:500;color:var(--text-primary);">王老师</span>
+            <ion-icon name="chevron-down-outline" style="font-size:16px;color:var(--text-tertiary);"></ion-icon>
+          </div>
+        </div>
+      </header>
+
+      <main class="app-content form-max">
+        <!-- Page header -->
+        <div class="page-header">
+          <div>
+            <h1>创建试卷</h1>
+            <div class="subtitle">按 4 步完成组卷：基本信息 → 选题 → 设置分值 → 确认发布</div>
+          </div>
+        </div>
+
+        <!-- Steps -->
+        <div class="steps mb-8">
+          <div class="step active"><div class="step-dot">1</div><div class="step-title">基本信息</div></div>
+          <div class="step"><div class="step-dot">2</div><div class="step-title">选题</div></div>
+          <div class="step"><div class="step-dot">3</div><div class="step-title">设置分值</div></div>
+          <div class="step"><div class="step-dot">4</div><div class="step-title">确认</div></div>
+        </div>
+
+        <!-- ========== Step 1: 基本信息 ========== -->
+        <div class="step-panel section-card">
+          <div class="section-head"><span class="section-title">基本信息</span></div>
+          <div class="section-body">
+            <div class="input-group">
+              <label class="input-label">标题 <span class="req">*</span></label>
+              <input class="input" type="text" placeholder="试卷标题" value="Java 基础测试卷 (一)">
+            </div>
+            <div class="input-group">
+              <label class="input-label">描述</label>
+              <textarea class="textarea" rows="4" placeholder="试卷描述（可选）">本试卷涵盖 Java 基础语法、面向对象、集合框架等核心知识点。</textarea>
+            </div>
+            <div class="form-grid">
+              <div class="input-group">
+                <label class="input-label">时间限制（分钟）</label>
+                <input class="input" type="number" placeholder="不限时留空" value="90">
+              </div>
+              <div class="input-group">
+                <label class="input-label">作答次数限制</label>
+                <input class="input" type="number" placeholder="不限次数留空" value="3">
+              </div>
+              <div class="input-group">
+                <label class="input-label">及格线（%）</label>
+                <input class="input" type="number" placeholder="默认 60" value="60">
+              </div>
+              <div class="input-group">
+                <label class="input-label">开始时间</label>
+                <input class="input" type="datetime-local">
+              </div>
+              <div class="input-group">
+                <label class="input-label">结束时间</label>
+                <input class="input" type="datetime-local">
+              </div>
+              <div class="input-group">
+                <label class="input-label">批改人</label>
+                <input class="input" type="text" placeholder="搜索用户（username / 昵称），留空默认自己" value="王老师">
+              </div>
+              <div class="input-group">
+                <label class="input-label">分享类型 <span class="req">*</span></label>
+                <select class="select">
+                  <option>私有</option>
+                  <option>链接分享</option>
+                  <option selected>密码访问</option>
+                  <option>公开</option>
+                </select>
+              </div>
+              <div class="input-group">
+                <label class="input-label">访问密码</label>
+                <input class="input" type="password" placeholder="设置密码" value="exam123">
+              </div>
+            </div>
+            <!-- 防作弊 -->
+            <div style="display:flex;align-items:center;gap:12px;padding:var(--space-3) 0;border-top:1px solid var(--border-default);margin-top:var(--space-3);">
+              <div class="toggle"><div class="knob"></div></div>
+              <span style="font-size:var(--text-sm);color:var(--text-primary);">防作弊</span>
+            </div>
+          </div>
+          <div style="display:flex;justify-content:flex-end;padding:0 var(--space-5) var(--space-5);">
+            <button class="btn btn-primary" onclick="showStep(1)">下一步</button>
+          </div>
+        </div>
+
+        <!-- ========== Step 2: 选题 ========== -->
+        <div class="step-panel section-card" style="display:none;">
+          <div class="section-head">
+            <span class="section-title">选择题目</span>
+            <span class="text-sm text-neutral-500">已选 <span class="text-primary font-bold">3</span> 题</span>
+          </div>
+          <div class="section-body">
+            <!-- 筛选栏 -->
+            <div class="filter-bar">
+              <select class="select" style="width:200px;">
+                <option>全部题库</option>
+                <option>Java 基础题库</option>
+                <option>数据结构题库</option>
+              </select>
+              <select class="select" style="width:110px;">
+                <option>题型</option>
+                <option>单选题</option>
+                <option>多选题</option>
+                <option>判断题</option>
+                <option>填空题</option>
+                <option>简答题</option>
+              </select>
+              <select class="select" style="width:100px;">
+                <option>难度</option>
+                <option>简单</option>
+                <option>中等</option>
+                <option>困难</option>
+              </select>
+              <div class="filter-search" style="position:relative;flex:1;min-width:200px;">
+                <ion-icon name="search-outline" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:18px;color:var(--text-tertiary);"></ion-icon>
+                <input class="input" type="text" placeholder="搜索题干..." style="padding-left:38px;">
+              </div>
+              <button class="btn btn-secondary btn-sm">搜索</button>
+              <button class="btn btn-ghost btn-sm">重置</button>
+            </div>
+
+            <div class="picker">
+              <!-- 左：候选 -->
+              <div class="picker-left">
+                <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+                  <label style="display:flex;align-items:center;gap:8px;font-size:var(--text-sm);">
+                    <input type="checkbox" checked> 全选本页
+                  </label>
+                  <span class="text-xs text-neutral-400">共 20 题可选（仅已发布题目）</span>
+                </div>
+                <div class="cand-list">
+                  <div class="cand-row selected">
+                    <input type="checkbox" checked>
+                    <div class="cand-content">
+                      <div style="font-size:var(--text-sm);">在 Java 中，以下哪个关键字用于实现继承？</div>
+                      <div class="cand-tags">
+                        <span class="tag tag-info">单选题</span>
+                        <span class="tag tag-success">简单</span>
+                        <span class="text-xs text-neutral-400">Java 基础题库</span>
+                      </div>
+                    </div>
+                    <button class="btn btn-ghost btn-sm" style="color:var(--text-brand);">预览</button>
+                  </div>
+                  <div class="cand-row selected">
+                    <input type="checkbox" checked>
+                    <div class="cand-content">
+                      <div style="font-size:var(--text-sm);">关于 Java 集合框架，以下说法正确的有？</div>
+                      <div class="cand-tags">
+                        <span class="tag tag-warning">多选题</span>
+                        <span class="tag tag-error">困难</span>
+                        <span class="text-xs text-neutral-400">Java 基础题库</span>
+                      </div>
+                    </div>
+                    <button class="btn btn-ghost btn-sm" style="color:var(--text-brand);">预览</button>
+                  </div>
+                  <div class="cand-row">
+                    <input type="checkbox">
+                    <div class="cand-content">
+                      <div style="font-size:var(--text-sm);">Java 是一门面向对象的编程语言。</div>
+                      <div class="cand-tags">
+                        <span class="tag tag-success">判断题</span>
+                        <span class="tag tag-success">简单</span>
+                        <span class="text-xs text-neutral-400">Java 基础题库</span>
+                      </div>
+                    </div>
+                    <button class="btn btn-ghost btn-sm" style="color:var(--text-brand);">预览</button>
+                  </div>
+                  <div class="cand-row">
+                    <input type="checkbox">
+                    <div class="cand-content">
+                      <div style="font-size:var(--text-sm);">简述 TCP 三次握手的过程。</div>
+                      <div class="cand-tags">
+                        <span class="tag tag-primary">简答题</span>
+                        <span class="tag tag-warning">中等</span>
+                        <span class="text-xs text-neutral-400">计算机网络题库</span>
+                      </div>
+                    </div>
+                    <button class="btn btn-ghost btn-sm" style="color:var(--text-brand);">预览</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 右：已选 -->
+              <div class="picker-right section-card" style="margin-bottom:0;">
+                <div class="panel-head">
+                  <span style="font-size:var(--text-sm);font-weight:var(--font-medium);">已选题目</span>
+                  <button class="btn btn-ghost btn-sm" style="color:var(--color-error-600);">清空</button>
+                </div>
+                <div class="selected-list">
+                  <div class="selected-row">
+                    <span class="text-xs text-neutral-400" style="width:20px;text-align:right;">1</span>
+                    <div class="flex-1 min-w-0 text-xs text-neutral-800 truncate">在 Java 中，以下哪个关键字用于实现继承？</div>
+                    <button class="btn btn-ghost btn-sm" style="color:var(--color-error-600);">移除</button>
+                  </div>
+                  <div class="selected-row">
+                    <span class="text-xs text-neutral-400" style="width:20px;text-align:right;">2</span>
+                    <div class="flex-1 min-w-0 text-xs text-neutral-800 truncate">关于 Java 集合框架，以下说法正确的有？</div>
+                    <button class="btn btn-ghost btn-sm" style="color:var(--color-error-600);">移除</button>
+                  </div>
+                  <div class="selected-row">
+                    <span class="text-xs text-neutral-400" style="width:20px;text-align:right;">3</span>
+                    <div class="flex-1 min-w-0 text-xs text-neutral-800 truncate">Spring Bean 的生命周期包含哪些阶段？</div>
+                    <button class="btn btn-ghost btn-sm" style="color:var(--color-error-600);">移除</button>
+                  </div>
+                </div>
+                <div style="padding:12px 16px;border-top:1px solid var(--border-default);font-size:var(--text-xs);color:var(--text-tertiary);">
+                  共 <span class="text-primary font-bold">3</span> 题，分值在下一步统一设置
+                </div>
+              </div>
+            </div>
+
+            <div class="step-nav">
+              <button class="btn btn-ghost" onclick="showStep(0)">上一步</button>
+              <button class="btn btn-primary" onclick="showStep(2)">下一步（已选 3 题）</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ========== Step 3: 设置分值 ========== -->
+        <div class="step-panel section-card" style="display:none;">
+          <div class="section-head"><span class="section-title">设置分值</span></div>
+          <div class="section-body">
+            <div class="score-row">
+              <ion-icon name="reorder-two-outline" class="drag"></ion-icon>
+              <span class="idx">1</span>
+              <span class="flex-1 truncate text-sm">在 Java 中，以下哪个关键字用于实现继承？</span>
+              <input class="input" type="number" style="width:100px;" placeholder="分值" value="2">
+            </div>
+            <div class="score-row">
+              <ion-icon name="reorder-two-outline" class="drag"></ion-icon>
+              <span class="idx">2</span>
+              <span class="flex-1 truncate text-sm">关于 Java 集合框架，以下说法正确的有？</span>
+              <input class="input" type="number" style="width:100px;" placeholder="分值" value="3">
+            </div>
+            <div class="score-row">
+              <ion-icon name="reorder-two-outline" class="drag"></ion-icon>
+              <span class="idx">3</span>
+              <span class="flex-1 truncate text-sm">Spring Bean 的生命周期包含哪些阶段？</span>
+              <input class="input" type="number" style="width:100px;" placeholder="分值" value="5">
+            </div>
+            <div style="text-align:right;margin-top:16px;font-size:var(--text-lg);font-weight:var(--font-bold);">
+              总分：<span class="text-primary">10</span>
+            </div>
+            <div class="step-nav">
+              <button class="btn btn-ghost" onclick="showStep(1)">上一步</button>
+              <button class="btn btn-primary" onclick="showStep(3)">下一步</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ========== Step 4: 确认 ========== -->
+        <div class="step-panel section-card" style="display:none;">
+          <div class="section-head"><span class="section-title">确认信息</span></div>
+          <div class="section-body">
+            <div class="descriptions" style="margin-bottom:16px;">
+              <dt>标题</dt><dd>Java 基础测试卷 (一)</dd>
+              <dt>题目数</dt><dd>3</dd>
+              <dt>总分</dt><dd>10</dd>
+              <dt>分享类型</dt><dd>密码访问</dd>
+              <dt>时间限制</dt><dd>90分钟</dd>
+              <dt>防作弊</dt><dd>开启</dd>
+              <dt>批改人</dt><dd>王老师</dd>
+              <dt></dt><dd></dd>
+            </div>
+            <div class="section-card" style="margin-bottom:0;">
+              <div class="section-head"><span class="section-title" style="font-size:var(--text-sm);">题目列表</span></div>
+              <div style="padding:var(--space-4);">
+                <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border-default);font-size:var(--text-sm);">
+                  <span>#1 在 Java 中，以下哪个关键字用于实现继承？</span>
+                  <span class="text-primary font-bold">2 分</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border-default);font-size:var(--text-sm);">
+                  <span>#2 关于 Java 集合框架，以下说法正确的有？</span>
+                  <span class="text-primary font-bold">3 分</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;padding:8px 0;font-size:var(--text-sm);">
+                  <span>#3 Spring Bean 的生命周期包含哪些阶段？</span>
+                  <span class="text-primary font-bold">5 分</span>
+                </div>
+              </div>
+            </div>
+            <div class="step-nav">
+              <button class="btn btn-ghost" onclick="showStep(2)">上一步</button>
+              <button class="btn btn-primary" onclick="window.location.href='05-paper-list.html'">创建试卷</button>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+  <script>
+    document.querySelector(".sidebar-toggle")?.addEventListener("click", function() {
+      var s=document.querySelector(".sidebar"),m=document.querySelector(".main-area");
+      s.classList.toggle("sidebar-collapsed");m.classList.toggle("main-area-collapsed");
+      var i=this.querySelector("ion-icon");
+      i.setAttribute("name",s.classList.contains("sidebar-collapsed")?"chevron-forward-outline":"chevron-back-outline");
+    });
+    var panels = Array.from(document.querySelectorAll('.step-panel'));
+    var steps = Array.from(document.querySelectorAll('.steps .step'));
+    function showStep(n){
+      panels.forEach(function(p,i){ p.style.display = i===n ? 'block' : 'none'; });
+      steps.forEach(function(s,i){
+        s.classList.remove('active','done');
+        if(i===n) s.classList.add('active');
+        else if(i<n) s.classList.add('done');
+      });
+      window.scrollTo({top:0,behavior:'smooth'});
+    }
+  </script>
+</body>
+</html>

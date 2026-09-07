@@ -1,538 +1,320 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<html lang="zh-CN" data-page-node-id="AVDp3nhvAFsz1fjsgFxWlA">
+<head data-page-node-id="CU6dITG6EWno4Jsb0f1yUR">
+  <meta charset="UTF-8" data-page-node-id="mBkxO9o9IHsuyjt6CBfahr">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" data-page-node-id="0EmepSKOBnOxuQV9pEAzoE">
   <title>收藏题目 — Quick Study</title>
-  <link rel="stylesheet" href="styles/mockup.css">
+  <link rel="stylesheet" href="styles/mockup.css" data-page-node-id="W5YKsJENpUzBroBDJ118Vj">
   <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
   <script nomodule src="https://cdn.jsdelivr.net/npm/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
   <style>
-    .page-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: var(--space-6);
-    }
-    .page-title {
-      font-size: var(--text-2xl);
-      font-weight: var(--font-bold);
-      color: var(--text-primary);
-    }
+    .page-header-subtitle { font-size: var(--text-sm); color: var(--text-tertiary); margin: 4px 0 0; }
 
-    /* --- Summary Bar --- */
-    .summary-bar {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: var(--space-4);
-      margin-bottom: var(--space-6);
-    }
-    .summary-item {
-      background: var(--bg-card);
-      border: 1px solid var(--border-default);
-      border-radius: var(--radius-lg);
-      padding: var(--space-4) var(--space-5);
-      display: flex;
-      align-items: center;
-      gap: var(--space-3);
-    }
-    .summary-icon {
-      width: 40px;
-      height: 40px;
-      border-radius: var(--radius-md);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 22px;
-      flex-shrink: 0;
-    }
-    .summary-icon.brand { background: var(--color-primary-50); color: var(--text-brand); }
-    .summary-icon.warning { background: var(--color-warning-50); color: var(--color-warning-600); }
-    .summary-icon.success { background: var(--color-success-50); color: var(--color-success-600); }
-    .summary-icon.error { background: var(--color-error-50); color: var(--color-error-600); }
-    .summary-info { flex: 1; min-width: 0; }
-    .summary-label {
-      font-size: var(--text-xs);
-      color: var(--text-tertiary);
-      margin-bottom: 2px;
-    }
-    .summary-value {
-      font-size: var(--text-xl);
-      font-weight: var(--font-bold);
-      color: var(--text-primary);
-      line-height: 1.2;
-    }
+    /* 多形态分隔（正常态 / 加载态 / 空态） */
+    .form-divider { display: flex; align-items: center; gap: var(--space-3); margin: var(--space-10) 0 var(--space-5); }
+    .form-divider::before, .form-divider::after { content: ''; flex: 1; height: 1px; background: var(--border-default); }
+    .form-divider span { font-size: var(--text-sm); font-weight: var(--font-semibold); color: var(--text-tertiary); letter-spacing: 0.05em; }
 
-    /* --- Filter Bar --- */
-    .filter-bar {
-      background: var(--bg-card);
-      border: 1px solid var(--border-default);
-      border-radius: var(--radius-lg);
-      padding: var(--space-4);
-      margin-bottom: var(--space-5);
-      display: flex;
-      align-items: center;
-      gap: var(--space-3);
-      flex-wrap: wrap;
-    }
-    .filter-select {
-      padding: var(--space-2) var(--space-3);
-      border: 1px solid var(--border-default);
-      border-radius: var(--radius-md);
-      background: var(--bg-card);
-      font-size: var(--text-sm);
-      color: var(--text-primary);
-      cursor: pointer;
-      outline: none;
-      transition: all var(--transition-base);
-    }
+    /* StatCard.vue：label + 数值(tone 色) + suffix 图标 */
+    .stat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--space-4); margin-bottom: var(--space-6); }
+    @media (min-width: 1024px) { .stat-grid { grid-template-columns: repeat(4, 1fr); } }
+    .stat-card-x { background: var(--bg-card); border: 1px solid var(--border-default); border-radius: var(--radius-lg); padding: var(--space-5); }
+    .stat-card-x .l { font-size: var(--text-xs); font-weight: var(--font-medium); color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: var(--space-2); }
+    .stat-card-x .v { font-size: var(--text-3xl); font-weight: var(--font-bold); line-height: 1.2; display: flex; align-items: flex-end; gap: var(--space-1); }
+    .stat-card-x .v.brand { color: var(--text-brand); }
+    .stat-card-x .v.success { color: var(--color-success-600); }
+    .stat-card-x .v.warning { color: var(--color-warning-600); }
+    .stat-card-x .v ion-icon { font-size: var(--text-base); color: var(--text-tertiary); margin-bottom: 4px; }
+
+    /* Filter Bar */
+    .filter-bar { display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; margin-bottom: var(--space-5); }
+    .filter-select { padding: var(--space-2) var(--space-3); border: 1px solid var(--border-default); border-radius: var(--radius-md); background: var(--bg-card); font-size: var(--text-sm); color: var(--text-primary); cursor: pointer; outline: none; transition: all var(--transition-base); }
     .filter-select:hover { border-color: var(--color-primary-300); }
-    .filter-select:focus { border-color: var(--color-primary-500); box-shadow: 0 0 0 3px rgba(91, 95, 233, 0.12); }
-    .type-tabs {
-      display: flex;
-      gap: 2px;
-      background: var(--color-neutral-100);
-      border-radius: var(--radius-md);
-      padding: 3px;
-    }
-    .type-tab {
-      padding: var(--space-2) var(--space-3);
-      border-radius: var(--radius-sm);
-      font-size: var(--text-sm);
-      font-weight: var(--font-medium);
-      color: var(--text-secondary);
-      cursor: pointer;
-      transition: all var(--transition-base);
-      white-space: nowrap;
-    }
+    .filter-select:focus { border-color: var(--color-primary-500); box-shadow: 0 0 0 3px rgba(91,95,233,0.12); }
+    .filter-divider { width: 1px; height: 24px; background: var(--border-default); }
+    /* n-radio-group(n-radio-button, size=small) */
+    .type-tabs { display: flex; gap: 2px; background: var(--color-neutral-100); border-radius: var(--radius-md); padding: 3px; }
+    .type-tab { padding: var(--space-1) var(--space-3); border-radius: var(--radius-sm); font-size: var(--text-sm); font-weight: var(--font-medium); color: var(--text-secondary); cursor: pointer; transition: all var(--transition-base); white-space: nowrap; }
     .type-tab:hover { color: var(--text-primary); }
-    .type-tab.active {
-      background: var(--bg-card);
-      color: var(--text-brand);
-      box-shadow: var(--shadow-xs);
-    }
-    .filter-divider {
-      width: 1px;
-      height: 24px;
-      background: var(--border-default);
-    }
+    .type-tab.active { background: var(--bg-card); color: var(--text-brand); box-shadow: var(--shadow-xs); }
 
-    /* --- Favorite Question Card --- */
-    .wq-list { display: flex; flex-direction: column; gap: var(--space-3); }
-    .wq-card {
-      background: var(--bg-card);
-      border: 1px solid var(--border-default);
-      border-radius: var(--radius-lg);
-      padding: var(--space-4) var(--space-5);
-      display: flex;
-      align-items: center;
-      gap: var(--space-4);
-      transition: all var(--transition-base);
-    }
-    .wq-card:hover {
-      border-color: var(--color-primary-300);
-      box-shadow: var(--shadow-sm);
-    }
-    .wq-left {
-      display: flex;
-      align-items: center;
-      gap: var(--space-3);
-      flex-shrink: 0;
-      width: 180px;
-    }
-    /* 收藏序号图标：品牌色 star 图标，primary-50 背景 */
-    .wq-num {
-      width: 32px;
-      height: 32px;
-      border-radius: var(--radius-md);
-      background: var(--color-primary-50);
-      color: var(--text-brand);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 18px;
-      flex-shrink: 0;
-    }
-    .wq-tags {
-      display: flex;
-      flex-direction: column;
-      gap: var(--space-1);
-      align-items: flex-start;
-    }
-    .wq-tags-row {
-      display: flex;
-      gap: var(--space-1);
-    }
-    .wq-middle {
-      flex: 1;
-      min-width: 0;
-    }
-    .wq-content {
-      font-size: var(--text-base);
-      color: var(--text-primary);
-      font-weight: var(--font-medium);
-      margin-bottom: var(--space-2);
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-    .wq-meta {
-      display: flex;
-      align-items: center;
-      gap: var(--space-3);
-      font-size: var(--text-xs);
-      color: var(--text-tertiary);
-    }
-    .wq-meta-item {
-      display: flex;
-      align-items: center;
-      gap: 3px;
-    }
-    .wq-meta-item ion-icon { font-size: 14px; }
-    .wq-right {
-      display: flex;
-      align-items: center;
-      gap: var(--space-3);
-      flex-shrink: 0;
-    }
-    .wq-date {
-      font-size: var(--text-xs);
-      color: var(--text-tertiary);
-      white-space: nowrap;
-    }
-    .wq-actions {
-      display: flex;
-      gap: var(--space-2);
-    }
-    .btn-text {
-      background: transparent;
-      border: none;
-      font-size: var(--text-sm);
-      font-weight: var(--font-medium);
-      cursor: pointer;
-      padding: var(--space-2) var(--space-3);
-      border-radius: var(--radius-md);
-      transition: all var(--transition-base);
-      white-space: nowrap;
-    }
-    .btn-text.brand { color: var(--text-brand); }
-    .btn-text.brand:hover { background: var(--color-primary-50); }
-    .btn-text.error { color: var(--color-error-600); }
-    .btn-text.error:hover { background: var(--color-error-50); }
+    /* n-tag round（题型 / 难度标签为圆形药丸） */
+    .tag-round { border-radius: var(--radius-full); }
+
+    /* 收藏列表卡片 */
+    .fav-list { display: flex; flex-direction: column; gap: var(--space-3); }
+    .fav-card { background: var(--bg-card); border: 1px solid var(--border-default); border-radius: var(--radius-lg); padding: var(--space-4) var(--space-5); display: flex; align-items: center; gap: var(--space-4); transition: all var(--transition-base); }
+    .fav-card:hover { border-color: var(--color-primary-300); box-shadow: var(--shadow-sm); }
+    .fav-left { display: flex; align-items: center; gap: var(--space-3); flex-shrink: 0; width: 180px; }
+    .fav-star { width: 32px; height: 32px; border-radius: var(--radius-md); background: var(--color-primary-50); color: var(--color-primary-600); display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 18px; }
+    .fav-tags { display: flex; flex-direction: column; gap: var(--space-1); align-items: flex-start; }
+    .fav-middle { flex: 1; min-width: 0; cursor: pointer; }
+    .fav-content { font-size: var(--text-base); color: var(--text-primary); font-weight: var(--font-medium); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: var(--leading-relaxed); }
+    .fav-meta { margin-top: var(--space-1); display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; font-size: var(--text-xs); color: var(--color-neutral-400); }
+    .fav-meta-item { display: inline-flex; align-items: center; gap: 3px; }
+    .fav-meta-item ion-icon { font-size: 13px; }
+    .fav-right { display: flex; align-items: center; gap: var(--space-3); flex-shrink: 0; }
+    .fav-date { font-size: var(--text-xs); color: var(--color-neutral-400); white-space: nowrap; }
+    /* n-button(size=small, quaternary) */
+    .btn-quaternary { background: transparent; border: none; font-size: var(--text-sm); font-weight: var(--font-medium); cursor: pointer; padding: var(--space-1) var(--space-2); border-radius: var(--radius-md); transition: all var(--transition-base); white-space: nowrap; }
+    .btn-quaternary.brand { color: var(--text-brand); }
+    .btn-quaternary.brand:hover { background: var(--color-primary-50); }
+    .btn-quaternary.error { color: var(--color-error-600); }
+    .btn-quaternary.error:hover { background: var(--color-error-50); }
+
+    /* SkeletonList(count=4, cols=1) */
+    .sk-list { display: grid; grid-template-columns: 1fr; gap: var(--space-4); }
+    .sk-item { background: var(--bg-card); border: 1px solid var(--border-default); border-radius: var(--radius-lg); padding: var(--space-5); }
+    .sk-line-head { height: 14px; margin-bottom: var(--space-4); }
   </style>
 </head>
-<body>
-  <div class="app-shell">
-    <!-- Sidebar -->
-    <aside class="sidebar">
-      <div class="sidebar-logo">
-        <div class="sidebar-logo-icon">QS</div>
-        <span class="sidebar-logo-text">Quick Study</span>
-      <button class="sidebar-toggle" data-tooltip="折叠侧边栏">
-        <ion-icon name="chevron-back-outline"></ion-icon>
-      </button>
+<body data-page-node-id="j0pVmWZiTYlu1HqwtVGskE">
+  <div class="app-shell" data-page-node-id="gOXXUzFRBiwoeF1GEDcJlb">
+    <aside class="sidebar" data-page-node-id="NEYVBUlryUaHHitikj9Pqi">
+      <div class="sidebar-logo" data-page-node-id="bJl9lyXVxlWMKbiKcTw26d">
+        <div class="sidebar-logo-icon" data-page-node-id="4fllTQZkBBOEysiuQSBaoK">QS</div>
+        <span class="sidebar-logo-text" data-page-node-id="0h8UA3KD9R4dRGuoirjozt">Quick Study</span>
+        <button class="sidebar-toggle" data-tooltip="折叠侧边栏" data-page-node-id="rnsYaWMbM6NVktImOPUqqG"><ion-icon name="chevron-back-outline" data-page-node-id="sIzC4oPFUAZTyktWVchCoF"></ion-icon></button>
       </div>
-      <nav class="sidebar-nav">
-        <div class="sidebar-nav-item" onclick="window.location.href='01-home.html'"><ion-icon name="home-outline"></ion-icon><span>首页</span></div>
-        <div class="sidebar-nav-item" onclick="window.location.href='02-bank-list.html'"><ion-icon name="library-outline"></ion-icon><span>题库</span></div>
-        <div class="sidebar-nav-item" onclick="window.location.href='04-question-list.html'"><ion-icon name="document-text-outline"></ion-icon><span>题目</span></div>
-        <div class="sidebar-nav-item" onclick="window.location.href='05-paper-list.html'"><ion-icon name="file-tray-full-outline"></ion-icon><span>试卷</span></div>
-        <div class="sidebar-nav-label">学习中心</div>
-        <div class="sidebar-nav-item" onclick="window.location.href='24-practice-list.html'"><ion-icon name="game-controller-outline"></ion-icon><span>练习</span></div>
-        <div class="sidebar-nav-item" onclick="window.location.href='10-wrong-questions.html'"><ion-icon name="close-circle-outline"></ion-icon><span>错题本</span></div>
-        <div class="sidebar-nav-item active" onclick="window.location.href='18-favorites.html'"><ion-icon name="star-outline"></ion-icon><span>收藏题目</span></div>
-        <div class="sidebar-nav-item" onclick="window.location.href='11-records.html'"><ion-icon name="time-outline"></ion-icon><span>做题记录</span></div>
-        <div class="sidebar-nav-item" onclick="window.location.href='09-statistics.html'"><ion-icon name="bar-chart-outline"></ion-icon><span>统计</span></div>
-        <div class="sidebar-nav-item" onclick="window.location.href='13-notifications.html'"><ion-icon name="notifications-outline"></ion-icon><span>通知</span></div>
-        <div class="sidebar-nav-item" onclick="window.location.href='12-search.html'"><ion-icon name="search-outline"></ion-icon><span>搜索</span></div>
-        <div class="sidebar-nav-label">管理</div>
-        <div class="sidebar-nav-item" onclick="window.location.href='15-admin-users.html'"><ion-icon name="people-outline"></ion-icon><span>用户管理</span></div>
-        <div class="sidebar-nav-item" onclick="window.location.href='28-admin-reviews.html'"><ion-icon name="checkmark-done-outline"></ion-icon><span>审核列表</span></div>
+      <nav class="sidebar-nav" data-page-node-id="lYWYEQ22ZwCsK0MFPbxEyM">
+        <div class="sidebar-nav-item" onclick="window.location.href='01-home.html'" data-page-node-id="JVMuVVEKpxrD1tnYeTB6U0"><ion-icon name="home-outline" data-page-node-id="S88rjDWDSLUBQitRcLkoCe"></ion-icon><span data-page-node-id="aerhel9tvFfBHeqftBTW4B">首页</span></div>
+        <div class="sidebar-nav-item" onclick="window.location.href='02-bank-list.html'" data-page-node-id="1x2B96p2HugzUXEcijzEXE"><ion-icon name="library-outline" data-page-node-id="vVYT0ATMSo9DYrueAn7KFg"></ion-icon><span data-page-node-id="69HtMKoQlppNsV3oZeFsgo">题库</span></div>
+        <div class="sidebar-nav-item" onclick="window.location.href='04-question-list.html'" data-page-node-id="v6YJXYrKwHkVK8Z5AYeUNS"><ion-icon name="document-text-outline" data-page-node-id="JBCcktzmMP6rYTlEPnUGeX"></ion-icon><span data-page-node-id="iixRzGiMPhQF0EgkQqVBE1">题目</span></div>
+        <div class="sidebar-nav-item" onclick="window.location.href='05-paper-list.html'" data-page-node-id="zitgPbmDGM9ldK4x807iP9"><ion-icon name="file-tray-full-outline" data-page-node-id="Z8kTYfTQqnnyQxZjmBzAdp"></ion-icon><span data-page-node-id="mvAgetjNkzscydSnGFwOKL">试卷</span></div>
+        <div class="sidebar-nav-label" data-page-node-id="MKUXY3Gxd6fITjYD83dxCh">学习中心</div>
+        <div class="sidebar-nav-item" onclick="window.location.href='24-practice-list.html'" data-page-node-id="I2rs15vHmA2dUwaFmsGhpX"><ion-icon name="game-controller-outline" data-page-node-id="jpi9up0KJh2TiD3ZVXm5o1"></ion-icon><span data-page-node-id="pElzkngF0l9Q63ZVht4Iw8">练习</span></div>
+        <div class="sidebar-nav-item" onclick="window.location.href='19-playground.html'" data-page-node-id="6Qb5Aho3V5BJkNEZZIczX2"><ion-icon name="code-slash-outline" data-page-node-id="nCTqFSC6zc1Y3TTm2B3iqZ"></ion-icon><span data-page-node-id="BhiV5EqECnHoai7R5cU3Xn">代码运行台</span></div>
+        <div class="sidebar-nav-item" onclick="window.location.href='10-wrong-questions.html'" data-page-node-id="z1jrcsOw01ivpOXiW3Ch2X"><ion-icon name="close-circle-outline" data-page-node-id="7ucc0Muw5BBejazDN4fIaZ"></ion-icon><span data-page-node-id="9wrXTDfdccVeYtECfllrqM">错题本</span></div>
+        <div class="sidebar-nav-item active" onclick="window.location.href='18-favorites.html'" data-page-node-id="nMFwuzIGIwhDUHy0C9aAw7"><ion-icon name="star-outline" data-page-node-id="HJQRZqu4Q6bhHJhS2Jq8EV"></ion-icon><span data-page-node-id="dR4HHTi95EDWz2fSTxPLUB">收藏题目</span></div>
+        <div class="sidebar-nav-item" onclick="window.location.href='11-records.html'" data-page-node-id="BTMz9gaPmzhZOeuUtp6LFD"><ion-icon name="time-outline" data-page-node-id="cMC0ICubyh3Nl1jK9hXq3P"></ion-icon><span data-page-node-id="XEB5aXHIyHADp77zCEZ4Du">做题记录</span></div>
+        <div class="sidebar-nav-item" onclick="window.location.href='20-exam-records.html'" data-page-node-id="qubWeAgUMJFnW80bUSFBt7"><ion-icon name="document-text-outline" data-page-node-id="be8K8kl6qM1SO3tcH0BxnZ"></ion-icon><span data-page-node-id="4OYWn8ZxanyXuUbqdeaMJi">考试记录</span></div>
+        <div class="sidebar-nav-item" onclick="window.location.href='09-statistics.html'" data-page-node-id="3OgvLd6O7CXZoXy5WNkaUW"><ion-icon name="bar-chart-outline" data-page-node-id="rjVx0hm6mQAEK4DCHtF3g9"></ion-icon><span data-page-node-id="YeIZufwkCqOEl1XkrvRKgd">统计</span></div>
+        <div class="sidebar-nav-item" onclick="window.location.href='13-notifications.html'" data-page-node-id="0iBRYrDA7S4JJkP6UmV9YJ"><ion-icon name="notifications-outline" data-page-node-id="lJulmfyTaSLzFa0dAV18sn"></ion-icon><span data-page-node-id="6tnqlzZbsrs7HNfbmBhq7l">通知</span></div>
+        <div class="sidebar-nav-item" onclick="window.location.href='12-search.html'" data-page-node-id="OnMU3RWoPfQ2FPJzjKKyE5"><ion-icon name="search-outline" data-page-node-id="qCScd6BXpP8cQagmaozibi"></ion-icon><span data-page-node-id="f391afB2ihYuoURSwy0djD">搜索</span></div>
+        <div class="sidebar-nav-label" data-page-node-id="8CpNDNPCMi4TxpdrbuBWz1">管理</div>
+        <div class="sidebar-nav-item" onclick="window.location.href='15-admin-users.html'" data-page-node-id="sn0BvJCf91ypatLPrQoYDa"><ion-icon name="people-outline" data-page-node-id="ML9c1x0fP1WaCQ1oBBlPVM"></ion-icon><span data-page-node-id="o1AMbDHPrAfk6T2ykUCU6a">用户管理</span></div>
+        <div class="sidebar-nav-item" onclick="window.location.href='31-admin-reviews.html'" data-page-node-id="ljQsnmKeKeu2u3KK1eH6Ez"><ion-icon name="checkmark-done-outline" data-page-node-id="q4O34ozcb4Yamhi7kyfWbr"></ion-icon><span data-page-node-id="1vePS7O6TL8DTJMQAIL4vk">审核列表</span></div>
       </nav>
-      <div class="sidebar-footer">
-        <div class="sidebar-nav-item"><ion-icon name="log-out-outline"></ion-icon><span>退出登录</span></div>
+      <div class="sidebar-footer" data-page-node-id="4jDj9JUeu13K7qcSryCScr">
+        <div class="sidebar-nav-item" data-page-node-id="ce2DREjyVSUHhcnVuyQDGp"><ion-icon name="log-out-outline" data-page-node-id="rTFO9keTzYQrwe3wg5ZllW"></ion-icon><span data-page-node-id="S7aNCDUQYHN2oEhWNPEzaQ">退出登录</span></div>
       </div>
     </aside>
 
-    <!-- Main Area -->
-    <div class="main-area">
-      <header class="app-header">
-        <div class="app-header-left">
-          <button class="mobile-menu-btn" onclick="document.querySelector('.sidebar').classList.toggle('mobile-open')"><ion-icon name="menu-outline"></ion-icon></button>
-          <div class="breadcrumb">
-            <span class="breadcrumb-current">收藏题目</span>
-          </div>
+    <div class="main-area" data-page-node-id="CbWzNR5YK5zjZVoeDKEDLJ">
+      <header class="app-header" data-page-node-id="78mLtfoEPIWVSJJbxikCIc">
+        <div class="app-header-left" data-page-node-id="2exs7AyR9BFxxLlaT8aA14">
+          <button class="mobile-menu-btn" onclick="document.querySelector('.sidebar').classList.toggle('mobile-open')" data-page-node-id="XyVjDkRR2GOSdkY53HwWsg"><ion-icon name="menu-outline" data-page-node-id="Q2X9WkDYeAxyE9GQ76s8jC"></ion-icon></button>
+          <div class="breadcrumb" data-page-node-id="Xe9qKAEkzsXPxgpFTNGyHz"><span class="breadcrumb-current" data-page-node-id="KdJ4wly6dpCrzQvqRz99uh">收藏题目</span></div>
         </div>
-        <div class="app-header-right">
-          <div class="header-search">
-            <ion-icon name="search-outline"></ion-icon>
-            <input class="input" type="text" placeholder="搜索题目 / 题库 / 试卷" readonly style="cursor:pointer;" onclick="window.location.href='12-search.html'">
+        <div class="app-header-right" data-page-node-id="iyYSdVcdQwLFpN12XFaguY">
+          <div class="header-search" data-page-node-id="GmrW4bjZNfiUmgT8VMzLxz">
+            <ion-icon name="search-outline" data-page-node-id="sGzIcxZ9TDPRiivJZgcV7q"></ion-icon>
+            <input class="input" type="text" placeholder="搜索题目 / 题库 / 试卷" readonly style="cursor:pointer;" onclick="window.location.href='12-search.html'" data-page-node-id="S1tmaL8TeUG1HuApPn5IAd">
           </div>
-          <div style="position:relative;cursor:pointer;" onclick="window.location.href='13-notifications.html'">
-            <ion-icon name="notifications-outline" style="font-size:22px;color:var(--text-secondary);"></ion-icon>
-            <span class="badge" style="position:absolute;top:-4px;right:-4px;">3</span>
+          <div style="position:relative;cursor:pointer;" onclick="window.location.href='13-notifications.html'" data-page-node-id="KDCG3uEXcfxIB5f7m83FcB">
+            <ion-icon name="notifications-outline" style="font-size:22px;color:var(--text-secondary);" data-page-node-id="dHNcu3zlonnN6WYqR3Bsfk"></ion-icon>
           </div>
-          <div style="display:flex;align-items:center;gap:8px;cursor:pointer;" onclick="window.location.href='14-profile.html'">
-            <div class="avatar" style="background:var(--gradient-brand);">张</div>
-            <span style="font-size:14px;font-weight:500;color:var(--text-primary);">张同学</span>
-            <ion-icon name="chevron-down-outline" style="font-size:16px;color:var(--text-tertiary);"></ion-icon>
+          <div style="display:flex;align-items:center;gap:8px;cursor:pointer;" onclick="window.location.href='14-profile.html'" data-page-node-id="NwIS2rknQ5oyInsYkAWpWQ">
+            <div class="avatar" style="background:var(--gradient-brand);" data-page-node-id="ewAtGdbGp0RoObhEtnjBAE">张</div>
+            <span style="font-size:14px;font-weight:500;color:var(--text-primary);" data-page-node-id="9ocy1Adm94t1EWYTWCQRp5">张同学</span>
+            <ion-icon name="chevron-down-outline" style="font-size:16px;color:var(--text-tertiary);" data-page-node-id="lM1FvFtAVtuP2ioJ5Dfwn0"></ion-icon>
           </div>
         </div>
       </header>
 
-      <main class="app-content">
-        <!-- Page Header -->
-        <div class="page-header">
-          <h1 class="page-title">收藏题目</h1>
-          <button class="btn btn-secondary">
-            <ion-icon name="download-outline"></ion-icon>
-            <span>批量导出</span>
+      <main class="app-content" data-page-node-id="MOFo1F7eXufghKbN8cLCjr">
+        <!-- ==================== 形态一：正常态 — favList.length > 0 ==================== -->
+
+        <!-- PageHeader：title + subtitle(`共 ${itemCount} 道收藏题目`) + actions(批量导出, secondary, loading=exporting) -->
+        <div class="page-header" data-page-node-id="SGGg8oc9EHoLoDfKU1ucEq">
+          <div data-page-node-id="APfEQ1CC5WEaNinS2wFZYT">
+            <h1 class="page-header-title" data-page-node-id="zEfFEUiF6Jwf26bLMxACWG">收藏题目</h1>
+            <p class="page-header-subtitle" data-page-node-id="0tFwtqN3XKQCqLe7UEjxJn">共 128 道收藏题目</p>
+          </div>
+          <button class="btn btn-secondary" data-page-node-id="zLMbmHvb9sulfQDMiyfB2P">
+            <ion-icon name="download-outline" style="font-size:16px;" data-page-node-id="rR5f8LYYDIy1ZbCmuoA7dt"></ion-icon>
+            <span data-page-node-id="Mzo0Uviyv5P0JdAwyoTfFy">批量导出</span>
           </button>
         </div>
 
-        <!-- Summary Bar -->
-        <div class="summary-bar">
-          <div class="summary-item">
-            <div class="summary-icon brand"><ion-icon name="star-outline"></ion-icon></div>
-            <div class="summary-info">
-              <div class="summary-label">收藏总数</div>
-              <div class="summary-value">128</div>
+        <!-- 统计卡：getFavoriteStats（后端就绪前保持 0 占位）StatCard label/value/tone + suffix 图标 -->
+        <div class="stat-grid" data-page-node-id="W8MhZbM0sj8mhWhC3I2Zqd">
+          <div class="stat-card-x" data-page-node-id="26GRGqP2V9r1HpblG43vw1">
+            <div class="l" data-page-node-id="rdMEPLpyb9hD9PSxFDmSTO">收藏总数</div>
+            <div class="v brand" data-page-node-id="FlyL7wdtWH3LpJ6W8OW7c4">128<ion-icon name="star-outline" data-page-node-id="r7BqmxcfhsyaPenYIQRdl1"></ion-icon></div>
+          </div>
+          <div class="stat-card-x" data-page-node-id="o3GWXSLektkV08MD0VUEE2">
+            <div class="l" data-page-node-id="8wIxFPEqglvCXIQ8Oq2MBR">本周新增</div>
+            <div class="v success" data-page-node-id="7bbL1B6Z0gHdlcEbE6oG3n">12<ion-icon name="add-circle-outline" data-page-node-id="ilREuyV9wXpX5orlnYF6wA"></ion-icon></div>
+          </div>
+          <div class="stat-card-x" data-page-node-id="itQ4Y7a9G4okqcMfXxA2eH">
+            <div class="l" data-page-node-id="8xCECivYy74siAES1muf5S">本月练习</div>
+            <div class="v warning" data-page-node-id="T8Jg1oPJ9BcBS1EvrFuaYF">45<ion-icon name="bar-chart-outline" data-page-node-id="s0bJENCR5unjLnOAKpuBd1"></ion-icon></div>
+          </div>
+        </div>
+
+        <!-- FilterBar：题库下拉(全部题库) + 标签下拉(全部标签) + 题型 radio-button + 排序下拉 -->
+        <div class="filter-bar" data-page-node-id="ZqKbAOROvvZ2bqFDJqylVT">
+          <select class="filter-select" style="width:200px;" data-page-node-id="ndL5KF5vxoaGsDvdsevtkR"><option data-page-node-id="ZNJaoDLgQ8edbyV9UjL80R">全部题库</option><option data-page-node-id="WXDhIuvCKFK4ypGFnUFQMn">Java基础与进阶</option><option data-page-node-id="GiipSvRatsXNuALNkBxvr2">计算机网络</option><option data-page-node-id="YLtDcKzyDBtecAW2fuyciE">Python入门</option></select>
+          <select class="filter-select" style="width:200px;" data-page-node-id="2k0TQqXod2yTjLKdi7izh9"><option data-page-node-id="4tvFOGnhPwaFE0C5ZAsLef">全部标签</option><option data-page-node-id="2KjeaA3gpK4Ayw7xHxC5Ac">基础概念</option><option data-page-node-id="rAugP2Pn5LqYWwIVjYjqYX">集合框架</option><option data-page-node-id="DTNqmMrmSNaq3yt6KbTa05">传输层</option></select>
+          <div class="filter-divider" data-page-node-id="wLDQyTgepR6AGifiHFde3r"></div>
+          <div class="type-tabs" data-page-node-id="PZfAk6ukgL65Bwnd71X5Kh">
+            <div class="type-tab active" data-page-node-id="vAOG6O3T4IZ3CB9AKQCN5i">全部</div>
+            <div class="type-tab" data-page-node-id="655N6Dq11niJuOpm7wAeK9">单选</div>
+            <div class="type-tab" data-page-node-id="GViViFj1SIAhWMNMjNV2ne">多选</div>
+            <div class="type-tab" data-page-node-id="jvYE6mS11A9BVkXRmdAutn">判断</div>
+            <div class="type-tab" data-page-node-id="IDhGwPXFIftySvigU4nZdI">填空</div>
+            <div class="type-tab" data-page-node-id="IzKGkfci2eKmSqMdsAXYIS">简答</div>
+          </div>
+          <div class="filter-divider" data-page-node-id="G86bJG8NKAifw5r5Fyxswe"></div>
+          <select class="filter-select" style="width:160px;" data-page-node-id="2uScwobVzsdjjKBrSDtoh9">
+            <option data-page-node-id="Toy7ja9eQMYgHJ6EflNHaC">最近收藏</option>
+            <option data-page-node-id="pCv1i8yDhEFcUNEigOqaOi">收藏时间最早</option>
+          </select>
+        </div>
+
+        <!-- 收藏列表：左侧 star + 题型/难度 round tag；中间题干(plainContent，点击跳原题) + meta(题库名/标签名)；右侧日期 + 查看详情/取消收藏 -->
+        <div class="fav-list" data-page-node-id="wvnh4rSIdQugJ5QqtH3bZz">
+          <div class="fav-card" data-page-node-id="VDONARQ0LbCOmSi0v22nOG">
+            <div class="fav-left" data-page-node-id="JM2XCCWyVnBwZwE5k04CvN">
+              <div class="fav-star" data-page-node-id="ghUFCahLZV16cndhrJQZJr"><ion-icon name="star" data-page-node-id="0b1KNFwogyEzFjz30Mld7C"></ion-icon></div>
+              <div class="fav-tags" data-page-node-id="S0g4z6mK2OWYQ51DvGFseC">
+                <span class="tag tag-info tag-round" data-page-node-id="pWBXBaYemA51QV1FTwMpjG">单选题</span>
+                <span class="tag tag-success tag-round" data-page-node-id="A98CjkaJW4pOVj5gOomcfn">简单</span>
+              </div>
+            </div>
+            <div class="fav-middle" data-page-node-id="3SfeuZOyRG0RTyn0EDH1Dl">
+              <div class="fav-content" data-page-node-id="bfLmkL6TPWisimBr8qBuhH">以下哪个不是 Java 的基本数据类型？</div>
+              <div class="fav-meta" data-page-node-id="lPi1VLnODPPs9ARu2QtHLO">
+                <span class="fav-meta-item" data-page-node-id="pTBGt4DwmCu64rtBQJ58L1"><ion-icon name="library-outline" data-page-node-id="Y5Auj95kGKCI6hqYnEix54"></ion-icon>Java基础与进阶</span>
+                <span class="fav-meta-item" data-page-node-id="eTTpKziCIILKtetaeVDPB8"><ion-icon name="pricetag-outline" data-page-node-id="tNYkapG6fo9P7fhWNaWklg"></ion-icon>基础概念</span>
+              </div>
+            </div>
+            <div class="fav-right" data-page-node-id="9UGpJ7OmgPvb5B5vJMVvDk">
+              <span class="fav-date" data-page-node-id="lNl6FPjh1jGzrl45xs5MxD">2025-09-03</span>
+              <button class="btn-quaternary brand" data-page-node-id="SlfwZUHFGTkimZMCoqEd0w">查看详情</button>
+              <button class="btn-quaternary error" data-page-node-id="ddz1sUhIMe8xYAnlKaqvHv">取消收藏</button>
             </div>
           </div>
-          <div class="summary-item">
-            <div class="summary-icon success"><ion-icon name="add-circle-outline"></ion-icon></div>
-            <div class="summary-info">
-              <div class="summary-label">本周新增</div>
-              <div class="summary-value">12</div>
+
+          <div class="fav-card" data-page-node-id="fzInTqnEpy0XzIA9ZCjJAC">
+            <div class="fav-left" data-page-node-id="8p1sTnzqgQrd59bOIJgEeV">
+              <div class="fav-star" data-page-node-id="jI77kZRi457rQOFEFxLsAg"><ion-icon name="star" data-page-node-id="D72o941ZpAYgHsVCiMRO2k"></ion-icon></div>
+              <div class="fav-tags" data-page-node-id="w1TkhuuGogsnVPsQcUTKyf">
+                <span class="tag tag-warning tag-round" data-page-node-id="m9GY1fxJhOZTXHijD09S9p">多选题</span>
+                <span class="tag tag-error tag-round" data-page-node-id="D2f5XTCb1Dfh3U9hebtZoe">困难</span>
+              </div>
+            </div>
+            <div class="fav-middle" data-page-node-id="qTGbAg6Wys3TsVUr99mdal">
+              <div class="fav-content" data-page-node-id="d7tFT8ziU86bhtm3eRik7H">关于 Java 集合框架，以下说法正确的有？</div>
+              <div class="fav-meta" data-page-node-id="cOybnMiwW6DWvSZahQ7gQA">
+                <span class="fav-meta-item" data-page-node-id="zl2wovRubqrBHis8dScybn"><ion-icon name="library-outline" data-page-node-id="yPaZ4hSsPcyoKyteT3G7Cy"></ion-icon>Java基础与进阶</span>
+                <span class="fav-meta-item" data-page-node-id="osWEkG85QeE0owAYMpdr46"><ion-icon name="pricetag-outline" data-page-node-id="ymIwk4DRxTH08OJpvNrK62"></ion-icon>集合框架、泛型</span>
+              </div>
+            </div>
+            <div class="fav-right" data-page-node-id="s9GK8MBBCXK7XLdkrVECXA">
+              <span class="fav-date" data-page-node-id="tYBBX3gzQM0MFgnAfyfVpm">2025-09-01</span>
+              <button class="btn-quaternary brand" data-page-node-id="bXx5v2qu7uq7G64fHXQVUC">查看详情</button>
+              <button class="btn-quaternary error" data-page-node-id="RqpNvKSqHjlexoHgmZ5Rwp">取消收藏</button>
             </div>
           </div>
-          <div class="summary-item">
-            <div class="summary-icon warning"><ion-icon name="bar-chart-outline"></ion-icon></div>
-            <div class="summary-info">
-              <div class="summary-label">本月练习</div>
-              <div class="summary-value">45</div>
+
+          <div class="fav-card" data-page-node-id="VCRYa0FactE1XBmCmM4xRp">
+            <div class="fav-left" data-page-node-id="DTUBGg7PXtkQuMuCiYgzAN">
+              <div class="fav-star" data-page-node-id="rrV8vAjidpECYnNp3ASTh5"><ion-icon name="star" data-page-node-id="Jr7gDjwpPJ1dXCzkGpmV5V"></ion-icon></div>
+              <div class="fav-tags" data-page-node-id="YUBtPEw2CTkt999rZ4Swmu">
+                <span class="tag tag-success tag-round" data-page-node-id="iDl5Y2JlwVjuZGSsHEvi5R">判断题</span>
+                <span class="tag tag-warning tag-round" data-page-node-id="fYKoIu1aL1ZEuKXIzHqxPN">中等</span>
+              </div>
+            </div>
+            <div class="fav-middle" data-page-node-id="hXxQRzpRwmEMRXVVDVr1OL">
+              <div class="fav-content" data-page-node-id="4R9ZywkBDeBLBJHGqUbEPg">TCP 协议是面向连接的可靠传输协议。</div>
+              <div class="fav-meta" data-page-node-id="xbWGpsGOWGygZSZzCsQeis">
+                <span class="fav-meta-item" data-page-node-id="VmZjHCbbKu8eS75erKMEdq"><ion-icon name="library-outline" data-page-node-id="DwEgg2dqqLD4SxpOVM7wS7"></ion-icon>计算机网络</span>
+                <span class="fav-meta-item" data-page-node-id="56HIB443xUKdLiYULxSJQa"><ion-icon name="pricetag-outline" data-page-node-id="JIA6ojHIZn2clQo4nFcemC"></ion-icon>传输层</span>
+              </div>
+            </div>
+            <div class="fav-right" data-page-node-id="saBtWVGQhpXqJHmiBSKECn">
+              <span class="fav-date" data-page-node-id="c9cxhck3UDO02iXGBQKG3a">2025-08-30</span>
+              <button class="btn-quaternary brand" data-page-node-id="2Y2b3BMDBFIQyp3D0N35SP">查看详情</button>
+              <button class="btn-quaternary error" data-page-node-id="Gtb6ZMFlLWkRr8R6b6OthU">取消收藏</button>
             </div>
           </div>
-          <div class="summary-item">
-            <div class="summary-icon error"><ion-icon name="alert-circle-outline"></ion-icon></div>
-            <div class="summary-info">
-              <div class="summary-label">待复习</div>
-              <div class="summary-value">23</div>
+
+          <div class="fav-card" data-page-node-id="KsCBj6LGVbHS4Uc344qxPf">
+            <div class="fav-left" data-page-node-id="xJQNLFAEQW14rRUwzoqGYG">
+              <div class="fav-star" data-page-node-id="gK9QZcQDLA3ADRpzVxIzg4"><ion-icon name="star" data-page-node-id="qBn7iViaMKIZwsC7yZD8SC"></ion-icon></div>
+              <div class="fav-tags" data-page-node-id="P7hpPuFzh6o5iVUqRMu05H">
+                <span class="tag tag-info tag-round" data-page-node-id="OOxU5FYGbXxRs54WiDxu0s">单选题</span>
+                <span class="tag tag-warning tag-round" data-page-node-id="SKz9PFSdJcMCiqZoa0GFXw">中等</span>
+              </div>
+            </div>
+            <div class="fav-middle" data-page-node-id="vzdRwJ2E6MspPmNoycN2bZ">
+              <div class="fav-content" data-page-node-id="b1ojn2yPrQNZhW0rChEQnz">在 Python 中，以下哪个不是内置数据类型？</div>
+              <div class="fav-meta" data-page-node-id="wHE6wlHSpEXzYvmDUFEWUt">
+                <span class="fav-meta-item" data-page-node-id="f7L1eQGr8LqGt6tlnVun4i"><ion-icon name="library-outline" data-page-node-id="MMNLKPAKrWjImyBgAah5Ky"></ion-icon>Python入门</span>
+                <span class="fav-meta-item" data-page-node-id="mcTyMsl6Bpmgx9LWQQE8Gu"><ion-icon name="pricetag-outline" data-page-node-id="9perOk95pEZjEIFGFG2Lb2"></ion-icon>数据类型</span>
+              </div>
+            </div>
+            <div class="fav-right" data-page-node-id="BNoEayvAzTUDZFm269AoOm">
+              <span class="fav-date" data-page-node-id="7lAJg8BOtDlg5U8Aj80ltt">2025-08-28</span>
+              <button class="btn-quaternary brand" data-page-node-id="AXxIzNaeUqCIvhA2Yi1Nc3">查看详情</button>
+              <button class="btn-quaternary error" data-page-node-id="Qy4JHB9JWlQ0FQ3YSBusWT">取消收藏</button>
             </div>
           </div>
         </div>
 
-        <!-- Filter Bar -->
-        <div class="filter-bar">
-          <select class="filter-select">
-            <option>全部题库</option>
-            <option>Java基础与进阶</option>
-            <option>Python入门</option>
-            <option>数据结构</option>
-            <option>计算机网络</option>
-            <option>数据库原理</option>
-          </select>
-          <select class="filter-select">
-            <option>全部标签</option>
-            <option>基础概念</option>
-            <option>进阶</option>
-            <option>易错点</option>
-          </select>
-          <div class="filter-divider"></div>
-          <div class="type-tabs">
-            <div class="type-tab active">全部</div>
-            <div class="type-tab">单选</div>
-            <div class="type-tab">多选</div>
-            <div class="type-tab">判断</div>
-            <div class="type-tab">填空</div>
-            <div class="type-tab">简答</div>
+        <!-- 分页：v-if="pagination.itemCount > pagination.pageSize"，右对齐，无卡片包裹、无总数文案 -->
+        <div class="flex justify-end" style="margin-top: var(--space-5);" data-page-node-id="FI6KrX6KKIj9oFeEYTONjU">
+          <div class="pagination" data-page-node-id="W8Q4KzUkzq1rafGHqtCka0">
+            <button class="page-btn" disabled data-page-node-id="Isj9SjmzkPhCSXrl0Z45WT"><ion-icon name="chevron-back-outline" style="font-size:16px;" data-page-node-id="zdp5Q6Ma5De1TEgCab7U8A"></ion-icon></button>
+            <button class="page-btn active" data-page-node-id="C9zQr8VMSrlCpYudVLydcq">1</button>
+            <button class="page-btn" data-page-node-id="40H7CQAwsLDZQ9KV2MzAcV">2</button>
+            <button class="page-btn" data-page-node-id="AtxHmp5g6rBkOGF4tEpG4l">3</button>
+            <button class="page-btn" data-page-node-id="BLGLJskukCzPQHWCzEuUEf"><ion-icon name="chevron-forward-outline" style="font-size:16px;" data-page-node-id="NZsHiuS3Bxix05HdSdDlMq"></ion-icon></button>
           </div>
-          <div class="filter-divider"></div>
-          <select class="filter-select">
-            <option>最近收藏</option>
-            <option>收藏时间最早</option>
-            <option>错误次数最多</option>
-          </select>
         </div>
 
-        <!-- Favorite Question List -->
-        <div class="wq-list">
-
-          <!-- Item 1 -->
-          <div class="wq-card">
-            <div class="wq-left">
-              <div class="wq-num"><ion-icon name="star"></ion-icon></div>
-              <div class="wq-tags">
-                <div class="wq-tags-row">
-                  <span class="tag tag-info">单选</span>
-                  <span class="tag tag-success">简单</span>
-                </div>
-              </div>
-            </div>
-            <div class="wq-middle">
-              <div class="wq-content">以下哪个不是 Java 的基本数据类型？</div>
-              <div class="wq-meta">
-                <span class="wq-meta-item"><ion-icon name="library-outline"></ion-icon>Java基础与进阶</span>
-                <span class="wq-meta-item"><ion-icon name="pricetag-outline"></ion-icon>基础概念</span>
-              </div>
-            </div>
-            <div class="wq-right">
-              <span class="wq-date">2025-09-03</span>
-              <div class="wq-actions">
-                <button class="btn-text brand">查看详情</button>
-                <button class="btn-text error">取消收藏</button>
-              </div>
-            </div>
+        <!-- ==================== 形态二：加载态 — loading && favList.length === 0 ==================== -->
+        <div class="form-divider" id="loading" data-page-node-id="FGEALGw5AcN0W1S7VndiEy"><span data-page-node-id="K8v4RAOKytu8GryFUAxefF">形态二 · 加载态 — SkeletonList(count=4, cols=1)</span></div>
+        <div class="sk-list" data-page-node-id="NMZccIYAMsOvC2tF4T8CUJ">
+          <div class="sk-item" data-page-node-id="X4JE2SZL2ryvCJDb8iKul6">
+            <div class="skeleton sk-line-head" data-page-node-id="pjpWVuQE9wLOKzbQuYtyCg"></div>
+            <div class="skeleton skeleton-text" data-page-node-id="dU6UphI3IypL2t1ewkRCwv"></div>
+            <div class="skeleton skeleton-text" data-page-node-id="fXUQpl1xc8YYFG8VVdBmu3"></div>
+            <div class="skeleton skeleton-text" data-page-node-id="JeQDRL7zw7ovwWG8soGImy"></div>
+            <div class="skeleton skeleton-text" style="width:40%;" data-page-node-id="ihMu3IFDwnQRrlpIkHJlSI"></div>
           </div>
-
-          <!-- Item 2 -->
-          <div class="wq-card">
-            <div class="wq-left">
-              <div class="wq-num"><ion-icon name="star"></ion-icon></div>
-              <div class="wq-tags">
-                <div class="wq-tags-row">
-                  <span class="tag tag-info">多选</span>
-                  <span class="tag tag-error">困难</span>
-                </div>
-              </div>
-            </div>
-            <div class="wq-middle">
-              <div class="wq-content">关于 Java 集合框架，以下说法正确的有？</div>
-              <div class="wq-meta">
-                <span class="wq-meta-item"><ion-icon name="library-outline"></ion-icon>Java基础与进阶</span>
-                <span class="wq-meta-item"><ion-icon name="pricetag-outline"></ion-icon>集合框架</span>
-              </div>
-            </div>
-            <div class="wq-right">
-              <span class="wq-date">2025-09-01</span>
-              <div class="wq-actions">
-                <button class="btn-text brand">查看详情</button>
-                <button class="btn-text error">取消收藏</button>
-              </div>
-            </div>
+          <div class="sk-item" data-page-node-id="JNjersHb4kaTByk8kjCnmp">
+            <div class="skeleton sk-line-head" data-page-node-id="NgdQSpwN8IJNkRsgg82Tsa"></div>
+            <div class="skeleton skeleton-text" data-page-node-id="6NcanlxRkvbkhijaMmNL7w"></div>
+            <div class="skeleton skeleton-text" data-page-node-id="Jo7EoWXCZwuG7il0JvoS4J"></div>
+            <div class="skeleton skeleton-text" data-page-node-id="8trZLAMLhzuhlZJRraFNvb"></div>
+            <div class="skeleton skeleton-text" style="width:40%;" data-page-node-id="GPxRbVGKMKL5WDZp2oRquF"></div>
           </div>
-
-          <!-- Item 3 -->
-          <div class="wq-card">
-            <div class="wq-left">
-              <div class="wq-num"><ion-icon name="star"></ion-icon></div>
-              <div class="wq-tags">
-                <div class="wq-tags-row">
-                  <span class="tag tag-warning">判断</span>
-                  <span class="tag tag-warning">中等</span>
-                </div>
-              </div>
-            </div>
-            <div class="wq-middle">
-              <div class="wq-content">TCP 协议是面向连接的可靠传输协议。</div>
-              <div class="wq-meta">
-                <span class="wq-meta-item"><ion-icon name="library-outline"></ion-icon>计算机网络</span>
-                <span class="wq-meta-item"><ion-icon name="pricetag-outline"></ion-icon>传输层</span>
-              </div>
-            </div>
-            <div class="wq-right">
-              <span class="wq-date">2025-08-30</span>
-              <div class="wq-actions">
-                <button class="btn-text brand">查看详情</button>
-                <button class="btn-text error">取消收藏</button>
-              </div>
-            </div>
+          <div class="sk-item" data-page-node-id="PPCN4v9D8yDstoUjWfI5mZ">
+            <div class="skeleton sk-line-head" data-page-node-id="5T3txhrjxFYJgoxbH0FKBh"></div>
+            <div class="skeleton skeleton-text" data-page-node-id="q5zHVoLG2SkuK702qd6s42"></div>
+            <div class="skeleton skeleton-text" data-page-node-id="MQJhAI62pFEOwibmnGpaHe"></div>
+            <div class="skeleton skeleton-text" data-page-node-id="UAwcGv9v2CpcWQMOiH1WFO"></div>
+            <div class="skeleton skeleton-text" style="width:40%;" data-page-node-id="rrMycAZ78G023itGUjDEXg"></div>
           </div>
-
-          <!-- Item 4 -->
-          <div class="wq-card">
-            <div class="wq-left">
-              <div class="wq-num"><ion-icon name="star"></ion-icon></div>
-              <div class="wq-tags">
-                <div class="wq-tags-row">
-                  <span class="tag tag-info">单选</span>
-                  <span class="tag tag-warning">中等</span>
-                </div>
-              </div>
-            </div>
-            <div class="wq-middle">
-              <div class="wq-content">在 Python 中，以下哪个不是内置数据类型？</div>
-              <div class="wq-meta">
-                <span class="wq-meta-item"><ion-icon name="library-outline"></ion-icon>Python入门</span>
-                <span class="wq-meta-item"><ion-icon name="pricetag-outline"></ion-icon>数据类型</span>
-              </div>
-            </div>
-            <div class="wq-right">
-              <span class="wq-date">2025-08-28</span>
-              <div class="wq-actions">
-                <button class="btn-text brand">查看详情</button>
-                <button class="btn-text error">取消收藏</button>
-              </div>
-            </div>
+          <div class="sk-item" data-page-node-id="DN0iUEyjZ3lEgXXi0HPufG">
+            <div class="skeleton sk-line-head" data-page-node-id="CxlH31qsgUYZxUMXmNYk1w"></div>
+            <div class="skeleton skeleton-text" data-page-node-id="VnITWDxfXE47DsfXRbdUzZ"></div>
+            <div class="skeleton skeleton-text" data-page-node-id="kifIWGjS10i1zUc8dvtKBy"></div>
+            <div class="skeleton skeleton-text" data-page-node-id="R8LKU217qdOrCxPmVAtxVo"></div>
+            <div class="skeleton skeleton-text" style="width:40%;" data-page-node-id="CtEV77TcF1xYncUZ1SbHeC"></div>
           </div>
-
-          <!-- Item 5 -->
-          <div class="wq-card">
-            <div class="wq-left">
-              <div class="wq-num"><ion-icon name="star"></ion-icon></div>
-              <div class="wq-tags">
-                <div class="wq-tags-row">
-                  <span class="tag tag-info">多选</span>
-                  <span class="tag tag-warning">中等</span>
-                </div>
-              </div>
-            </div>
-            <div class="wq-middle">
-              <div class="wq-content">以下哪些是操作系统的基本功能？</div>
-              <div class="wq-meta">
-                <span class="wq-meta-item"><ion-icon name="library-outline"></ion-icon>操作系统</span>
-                <span class="wq-meta-item"><ion-icon name="pricetag-outline"></ion-icon>基础概念</span>
-              </div>
-            </div>
-            <div class="wq-right">
-              <span class="wq-date">2025-08-25</span>
-              <div class="wq-actions">
-                <button class="btn-text brand">查看详情</button>
-                <button class="btn-text error">取消收藏</button>
-              </div>
-            </div>
-          </div>
-
-          <!-- Item 6 -->
-          <div class="wq-card">
-            <div class="wq-left">
-              <div class="wq-num"><ion-icon name="star"></ion-icon></div>
-              <div class="wq-tags">
-                <div class="wq-tags-row">
-                  <span class="tag tag-info">单选</span>
-                  <span class="tag tag-error">困难</span>
-                </div>
-              </div>
-            </div>
-            <div class="wq-middle">
-              <div class="wq-content">数据库范式中，3NF 消除了哪种依赖？</div>
-              <div class="wq-meta">
-                <span class="wq-meta-item"><ion-icon name="library-outline"></ion-icon>数据库原理</span>
-                <span class="wq-meta-item"><ion-icon name="pricetag-outline"></ion-icon>范式理论</span>
-              </div>
-            </div>
-            <div class="wq-right">
-              <span class="wq-date">2025-08-22</span>
-              <div class="wq-actions">
-                <button class="btn-text brand">查看详情</button>
-                <button class="btn-text error">取消收藏</button>
-              </div>
-            </div>
-          </div>
-
         </div>
 
-        <!-- Pagination -->
-        <div class="card mt-5">
-          <div class="pagination">
-            <span style="font-size:var(--text-sm);color:var(--text-tertiary);margin-right:auto;">共 128 条，每页 10 条</span>
-            <button class="page-btn" disabled><ion-icon name="chevron-back-outline" style="font-size:16px;"></ion-icon></button>
-            <button class="page-btn active">1</button>
-            <button class="page-btn">2</button>
-            <button class="page-btn">3</button>
-            <button class="page-btn">4</button>
-            <button class="page-btn">5</button>
-            <button class="page-btn"><ion-icon name="chevron-forward-outline" style="font-size:16px;"></ion-icon></button>
+        <!-- ==================== 形态三：空态 — favList.length === 0 ==================== -->
+        <div class="form-divider" id="empty" data-page-node-id="vHak9GFppCnb982Avp3qg1"><span data-page-node-id="f1iChTOJpNBdKnU9B49vhk">形态三 · 空态 — favList.length === 0（subtitle 同时隐藏）</span></div>
+        <div class="card" data-page-node-id="JgjAHtYMRYXaDa6lskCLOl">
+          <div class="empty-state" data-page-node-id="HkH5FSL2mR1dTv5XL9H4Pf">
+            <ion-icon name="star-outline" class="empty-state-icon" style="font-size:56px;" data-page-node-id="sCt3sjfJABKlDBVbCfGp7I"></ion-icon>
+            <h3 class="empty-state-title" style="font-size:var(--text-base);" data-page-node-id="sZGBIkk2JUTqiPVw3rmfHX">暂无收藏题目</h3>
+            <p class="empty-state-desc" data-page-node-id="M0qRlS0K4UJGXqovu6KAoP">浏览题库或做题时点击收藏，题目会自动收录到这里，方便集中复习</p>
           </div>
         </div>
       </main>

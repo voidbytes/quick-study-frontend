@@ -5,471 +5,556 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>题目 — Quick Study</title>
   <link rel="stylesheet" href="styles/mockup.css">
-  <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
-  <script nomodule src="https://cdn.jsdelivr.net/npm/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
   <style>
-    /* ---- Page header ---- */
-    .page-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 20px;
+    /* 搜索框前缀图标（n-input #prefix） */
+    .input-affix { position: relative; }
+    .input-affix .input-affix-icon {
+      position: absolute; top: 50%; transform: translateY(-50%);
+      left: 12px; font-size: 18px; color: var(--text-tertiary); pointer-events: none;
     }
-    .page-header h1 {
-      font-size: var(--text-2xl);
-      font-weight: var(--font-bold);
-      color: var(--text-primary);
+    .input-affix .input { padding-left: 40px; }
+
+    /* 补充工具类（mockup.css 未提供） */
+    .items-end { align-items: flex-end; }
+
+    /* 题目行（列表项） */
+    .q-row {
+      display: flex; align-items: flex-start; gap: var(--space-3);
+      padding: var(--space-4); border-bottom: 1px solid var(--border-default);
+      transition: background var(--transition-base);
     }
-    .page-header .subtitle {
-      font-size: var(--text-sm);
-      color: var(--text-tertiary);
-      margin-top: 4px;
+    .q-row:last-child { border-bottom: none; }
+    .q-row:hover { background: var(--bg-subtle); }
+    .q-index {
+      font-family: var(--font-mono); font-size: var(--text-sm);
+      color: var(--text-disabled); width: 40px; flex-shrink: 0; padding-top: 2px;
+    }
+    .q-stem {
+      font-size: var(--text-sm); font-weight: var(--font-medium); color: var(--text-primary);
+      display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden;
+    }
+    .q-stem p { margin: 0; }
+    .q-stem-link { cursor: pointer; }
+    .q-stem-link:hover { color: var(--text-brand); }
+    .checkbox {
+      width: 16px; height: 16px; border-radius: 4px; border: 1px solid var(--border-strong);
+      background: var(--bg-card); flex-shrink: 0; margin-top: 2px; display: inline-block;
+    }
+    .checkbox.checked { background: var(--color-primary-500); border-color: var(--color-primary-500); position: relative; }
+    .checkbox.checked::after {
+      content: ""; position: absolute; left: 4px; top: 1px; width: 5px; height: 9px;
+      border: solid #fff; border-width: 0 2px 2px 0; transform: rotate(45deg);
     }
 
-    /* ---- Filter bar ---- */
-    .filter-card { padding: 16px 20px; margin-bottom: 20px; }
-    .filter-row {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      flex-wrap: wrap;
-    }
-    .filter-row + .filter-row {
-      margin-top: 14px;
-      padding-top: 14px;
-      border-top: 1px solid var(--border-default);
-    }
-    .filter-search {
-      position: relative;
-      flex: 1;
-      min-width: 240px;
-    }
-    .filter-search ion-icon {
-      position: absolute;
-      left: 12px;
-      top: 50%;
-      transform: translateY(-50%);
-      font-size: 18px;
-      color: var(--text-tertiary);
-      pointer-events: none;
-    }
-    .filter-search .input { padding-left: 38px; }
-    .filter-select { width: auto; min-width: 150px; }
-    .filter-label {
-      font-size: var(--text-sm);
-      font-weight: var(--font-semibold);
-      color: var(--text-secondary);
-      margin-right: 4px;
+    .pagination-bar { display: flex; align-items: center; justify-content: flex-end; gap: var(--space-2); margin-top: var(--space-4); }
+    .page-size-picker {
+      border: 1px solid var(--border-default); border-radius: var(--radius-md);
+      padding: 4px 8px; font-size: var(--text-sm); color: var(--text-primary); background: var(--bg-card);
     }
 
-    /* ---- Tag chips ---- */
-    .tag-chip {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 6px 14px;
-      border-radius: var(--radius-full);
-      border: 1px solid var(--border-default);
-      background: var(--bg-card);
-      color: var(--text-secondary);
-      font-size: var(--text-sm);
-      font-weight: var(--font-medium);
-      cursor: pointer;
-      transition: all var(--transition-base);
-    }
-    .tag-chip:hover { border-color: var(--color-primary-300); color: var(--text-primary); }
-    .tag-chip.selected {
-      background: var(--color-primary-50);
-      border-color: var(--color-primary-500);
-      color: var(--text-brand);
-      font-weight: var(--font-semibold);
-    }
-    .tag-chip ion-icon { font-size: 14px; }
+    /* 分组标题（两种形态分隔） */
+    .state-divider { display: flex; align-items: center; gap: var(--space-3); margin: var(--space-8) 0 var(--space-4); }
+    .state-divider h2 { font-size: var(--text-lg); font-weight: var(--font-bold); color: var(--text-primary); margin: 0; white-space: nowrap; }
+    .state-divider::after { content: ""; flex: 1; height: 1px; background: var(--border-default); }
+    .state-note { font-size: var(--text-xs); color: var(--text-tertiary); margin-bottom: var(--space-4); }
 
-    /* ---- Status tabs ---- */
-    .status-tabs {
-      display: inline-flex;
-      gap: 4px;
-      background: var(--bg-subtle);
-      padding: 4px;
-      border-radius: var(--radius-md);
+    /* 抽屉（QuestionPreviewDrawer.vue：n-drawer width 520） */
+    .drawer-panel {
+      position: absolute; top: 0; right: 0; bottom: 0; width: 520px; max-width: 92vw;
+      background: var(--bg-card); box-shadow: var(--shadow-xl);
+      display: flex; flex-direction: column;
     }
-    .status-tab {
-      padding: 6px 14px;
-      border-radius: var(--radius-sm);
-      font-size: var(--text-sm);
-      font-weight: var(--font-medium);
-      color: var(--text-secondary);
-      cursor: pointer;
-      transition: all var(--transition-base);
+    .drawer-head {
+      padding: var(--space-5) var(--space-6); border-bottom: 1px solid var(--border-default);
+      display: flex; align-items: center; justify-content: space-between;
     }
-    .status-tab:hover { color: var(--text-primary); }
-    .status-tab.active {
-      background: var(--bg-card);
-      color: var(--text-primary);
-      font-weight: var(--font-semibold);
-      box-shadow: var(--shadow-xs);
-    }
+    .drawer-body { padding: var(--space-6); overflow-y: auto; }
 
-    /* ---- Table tweaks ---- */
-    .cell-question {
-      max-width: 340px;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
+    /* 弹窗 / 抽屉关闭按钮 */
+    .modal-close {
+      width: 28px; height: 28px; border: none; background: transparent;
+      color: var(--text-tertiary); cursor: pointer; border-radius: var(--radius-md);
+      display: flex; align-items: center; justify-content: center;
     }
-    .cell-tags { display: inline-flex; gap: 4px; flex-wrap: wrap; }
-    .icon-btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 30px;
-      height: 30px;
-      border-radius: var(--radius-md);
-      color: var(--text-tertiary);
-      cursor: pointer;
-      transition: all var(--transition-base);
-      border: none;
-      background: transparent;
-    }
-    .icon-btn:hover { background: var(--bg-hover); color: var(--text-brand); }
-    .icon-btn.danger:hover { color: var(--color-error-500); }
-    .icon-btn ion-icon { font-size: 18px; }
-
-    .table-toolbar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 14px 20px;
-      border-bottom: 1px solid var(--border-default);
-    }
-    .table-toolbar .count { font-size: var(--text-sm); color: var(--text-secondary); }
-    .table-toolbar .count strong { color: var(--text-primary); }
+    .modal-close:hover { background: var(--bg-hover); color: var(--text-primary); }
   </style>
 </head>
 <body>
   <div class="app-shell">
+    <!-- ===== Sidebar（MainLayout.vue：已登录 + 管理员） ===== -->
     <aside class="sidebar">
       <div class="sidebar-logo">
         <div class="sidebar-logo-icon">QS</div>
         <span class="sidebar-logo-text">Quick Study</span>
-      <button class="sidebar-toggle" data-tooltip="折叠侧边栏">
-        <ion-icon name="chevron-back-outline"></ion-icon>
-      </button>
+        <button class="sidebar-toggle" data-tooltip="折叠菜单"><ion-icon name="chevron-back-outline"></ion-icon></button>
       </div>
       <nav class="sidebar-nav">
-        <div class="sidebar-nav-item" onclick="window.location.href='01-home.html'"><ion-icon name="home-outline"></ion-icon><span>首页</span></div>
-        <div class="sidebar-nav-item" onclick="window.location.href='02-bank-list.html'"><ion-icon name="library-outline"></ion-icon><span>题库</span></div>
-        <div class="sidebar-nav-item active" onclick="window.location.href='04-question-list.html'"><ion-icon name="document-text-outline"></ion-icon><span>题目</span></div>
-        <div class="sidebar-nav-item" onclick="window.location.href='05-paper-list.html'"><ion-icon name="file-tray-full-outline"></ion-icon><span>试卷</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='01-home.html'"><ion-icon name="home-outline"></ion-icon><span>首页</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='02-bank-list.html'"><ion-icon name="library-outline"></ion-icon><span>题库</span></div>
+        <div class="sidebar-nav-item active" onclick="location.href='04-question-list.html'"><ion-icon name="document-text-outline"></ion-icon><span>题目</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='05-paper-list.html'"><ion-icon name="file-tray-full-outline"></ion-icon><span>试卷</span></div>
+
         <div class="sidebar-nav-label">学习中心</div>
-        <div class="sidebar-nav-item" onclick="window.location.href='24-practice-list.html'"><ion-icon name="game-controller-outline"></ion-icon><span>练习</span></div>
-        <div class="sidebar-nav-item" onclick="window.location.href='10-wrong-questions.html'"><ion-icon name="close-circle-outline"></ion-icon><span>错题本</span></div>
-        <div class="sidebar-nav-item" onclick="window.location.href='18-favorites.html'"><ion-icon name="star-outline"></ion-icon><span>收藏题目</span></div>
-        <div class="sidebar-nav-item" onclick="window.location.href='11-records.html'"><ion-icon name="time-outline"></ion-icon><span>做题记录</span></div>
-        <div class="sidebar-nav-item" onclick="window.location.href='09-statistics.html'"><ion-icon name="bar-chart-outline"></ion-icon><span>统计</span></div>
-        <div class="sidebar-nav-item" onclick="window.location.href='13-notifications.html'"><ion-icon name="notifications-outline"></ion-icon><span>通知</span></div>
-        <div class="sidebar-nav-item" onclick="window.location.href='12-search.html'"><ion-icon name="search-outline"></ion-icon><span>搜索</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='24-practice-list.html'"><ion-icon name="game-controller-outline"></ion-icon><span>练习</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='19-playground.html'"><ion-icon name="code-slash-outline"></ion-icon><span>代码运行台</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='10-wrong-questions.html'"><ion-icon name="close-circle-outline"></ion-icon><span>错题本</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='18-favorites.html'"><ion-icon name="star-outline"></ion-icon><span>收藏题目</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='11-records.html'"><ion-icon name="time-outline"></ion-icon><span>做题记录</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='20-exam-records.html'"><ion-icon name="document-text-outline"></ion-icon><span>考试记录</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='09-statistics.html'"><ion-icon name="bar-chart-outline"></ion-icon><span>统计</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='13-notifications.html'"><ion-icon name="notifications-outline"></ion-icon><span>通知</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='12-search.html'"><ion-icon name="search-outline"></ion-icon><span>搜索</span></div>
+
         <div class="sidebar-nav-label">管理</div>
-        <div class="sidebar-nav-item" onclick="window.location.href='15-admin-users.html'"><ion-icon name="people-outline"></ion-icon><span>用户管理</span></div>
-        <div class="sidebar-nav-item" onclick="window.location.href='28-admin-reviews.html'"><ion-icon name="checkmark-done-outline"></ion-icon><span>审核列表</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='15-admin-users.html'"><ion-icon name="people-outline"></ion-icon><span>用户管理</span></div>
+        <div class="sidebar-nav-item"><ion-icon name="checkmark-done-outline"></ion-icon><span>审核列表</span></div>
       </nav>
       <div class="sidebar-footer">
         <div class="sidebar-nav-item"><ion-icon name="log-out-outline"></ion-icon><span>退出登录</span></div>
       </div>
     </aside>
 
+    <!-- ===== Main Area ===== -->
     <div class="main-area">
       <header class="app-header">
         <div class="app-header-left">
           <button class="mobile-menu-btn" onclick="document.querySelector('.sidebar').classList.toggle('mobile-open')"><ion-icon name="menu-outline"></ion-icon></button>
-          <button class="mobile-menu-btn" onclick="document.querySelector('.sidebar').classList.toggle('mobile-open')"><ion-icon name="menu-outline"></ion-icon></button>
-          <div class="breadcrumb"><span>题目</span></div>
+          <!-- /questions → MENU_TITLES「题目」；下方形态二（/banks/:id/questions）命中 /banks →「题库」 -->
+          <div class="breadcrumb"><span class="breadcrumb-current">题目</span></div>
         </div>
         <div class="app-header-right">
           <div class="header-search">
             <ion-icon name="search-outline"></ion-icon>
-            <input class="input" type="text" placeholder="搜索题目 / 题库 / 试卷" readonly style="cursor:pointer;" onclick="window.location.href='12-search.html'">
+            <input class="input" type="text" placeholder="搜索题目 / 题库 / 试卷" readonly style="cursor:pointer;" onclick="location.href='12-search.html'">
           </div>
-          <div style="position:relative;cursor:pointer;" onclick="window.location.href='13-notifications.html'">
+          <div style="position:relative;cursor:pointer;" onclick="location.href='13-notifications.html'">
             <ion-icon name="notifications-outline" style="font-size:22px;color:var(--text-secondary);"></ion-icon>
             <span class="badge" style="position:absolute;top:-4px;right:-4px;">3</span>
           </div>
-          <div style="display:flex;align-items:center;gap:8px;cursor:pointer;" onclick="window.location.href='14-profile.html'">
-            <div class="avatar" style="background:var(--gradient-brand);">张</div>
-            <span style="font-size:14px;font-weight:500;color:var(--text-primary);">张同学</span>
+          <div style="display:flex;align-items:center;gap:8px;cursor:pointer;" onclick="location.href='14-profile.html'">
+            <div class="avatar" style="background:var(--gradient-brand);">王</div>
+            <span style="font-size:14px;font-weight:500;color:var(--text-primary);">王老师</span>
             <ion-icon name="chevron-down-outline" style="font-size:16px;color:var(--text-tertiary);"></ion-icon>
           </div>
         </div>
       </header>
 
       <main class="app-content">
-        <!-- Page header -->
+
+        <!-- ============================================================
+             形态一：/questions → QuestionManage.vue（跨题库题目管理）
+             ============================================================ -->
+        <div class="state-divider"><h2>形态一：/questions — 题目（QuestionManage.vue）</h2></div>
+
+        <!-- 页头（PageHeader.vue） -->
         <div class="page-header">
-          <div>
-            <h1>题目</h1>
-            <div class="subtitle">跨题库管理所有题目，支持按题型、难度、标签筛选</div>
+          <div class="page-header-left">
+            <h1 class="page-header-title">题目</h1>
+            <p class="page-header-subtitle">跨题库管理所有题目，支持按题型、难度、标签筛选</p>
           </div>
-          <button class="btn btn-secondary">
-            <ion-icon name="add-circle-outline"></ion-icon>
-            <span>创建题目</span>
-          </button>
+          <div class="page-header-actions">
+            <button class="btn btn-secondary btn-sm" onclick="location.href='29-tag-manage-modal.html'">标签管理</button>
+            <!-- 创建题目按钮 disabled，点击提示「请先在题库详情页中创建题目」 -->
+            <button class="btn btn-primary btn-sm" disabled title="请先在题库详情页中创建题目">创建题目</button>
+          </div>
         </div>
 
-        <!-- Filter bar -->
-        <div class="card filter-card">
-          <!-- Row 1 -->
-          <div class="filter-row">
-            <div class="filter-search">
-              <ion-icon name="search-outline"></ion-icon>
-              <input type="text" class="input" placeholder="搜索题干、标签...">
-            </div>
-            <select class="select filter-select">
-              <option>全部题库</option>
+        <!-- 筛选栏（白卡 px-5 py-4） -->
+        <div class="card mb-5" style="padding:var(--space-4) var(--space-5);">
+          <div class="flex flex-wrap items-center gap-3">
+            <select class="select" style="width:180px;">
+              <option>所属题库</option>
               <option>Java基础与进阶</option>
               <option>Python入门</option>
-              <option>数据结构经典题</option>
-              <option>计算机网络</option>
-              <option>数据库原理</option>
+              <option>数据结构</option>
             </select>
-            <select class="select filter-select">
-              <option>全部题型</option>
-              <option>单选</option>
-              <option>多选</option>
-              <option>判断</option>
-              <option>填空</option>
-              <option>简答</option>
+            <select class="select" style="width:120px;">
+              <option>题型</option>
+              <option>单选题</option>
+              <option>多选题</option>
+              <option>判断题</option>
+              <option>填空题</option>
+              <option>简答题</option>
             </select>
-            <select class="select filter-select">
-              <option>全部难度</option>
+            <select class="select" style="width:100px;">
+              <option>难度</option>
               <option>简单</option>
               <option>中等</option>
               <option>困难</option>
             </select>
-          </div>
-          <!-- Row 2 -->
-          <div class="filter-row">
-            <span class="filter-label">标签</span>
-            <div class="tag-chip selected"><ion-icon name="checkmark"></ion-icon>Java</div>
-            <div class="tag-chip selected"><ion-icon name="checkmark"></ion-icon>Python</div>
-            <div class="tag-chip">算法</div>
-            <div class="tag-chip">数据库</div>
-            <div class="tag-chip">网络协议</div>
-            <div style="flex:1;"></div>
-            <div class="status-tabs">
-              <div class="status-tab active">全部</div>
-              <div class="status-tab">草稿</div>
-              <div class="status-tab">已发布</div>
+            <select class="select" style="width:100px;">
+              <option>状态</option>
+              <option>草稿</option>
+              <option>待审核</option>
+              <option>已发布</option>
+            </select>
+            <select class="select" style="width:200px;">
+              <option>标签（可多选）</option>
+            </select>
+            <div class="input-affix" style="width:200px;">
+              <ion-icon name="search-outline" class="input-affix-icon"></ion-icon>
+              <input class="input" type="text" placeholder="搜索题干...">
+            </div>
+            <div class="flex items-center gap-2" style="margin-left:auto;">
+              <button class="btn btn-secondary btn-sm">批量导出</button>
+              <button class="btn btn-secondary btn-sm" onclick="location.href='28-question-import-dialog.html'">导入题目</button>
+              <button class="btn btn-primary btn-sm">搜索</button>
+              <button class="btn btn-secondary btn-sm">重置</button>
             </div>
           </div>
         </div>
 
-        <!-- Data table -->
-        <div class="table-wrapper">
-          <div class="table-toolbar">
-            <div class="count">共 <strong>128</strong> 道题目</div>
-            <button class="btn btn-ghost btn-sm">
-              <ion-icon name="download-outline"></ion-icon>
-              <span>导出</span>
-            </button>
+        <!-- 批量操作条（未勾选） -->
+        <div class="flex items-center gap-2 mb-3" style="padding-left:4px;">
+          <span class="checkbox"></span>
+          <span class="text-xs text-tertiary">全选本页</span>
+          <span class="text-xs text-tertiary" style="margin-left:var(--space-2);">已选 0 题</span>
+          <span class="text-xs text-tertiary">未勾选时「批量导出」将导出当前筛选条件下的全部题目</span>
+        </div>
+
+        <!-- 题目卡片列表（含所属题库名） -->
+        <div class="card mb-4">
+          <div class="q-row">
+            <span class="checkbox"></span>
+            <span class="q-index">#001</span>
+            <div class="flex-1">
+              <div class="q-stem q-stem-link">Java 中哪个关键字用于实现类的继承关系？</div>
+              <div class="flex flex-wrap items-center" style="gap:6px var(--space-4);margin-top:6px;">
+                <span class="pill tag-info">单选题</span>
+                <span class="pill tag-success">简单</span>
+                <span class="pill tag-success">已发布</span>
+                <span class="text-xs text-tertiary">Java基础与进阶</span>
+                <span class="tag-chip">面向对象</span><span class="tag-chip">继承</span>
+              </div>
+            </div>
+            <div class="flex flex-col items-end gap-2" style="flex-shrink:0;">
+              <span class="text-xs text-tertiary">2026-08-15</span>
+              <div class="flex items-center gap-1">
+                <button class="btn btn-ghost btn-sm" style="padding:2px 6px;font-size:var(--text-xs);color:var(--text-brand);" onclick="location.href='26-question-create.html'">查看</button>
+                <button class="btn btn-ghost btn-sm" style="padding:2px 6px;font-size:var(--text-xs);" onclick="location.href='26-question-create.html'">编辑</button>
+                <button class="btn btn-ghost btn-sm" style="padding:2px 6px;font-size:var(--text-xs);color:var(--color-error-600);">删除</button>
+              </div>
+            </div>
           </div>
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th class="col-narrow">题号</th>
-                <th>题干摘要</th>
-                <th>题型</th>
-                <th>难度</th>
-                <th>标签</th>
-                <th>所属题库</th>
-                <th>状态</th>
-                <th>创建时间</th>
-                <th class="col-narrow col-center">操作</th>
-              </tr>
-            </thead>
-            <tbody>
-              <!-- 1 -->
-              <tr>
-                <td>#001</td>
-                <td class="cell-question">以下哪个不是 Java 的基本数据类型？</td>
-                <td><span class="tag tag-info">单选</span></td>
-                <td><span class="tag tag-success">简单</span></td>
-                <td><div class="cell-tags"><span class="tag tag-default">Java</span></div></td>
-                <td>Java基础与进阶</td>
-                <td><span class="tag tag-success">已发布</span></td>
-                <td>2026-08-15</td>
-                <td class="col-center">
-                  <button class="icon-btn" title="详情"><ion-icon name="eye-outline"></ion-icon></button>
-                  <button class="icon-btn" title="编辑"><ion-icon name="create-outline"></ion-icon></button>
-                  <button class="icon-btn danger" title="删除"><ion-icon name="trash-outline"></ion-icon></button>
-                </td>
-              </tr>
-              <!-- 2 -->
-              <tr>
-                <td>#002</td>
-                <td class="cell-question">关于 Python 装饰器，以下说法正确的是？</td>
-                <td><span class="tag tag-warning">多选</span></td>
-                <td><span class="tag tag-warning">中等</span></td>
-                <td><div class="cell-tags"><span class="tag tag-default">Python</span></div></td>
-                <td>Python入门</td>
-                <td><span class="tag tag-success">已发布</span></td>
-                <td>2026-08-14</td>
-                <td class="col-center">
-                  <button class="icon-btn" title="详情"><ion-icon name="eye-outline"></ion-icon></button>
-                  <button class="icon-btn" title="编辑"><ion-icon name="create-outline"></ion-icon></button>
-                  <button class="icon-btn danger" title="删除"><ion-icon name="trash-outline"></ion-icon></button>
-                </td>
-              </tr>
-              <!-- 3 -->
-              <tr>
-                <td>#003</td>
-                <td class="cell-question">TCP 三次握手的目的是什么？</td>
-                <td><span class="tag tag-primary">简答</span></td>
-                <td><span class="tag tag-error">困难</span></td>
-                <td><div class="cell-tags"><span class="tag tag-default">网络协议</span></div></td>
-                <td>计算机网络</td>
-                <td><span class="tag tag-success">已发布</span></td>
-                <td>2026-08-12</td>
-                <td class="col-center">
-                  <button class="icon-btn" title="详情"><ion-icon name="eye-outline"></ion-icon></button>
-                  <button class="icon-btn" title="编辑"><ion-icon name="create-outline"></ion-icon></button>
-                  <button class="icon-btn danger" title="删除"><ion-icon name="trash-outline"></ion-icon></button>
-                </td>
-              </tr>
-              <!-- 4 -->
-              <tr>
-                <td>#004</td>
-                <td class="cell-question">下列关于栈和队列的说法，正确的是？</td>
-                <td><span class="tag tag-success">判断</span></td>
-                <td><span class="tag tag-warning">中等</span></td>
-                <td><div class="cell-tags"><span class="tag tag-default">算法</span></div></td>
-                <td>数据结构经典题</td>
-                <td><span class="tag tag-success">已发布</span></td>
-                <td>2026-08-10</td>
-                <td class="col-center">
-                  <button class="icon-btn" title="详情"><ion-icon name="eye-outline"></ion-icon></button>
-                  <button class="icon-btn" title="编辑"><ion-icon name="create-outline"></ion-icon></button>
-                  <button class="icon-btn danger" title="删除"><ion-icon name="trash-outline"></ion-icon></button>
-                </td>
-              </tr>
-              <!-- 5 -->
-              <tr>
-                <td>#005</td>
-                <td class="cell-question">简述数据库事务的 ACID 特性。</td>
-                <td><span class="tag tag-primary">简答</span></td>
-                <td><span class="tag tag-warning">中等</span></td>
-                <td><div class="cell-tags"><span class="tag tag-default">数据库</span></div></td>
-                <td>数据库原理</td>
-                <td><span class="tag tag-success">已发布</span></td>
-                <td>2026-08-09</td>
-                <td class="col-center">
-                  <button class="icon-btn" title="详情"><ion-icon name="eye-outline"></ion-icon></button>
-                  <button class="icon-btn" title="编辑"><ion-icon name="create-outline"></ion-icon></button>
-                  <button class="icon-btn danger" title="删除"><ion-icon name="trash-outline"></ion-icon></button>
-                </td>
-              </tr>
-              <!-- 6 -->
-              <tr>
-                <td>#006</td>
-                <td class="cell-question">Python 中 list 和 tuple 的主要区别是什么？</td>
-                <td><span class="tag tag-default">填空</span></td>
-                <td><span class="tag tag-success">简单</span></td>
-                <td><div class="cell-tags"><span class="tag tag-default">Python</span></div></td>
-                <td>Python入门</td>
-                <td><span class="tag tag-default">草稿</span></td>
-                <td>2026-08-08</td>
-                <td class="col-center">
-                  <button class="icon-btn" title="详情"><ion-icon name="eye-outline"></ion-icon></button>
-                  <button class="icon-btn" title="编辑"><ion-icon name="create-outline"></ion-icon></button>
-                  <button class="icon-btn danger" title="删除"><ion-icon name="trash-outline"></ion-icon></button>
-                </td>
-              </tr>
-              <!-- 7 -->
-              <tr>
-                <td>#007</td>
-                <td class="cell-question">关于 HTTP 状态码 404 的含义，正确的是？</td>
-                <td><span class="tag tag-info">单选</span></td>
-                <td><span class="tag tag-success">简单</span></td>
-                <td><div class="cell-tags"><span class="tag tag-default">网络协议</span></div></td>
-                <td>计算机网络</td>
-                <td><span class="tag tag-success">已发布</span></td>
-                <td>2026-08-07</td>
-                <td class="col-center">
-                  <button class="icon-btn" title="详情"><ion-icon name="eye-outline"></ion-icon></button>
-                  <button class="icon-btn" title="编辑"><ion-icon name="create-outline"></ion-icon></button>
-                  <button class="icon-btn danger" title="删除"><ion-icon name="trash-outline"></ion-icon></button>
-                </td>
-              </tr>
-              <!-- 8 -->
-              <tr>
-                <td>#008</td>
-                <td class="cell-question">下列哪些是 Java 集合框架中的接口？</td>
-                <td><span class="tag tag-warning">多选</span></td>
-                <td><span class="tag tag-warning">中等</span></td>
-                <td><div class="cell-tags"><span class="tag tag-default">Java</span></div></td>
-                <td>Java基础与进阶</td>
-                <td><span class="tag tag-success">已发布</span></td>
-                <td>2026-08-05</td>
-                <td class="col-center">
-                  <button class="icon-btn" title="详情"><ion-icon name="eye-outline"></ion-icon></button>
-                  <button class="icon-btn" title="编辑"><ion-icon name="create-outline"></ion-icon></button>
-                  <button class="icon-btn danger" title="删除"><ion-icon name="trash-outline"></ion-icon></button>
-                </td>
-              </tr>
-              <!-- 9 -->
-              <tr>
-                <td>#009</td>
-                <td class="cell-question">实现快速排序算法并分析其时间复杂度。</td>
-                <td><span class="tag tag-primary">简答</span></td>
-                <td><span class="tag tag-error">困难</span></td>
-                <td><div class="cell-tags"><span class="tag tag-default">算法</span></div></td>
-                <td>数据结构经典题</td>
-                <td><span class="tag tag-default">草稿</span></td>
-                <td>2026-08-03</td>
-                <td class="col-center">
-                  <button class="icon-btn" title="详情"><ion-icon name="eye-outline"></ion-icon></button>
-                  <button class="icon-btn" title="编辑"><ion-icon name="create-outline"></ion-icon></button>
-                  <button class="icon-btn danger" title="删除"><ion-icon name="trash-outline"></ion-icon></button>
-                </td>
-              </tr>
-              <!-- 10 -->
-              <tr>
-                <td>#010</td>
-                <td class="cell-question">SQL 中 JOIN 的作用是______。</td>
-                <td><span class="tag tag-default">填空</span></td>
-                <td><span class="tag tag-success">简单</span></td>
-                <td><div class="cell-tags"><span class="tag tag-default">数据库</span></div></td>
-                <td>数据库原理</td>
-                <td><span class="tag tag-success">已发布</span></td>
-                <td>2026-08-01</td>
-                <td class="col-center">
-                  <button class="icon-btn" title="详情"><ion-icon name="eye-outline"></ion-icon></button>
-                  <button class="icon-btn" title="编辑"><ion-icon name="create-outline"></ion-icon></button>
-                  <button class="icon-btn danger" title="删除"><ion-icon name="trash-outline"></ion-icon></button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-          <div class="pagination">
-            <button class="page-btn" disabled><ion-icon name="chevron-back-outline"></ion-icon></button>
-            <button class="page-btn active">1</button>
-            <button class="page-btn">2</button>
-            <button class="page-btn">3</button>
-            <button class="page-btn">4</button>
-            <span style="color:var(--text-tertiary);font-size:13px;">...</span>
-            <button class="page-btn">13</button>
-            <button class="page-btn"><ion-icon name="chevron-forward-outline"></ion-icon></button>
+
+          <div class="q-row">
+            <span class="checkbox checked"></span>
+            <span class="q-index">#002</span>
+            <div class="flex-1">
+              <div class="q-stem q-stem-link">下列选项中，哪些属于 Java 的基本数据类型？</div>
+              <div class="flex flex-wrap items-center" style="gap:6px var(--space-4);margin-top:6px;">
+                <span class="pill tag-warning">多选题</span>
+                <span class="pill tag-success">简单</span>
+                <span class="pill tag-success">已发布</span>
+                <span class="text-xs text-tertiary">Java基础与进阶</span>
+                <span class="tag-chip">基础语法</span>
+              </div>
+            </div>
+            <div class="flex flex-col items-end gap-2" style="flex-shrink:0;">
+              <span class="text-xs text-tertiary">2026-08-16</span>
+              <div class="flex items-center gap-1">
+                <button class="btn btn-ghost btn-sm" style="padding:2px 6px;font-size:var(--text-xs);color:var(--text-brand);">查看</button>
+                <button class="btn btn-ghost btn-sm" style="padding:2px 6px;font-size:var(--text-xs);">编辑</button>
+                <button class="btn btn-ghost btn-sm" style="padding:2px 6px;font-size:var(--text-xs);color:var(--color-error-600);">删除</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="q-row">
+            <span class="checkbox"></span>
+            <span class="q-index">#003</span>
+            <div class="flex-1">
+              <div class="q-stem q-stem-link">简述 TCP 三次握手的过程及其作用。</div>
+              <div class="flex flex-wrap items-center" style="gap:6px var(--space-4);margin-top:6px;">
+                <span class="pill tag-primary">简答题</span>
+                <span class="pill tag-warning">中等</span>
+                <span class="pill tag-default">草稿</span>
+                <span class="text-xs text-tertiary">计算机网络</span>
+                <span class="tag-chip">TCP</span>
+              </div>
+            </div>
+            <div class="flex flex-col items-end gap-2" style="flex-shrink:0;">
+              <span class="text-xs text-tertiary">2026-07-15</span>
+              <div class="flex items-center gap-1">
+                <button class="btn btn-ghost btn-sm" style="padding:2px 6px;font-size:var(--text-xs);color:var(--text-brand);">查看</button>
+                <button class="btn btn-ghost btn-sm" style="padding:2px 6px;font-size:var(--text-xs);">编辑</button>
+                <button class="btn btn-ghost btn-sm" style="padding:2px 6px;font-size:var(--text-xs);color:var(--color-error-600);">删除</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="q-row">
+            <span class="checkbox"></span>
+            <span class="q-index">#004</span>
+            <div class="flex-1">
+              <div class="q-stem q-stem-link">Python 中列表与元组的区别之一是列表可变、元组不可变。</div>
+              <div class="flex flex-wrap items-center" style="gap:6px var(--space-4);margin-top:6px;">
+                <span class="pill tag-success">判断题</span>
+                <span class="pill tag-success">简单</span>
+                <span class="pill tag-warning">待审核</span>
+                <span class="text-xs text-tertiary">Python入门</span>
+                <span class="tag-chip">基础语法</span>
+              </div>
+            </div>
+            <div class="flex flex-col items-end gap-2" style="flex-shrink:0;">
+              <span class="text-xs text-tertiary">2026-08-20</span>
+              <div class="flex items-center gap-1">
+                <button class="btn btn-ghost btn-sm" style="padding:2px 6px;font-size:var(--text-xs);color:var(--text-brand);">查看</button>
+                <button class="btn btn-ghost btn-sm" style="padding:2px 6px;font-size:var(--text-xs);">编辑</button>
+                <button class="btn btn-ghost btn-sm" style="padding:2px 6px;font-size:var(--text-xs);color:var(--color-error-600);">删除</button>
+              </div>
+            </div>
           </div>
         </div>
+
+        <!-- 分页（show-size-picker + 共 N 道） -->
+        <div class="pagination-bar" style="gap:var(--space-4);">
+          <button class="page-btn" disabled><ion-icon name="chevron-back-outline"></ion-icon></button>
+          <button class="page-btn active">1</button>
+          <button class="page-btn">2</button>
+          <button class="page-btn">3</button>
+          <button class="page-btn">4</button>
+          <button class="page-btn">5</button>
+          <button class="page-btn"><ion-icon name="chevron-forward-outline"></ion-icon></button>
+          <select class="page-size-picker">
+            <option>10 条/页</option>
+            <option selected>20 条/页</option>
+            <option>50 条/页</option>
+            <option>100 条/页</option>
+          </select>
+          <span class="text-sm text-tertiary">共 328 道</span>
+        </div>
+
+        <div class="state-note" style="margin-top:var(--space-6);">空态（EmptyState）：「暂无题目 / 当前筛选条件下没有题目，试试调整筛选条件」。</div>
+        <div class="card">
+          <div class="empty-state">
+            <ion-icon name="document-text-outline" class="empty-state-icon"></ion-icon>
+            <h3 class="empty-state-title">暂无题目</h3>
+            <p class="empty-state-desc">当前筛选条件下没有题目，试试调整筛选条件</p>
+          </div>
+        </div>
+
+        <!-- ============================================================
+             形态二：/banks/:id/questions → QuestionList.vue（题库内题目）
+             ============================================================ -->
+        <div class="state-divider"><h2>形态二：/banks/:id/questions — 题库内题目（QuestionList.vue）</h2></div>
+        <div class="state-note">
+          该形态组件本身不含 PageHeader；独立访问时顶栏标题与侧边栏高亮命中 <b>/banks</b> →「题库」，在题库详情页中则被嵌在「题目列表」区块内（见 03-bank-detail.html）。
+          导入弹窗的 bankId 由 props 固定，弹窗内不再显示题库选择器。
+        </div>
+
+        <!-- 筛选栏（FilterBar.vue） -->
+        <div class="filter-bar">
+          <div class="input-affix" style="width:220px;">
+            <ion-icon name="search-outline" class="input-affix-icon"></ion-icon>
+            <input class="input" type="text" placeholder="搜索题干...">
+          </div>
+          <select class="select" style="width:120px;">
+            <option>题型</option>
+            <option>单选题</option>
+            <option>多选题</option>
+            <option>判断题</option>
+            <option>填空题</option>
+            <option>简答题</option>
+          </select>
+          <select class="select" style="width:100px;">
+            <option>难度</option>
+            <option>简单</option>
+            <option>中等</option>
+            <option>困难</option>
+          </select>
+          <select class="select" style="width:100px;">
+            <option>状态</option>
+            <option>草稿</option>
+            <option>待审核</option>
+            <option>已发布</option>
+          </select>
+          <select class="select" style="width:200px;">
+            <option>标签（可多选）</option>
+          </select>
+          <div style="margin-left:auto;display:flex;align-items:center;gap:var(--space-2);">
+            <button class="btn btn-secondary btn-sm">导出选中（2）</button>
+            <button class="btn btn-secondary btn-sm" onclick="location.href='28-question-import-dialog.html'">导入题目</button>
+            <button class="btn btn-primary btn-sm" onclick="location.href='26-question-create.html'">创建题目</button>
+          </div>
+        </div>
+
+        <!-- 批量操作条（已勾选） -->
+        <div class="flex items-center gap-2 mb-3" style="padding-left:4px;">
+          <span class="checkbox"></span>
+          <span class="text-xs text-tertiary">全选本页</span>
+          <span class="text-xs text-tertiary" style="margin-left:var(--space-2);">已选 2 题</span>
+          <span class="text-xs" style="color:var(--text-brand);">仅导出勾选的题目</span>
+        </div>
+
+        <!-- 题目卡片列表（无所属题库列） -->
+        <div class="card mb-4">
+          <div class="q-row">
+            <span class="checkbox checked"></span>
+            <span class="q-index">#001</span>
+            <div class="flex-1">
+              <div class="q-stem">Java 中哪个关键字用于实现类的继承关系？</div>
+              <div class="flex flex-wrap items-center" style="gap:6px var(--space-4);margin-top:6px;">
+                <span class="pill tag-info">单选题</span>
+                <span class="pill tag-success">简单</span>
+                <span class="pill tag-success">已发布</span>
+                <span class="tag-chip">面向对象</span><span class="tag-chip">继承</span>
+              </div>
+            </div>
+            <div class="flex flex-col items-end gap-2" style="flex-shrink:0;">
+              <span class="text-xs text-tertiary">2026-08-15</span>
+              <div class="flex items-center gap-1">
+                <button class="btn btn-ghost btn-sm" style="padding:2px 6px;font-size:var(--text-xs);color:var(--text-brand);" onclick="location.href='26-question-create.html'">查看</button>
+                <button class="btn btn-ghost btn-sm" style="padding:2px 6px;font-size:var(--text-xs);" onclick="location.href='26-question-create.html'">编辑</button>
+                <button class="btn btn-ghost btn-sm" style="padding:2px 6px;font-size:var(--text-xs);color:var(--color-error-600);">删除</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="q-row">
+            <span class="checkbox checked"></span>
+            <span class="q-index">#002</span>
+            <div class="flex-1">
+              <div class="q-stem">下列选项中，哪些属于 Java 的基本数据类型？</div>
+              <div class="flex flex-wrap items-center" style="gap:6px var(--space-4);margin-top:6px;">
+                <span class="pill tag-warning">多选题</span>
+                <span class="pill tag-success">简单</span>
+                <span class="pill tag-success">已发布</span>
+                <span class="tag-chip">基础语法</span>
+              </div>
+            </div>
+            <div class="flex flex-col items-end gap-2" style="flex-shrink:0;">
+              <span class="text-xs text-tertiary">2026-08-16</span>
+              <div class="flex items-center gap-1">
+                <button class="btn btn-ghost btn-sm" style="padding:2px 6px;font-size:var(--text-xs);color:var(--text-brand);">查看</button>
+                <button class="btn btn-ghost btn-sm" style="padding:2px 6px;font-size:var(--text-xs);">编辑</button>
+                <button class="btn btn-ghost btn-sm" style="padding:2px 6px;font-size:var(--text-xs);color:var(--color-error-600);">删除</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="q-row">
+            <span class="checkbox"></span>
+            <span class="q-index">#003</span>
+            <div class="flex-1">
+              <div class="q-stem">Java 中实现多态需要满足的三个条件是：____、____、____。</div>
+              <div class="flex flex-wrap items-center" style="gap:6px var(--space-4);margin-top:6px;">
+                <span class="pill tag-default">填空题</span>
+                <span class="pill tag-warning">中等</span>
+                <span class="pill tag-default">草稿</span>
+                <span class="tag-chip">面向对象</span><span class="tag-chip">多态</span>
+              </div>
+            </div>
+            <div class="flex flex-col items-end gap-2" style="flex-shrink:0;">
+              <span class="text-xs text-tertiary">2026-08-22</span>
+              <div class="flex items-center gap-1">
+                <button class="btn btn-ghost btn-sm" style="padding:2px 6px;font-size:var(--text-xs);color:var(--text-brand);">查看</button>
+                <button class="btn btn-ghost btn-sm" style="padding:2px 6px;font-size:var(--text-xs);">编辑</button>
+                <button class="btn btn-ghost btn-sm" style="padding:2px 6px;font-size:var(--text-xs);color:var(--color-error-600);">删除</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 分页（无页大小选择器、无总数文案） -->
+        <div class="pagination-bar">
+          <button class="page-btn" disabled><ion-icon name="chevron-back-outline"></ion-icon></button>
+          <button class="page-btn active">1</button>
+          <button class="page-btn">2</button>
+          <button class="page-btn">3</button>
+          <button class="page-btn">4</button>
+          <button class="page-btn">5</button>
+          <button class="page-btn">6</button>
+          <button class="page-btn">7</button>
+          <button class="page-btn">8</button>
+          <button class="page-btn"><ion-icon name="chevron-forward-outline"></ion-icon></button>
+        </div>
+
+        <div class="state-note" style="margin-top:var(--space-6);">空态（EmptyState）：「暂无题目 / 当前筛选条件下没有题目」。</div>
+        <div class="card">
+          <div class="empty-state">
+            <ion-icon name="document-text-outline" class="empty-state-icon"></ion-icon>
+            <h3 class="empty-state-title">暂无题目</h3>
+            <p class="empty-state-desc">当前筛选条件下没有题目</p>
+          </div>
+        </div>
+
+        <div class="state-note" style="margin-top:var(--space-6);">加载态：QuestionList 为 SkeletonList(count=5, cols=1)，QuestionManage 为 SkeletonList(count=6, cols=1)。</div>
+        <div class="card p-5 mb-4">
+          <div class="skeleton skeleton-title"></div>
+          <div class="skeleton skeleton-text"></div>
+          <div class="skeleton skeleton-text-sm"></div>
+        </div>
+        <div class="card p-5">
+          <div class="skeleton skeleton-title"></div>
+          <div class="skeleton skeleton-text"></div>
+          <div class="skeleton skeleton-text-sm"></div>
+        </div>
+
       </main>
     </div>
   </div>
-<script>
-    document.querySelector(".sidebar-toggle")?.addEventListener("click", function() {
-      var s=document.querySelector(".sidebar"),m=document.querySelector(".main-area");
-      s.classList.toggle("sidebar-collapsed");m.classList.toggle("main-area-collapsed");
-      var i=this.querySelector("ion-icon");
-      i.setAttribute("name",s.classList.contains("sidebar-collapsed")?"chevron-forward-outline":"chevron-back-outline");
+
+  <!-- ===== 题目预览抽屉（QuestionPreviewDrawer.vue，n-drawer width 520） ===== -->
+  <div class="modal-overlay" style="justify-content:flex-end;">
+    <div class="drawer-panel">
+      <div class="drawer-head">
+        <span style="font-size:var(--text-lg);font-weight:var(--font-semibold);">题目预览 #1024</span>
+        <button class="modal-close"><ion-icon name="close-outline"></ion-icon></button>
+      </div>
+      <div class="drawer-body">
+        <div class="flex items-center gap-2 flex-wrap mb-4">
+          <span class="pill tag-info">单选题</span>
+          <span class="pill tag-success">简单</span>
+          <span class="text-xs text-tertiary" style="margin-left:auto;">Java基础与进阶</span>
+        </div>
+
+        <div style="margin-bottom:var(--space-5);">
+          <div class="field-label">题干</div>
+          <div class="rich-box">Java 中哪个关键字用于实现类的继承关系？</div>
+        </div>
+
+        <div style="margin-bottom:var(--space-5);">
+          <div class="field-label">选项</div>
+          <div class="flex items-start gap-3 p-3 rounded-lg" style="border:1px solid var(--color-success-500);background:var(--color-success-50);margin-bottom:var(--space-2);">
+            <div class="option-marker" style="background:var(--color-success-500);border-color:var(--color-success-500);color:#fff;">A</div>
+            <div class="flex-1 text-sm" style="padding-top:2px;">extends</div>
+          </div>
+          <div class="flex items-start gap-3 p-3 rounded-lg" style="border:1px solid var(--border-default);margin-bottom:var(--space-2);">
+            <div class="option-marker" style="background:var(--color-neutral-100);">B</div>
+            <div class="flex-1 text-sm" style="padding-top:2px;">implements</div>
+          </div>
+          <div class="flex items-start gap-3 p-3 rounded-lg" style="border:1px solid var(--border-default);margin-bottom:var(--space-2);">
+            <div class="option-marker" style="background:var(--color-neutral-100);">C</div>
+            <div class="flex-1 text-sm" style="padding-top:2px;">interface</div>
+          </div>
+          <div class="flex items-start gap-3 p-3 rounded-lg" style="border:1px solid var(--border-default);">
+            <div class="option-marker" style="background:var(--color-neutral-100);">D</div>
+            <div class="flex-1 text-sm" style="padding-top:2px;">abstract</div>
+          </div>
+        </div>
+
+        <div style="margin-bottom:var(--space-5);">
+          <div class="field-label">正确答案</div>
+          <div class="rich-box-success" style="font-weight:var(--font-medium);">A</div>
+        </div>
+
+        <div>
+          <div class="field-label">解析</div>
+          <div class="rich-box-warning">extends 用于类的继承，implements 用于实现接口。</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
+  <script nomodule src="https://cdn.jsdelivr.net/npm/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
+  <script>
+    document.querySelector(".sidebar-toggle")?.addEventListener("click", function () {
+      var s = document.querySelector(".sidebar"), m = document.querySelector(".main-area");
+      s.classList.toggle("sidebar-collapsed"); m.classList.toggle("main-area-collapsed");
+      var i = this.querySelector("ion-icon");
+      i.setAttribute("name", s.classList.contains("sidebar-collapsed") ? "chevron-forward-outline" : "chevron-back-outline");
     });
   </script>
 </body>

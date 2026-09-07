@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>创建练习 — Quick Study</title>
+  <link rel="stylesheet" href="styles/mockup.css">
+  <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
+  <script nomodule src="https://cdn.jsdelivr.net/npm/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
+  <style>
+    /* 弹窗结构：.modal-overlay + .modal（preset="card"），宽度按代码 style="width:560px;max-width:90vw" */
+    .modal { width: 560px; max-width: 90vw; }
+    .modal-close {
+      background: none; border: none; cursor: pointer;
+      color: var(--text-tertiary); font-size: 24px; line-height: 1;
+    }
+    .modal-close:hover { color: var(--text-primary); }
+    .modal-title { font-size: var(--text-xl); font-weight: var(--font-semibold); color: var(--text-primary); }
+
+    /* 多选标签（n-select multiple 的选中项；默认为空，仅显示 placeholder） */
+    .select-box {
+      width: 100%; padding: 6px 10px; min-height: 38px;
+      border: 1px solid var(--border-default); border-radius: var(--radius-md);
+      display: flex; align-items: center; gap: 6px; flex-wrap: wrap; background: var(--bg-card);
+    }
+    .select-box:focus-within { border-color: var(--color-primary-500); box-shadow: 0 0 0 3px rgba(91,95,233,.12); }
+    .select-chip {
+      display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px;
+      border-radius: var(--radius-full); background: var(--color-primary-50); color: var(--text-brand);
+      font-size: var(--text-xs); font-weight: var(--font-medium);
+    }
+    .select-chip ion-icon { font-size: 12px; cursor: pointer; }
+    .select-placeholder { font-size: var(--text-sm); color: var(--text-tertiary); }
+
+    /* 数字输入（n-input-number：题量 1–200；正确率 0–100 step 5 含 % 后缀） */
+    .num-box {
+      display: inline-flex; align-items: center; gap: 4px;
+      border: 1px solid var(--border-default); border-radius: var(--radius-md);
+      background: var(--bg-card); padding: 0 10px;
+    }
+    .num-box:focus-within { border-color: var(--color-primary-500); box-shadow: 0 0 0 3px rgba(91,95,233,.12); }
+    .num-box input {
+      border: none; outline: none; background: transparent; padding: 7px 0; width: 56px;
+      font-size: var(--text-base); color: var(--text-primary);
+    }
+    .num-box input::-webkit-outer-spin-button,
+    .num-box input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    .num-suffix { font-size: var(--text-sm); color: var(--text-tertiary); }
+
+    /* 开关（n-switch；默认 off） */
+    .switch {
+      position: relative; width: 40px; height: 22px; border-radius: var(--radius-full);
+      background: var(--color-neutral-300); transition: all var(--transition-base); cursor: pointer; flex-shrink: 0;
+    }
+    .switch.on { background: var(--color-primary-500); }
+    .switch::after {
+      content: ""; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px;
+      border-radius: 50%; background: #fff; transition: all var(--transition-base); box-shadow: var(--shadow-xs);
+    }
+    .switch.on::after { left: 20px; }
+
+    /* 开关行（标签在左、开关在右，与代码 n-form-item 顶置标签不同，这里为行内紧凑展示） */
+    .switch-row { display: flex; align-items: center; justify-content: space-between; padding: 6px 0; }
+    .switch-label { font-size: var(--text-sm); color: var(--text-primary); }
+  </style>
+</head>
+<body>
+  <!-- 背景：练习记录页（弹窗来源），仅作场景衬托 -->
+  <div class="app-shell" style="filter:saturate(.6);">
+    <aside class="sidebar">
+      <div class="sidebar-logo">
+        <div class="sidebar-logo-icon">QS</div>
+        <span class="sidebar-logo-text">Quick Study</span>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="sidebar-nav-item"><ion-icon name="home-outline"></ion-icon><span>首页</span></div>
+        <div class="sidebar-nav-item"><ion-icon name="library-outline"></ion-icon><span>题库</span></div>
+        <div class="sidebar-nav-item"><ion-icon name="document-text-outline"></ion-icon><span>题目</span></div>
+        <div class="sidebar-nav-item"><ion-icon name="file-tray-full-outline"></ion-icon><span>试卷</span></div>
+        <div class="sidebar-nav-label">学习中心</div>
+        <div class="sidebar-nav-item active"><ion-icon name="game-controller-outline"></ion-icon><span>练习</span></div>
+        <div class="sidebar-nav-item"><ion-icon name="code-slash-outline"></ion-icon><span>代码运行台</span></div>
+        <div class="sidebar-nav-item"><ion-icon name="close-circle-outline"></ion-icon><span>错题本</span></div>
+        <div class="sidebar-nav-item"><ion-icon name="star-outline"></ion-icon><span>收藏题目</span></div>
+        <div class="sidebar-nav-item"><ion-icon name="time-outline"></ion-icon><span>做题记录</span></div>
+        <div class="sidebar-nav-item"><ion-icon name="document-text-outline"></ion-icon><span>考试记录</span></div>
+        <div class="sidebar-nav-item"><ion-icon name="bar-chart-outline"></ion-icon><span>统计</span></div>
+        <div class="sidebar-nav-item"><ion-icon name="notifications-outline"></ion-icon><span>通知</span></div>
+        <div class="sidebar-nav-item"><ion-icon name="search-outline"></ion-icon><span>搜索</span></div>
+        <div class="sidebar-nav-label">管理</div>
+        <div class="sidebar-nav-item"><ion-icon name="people-outline"></ion-icon><span>用户管理</span></div>
+        <div class="sidebar-nav-item"><ion-icon name="checkmark-done-outline"></ion-icon><span>审核列表</span></div>
+      </nav>
+      <div class="sidebar-footer"><div class="sidebar-nav-item"><ion-icon name="log-out-outline"></ion-icon><span>退出登录</span></div></div>
+    </aside>
+    <div class="main-area">
+      <header class="app-header">
+        <div class="app-header-left">
+          <button class="mobile-menu-btn"><ion-icon name="menu-outline"></ion-icon></button>
+          <div class="breadcrumb"><span class="breadcrumb-current">练习</span></div>
+        </div>
+      </header>
+      <main class="app-content">
+        <h1 class="page-header-title">练习记录</h1>
+      </main>
+    </div>
+  </div>
+
+  <!-- 创建练习弹窗（n-modal preset="card" title="创建练习" :mask-closable="false"） -->
+  <div class="modal-overlay">
+    <div class="modal">
+      <div class="modal-header">
+        <span class="modal-title">创建练习</span>
+        <button class="modal-close" aria-label="关闭">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <!-- 题量（n-input-number :min="1" :max="200" v-model=10） -->
+        <div class="input-group">
+          <label class="input-label">题量</label>
+          <div class="num-box" style="width:120px;">
+            <input type="number" value="10" min="1" max="200" />
+          </div>
+        </div>
+
+        <!-- 题库选择（n-select multiple filterable，默认空） -->
+        <div class="input-group">
+          <label class="input-label">题库选择</label>
+          <div class="select-box">
+            <span class="select-placeholder">不限题库则留空</span>
+          </div>
+        </div>
+
+        <!-- 题型选择（n-select multiple，选项：单选题/多选题/判断题，默认空） -->
+        <div class="input-group">
+          <label class="input-label">题型选择</label>
+          <div class="select-box">
+            <span class="select-placeholder">不选则全部题型</span>
+          </div>
+        </div>
+
+        <!-- 标签选择（n-select multiple filterable，默认空） -->
+        <div class="input-group">
+          <label class="input-label">标签选择</label>
+          <div class="select-box">
+            <span class="select-placeholder">不选则不限制</span>
+          </div>
+        </div>
+
+        <!-- 最低 / 最高正确率（n-input-number :min="0" :max="100" :step="5"，默认空，% 后缀） -->
+        <div class="form-grid">
+          <div class="input-group">
+            <label class="input-label">最低正确率</label>
+            <div class="num-box">
+              <input type="number" min="0" max="100" step="5" placeholder="" />
+              <span class="num-suffix">%</span>
+            </div>
+          </div>
+          <div class="input-group">
+            <label class="input-label">最高正确率</label>
+            <div class="num-box">
+              <input type="number" min="0" max="100" step="5" placeholder="" />
+              <span class="num-suffix">%</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 优先未做题（n-switch v-model=false，默认关） -->
+        <div class="switch-row">
+          <span class="switch-label">优先未做题</span>
+          <div class="switch" onclick="this.classList.toggle('on')"></div>
+        </div>
+
+        <!-- 优先易错题（n-switch v-model=false，默认关） -->
+        <div class="switch-row">
+          <span class="switch-label">优先易错题</span>
+          <div class="switch" onclick="this.classList.toggle('on')"></div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" style="padding:8px 20px;font-size:var(--text-sm);">取消</button>
+        <button class="btn btn-primary" style="padding:8px 20px;font-size:var(--text-sm);box-shadow:var(--shadow-brand);">开始练习</button>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

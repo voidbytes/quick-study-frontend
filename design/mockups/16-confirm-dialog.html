@@ -1,76 +1,264 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<html lang="zh-CN" data-page-node-id="jirNvb9HhLEHdqFa87jSae">
+<head data-page-node-id="UqCAUJC84LLRHHpSpgpX05">
+  <meta charset="UTF-8" data-page-node-id="SeFAQV6G7zEBWp9qJeDt1z">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" data-page-node-id="kCeCaQiovOQAvhAhacq8Vh">
   <title>确认弹窗 — Quick Study</title>
-  <link rel="stylesheet" href="styles/mockup.css">
+  <link rel="stylesheet" href="styles/mockup.css" data-page-node-id="sC50kpYmbAMgYEUoHUIGJ9">
   <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
   <script nomodule src="https://cdn.jsdelivr.net/npm/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
   <style>
-    body { background: var(--bg-page); padding: 48px 24px; }
-    .demo-section { margin-bottom: 48px; }
-    .demo-label { font-size: 14px; font-weight: 600; color: var(--text-tertiary); margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.05em; }
-    .demo-bg { background: var(--bg-card); border: 1px solid var(--border-default); border-radius: 16px; padding: 48px; position: relative; min-height: 360px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
-    /* Contain the overlay inside each demo card so dialogs stack vertically */
+    /* 把遮罩收进各演示卡内，便于纵向排列多个场景 */
+    .demo-bg { position: relative; min-height: 320px; overflow: hidden; border-radius: var(--radius-lg); }
     .demo-bg .modal-overlay { position: absolute; inset: 0; }
+
+    /* 章节分组标题（与 13-notifications 一致） */
+    .state-divider { display: flex; align-items: center; gap: var(--space-3); margin: var(--space-8) 0 var(--space-4); }
+    .state-divider h2 { font-size: var(--text-lg); font-weight: var(--font-bold); color: var(--text-primary); margin: 0; white-space: nowrap; }
+    .state-divider::after { content: ""; flex: 1; height: 1px; background: var(--border-default); }
+    .state-note { font-size: var(--text-xs); color: var(--text-tertiary); margin-bottom: var(--space-4); line-height: var(--leading-relaxed); }
+    .state-note code { font-family: var(--font-mono); font-size: 11px; background: var(--color-neutral-100); padding: 1px 4px; border-radius: var(--radius-sm); }
+
+    .param-table { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
+    .param-table th, .param-table td { border: 1px solid var(--border-default); padding: 6px var(--space-3); text-align: left; color: var(--text-secondary); }
+    .param-table th { background: var(--bg-subtle); font-weight: var(--font-semibold); color: var(--text-primary); }
+    .param-table td.mono { font-family: var(--font-mono); font-size: 11px; }
+
+    /* 背景页占位卡片（示意弹窗出现前的宿主页面） */
+    .bg-strip { height: 56px; border-radius: var(--radius-lg); border: 1px solid var(--border-default); background: var(--bg-card); margin-bottom: var(--space-3); display: flex; align-items: center; padding: 0 var(--space-4); gap: var(--space-3); font-size: var(--text-sm); color: var(--text-secondary); }
+    .bg-strip .dot { width: 32px; height: 32px; border-radius: var(--radius-full); background: var(--color-neutral-100); flex-shrink: 0; }
   </style>
 </head>
-<body>
-  <div style="max-width:800px;margin:0 auto;">
-    <h1 style="font-size:24px;font-weight:700;margin-bottom:32px;">确认弹窗组件</h1>
+<body data-page-node-id="GCTGRtND0DyGnHtMP2r84K">
+  <div class="app-shell" data-page-node-id="lF0zPpsEGGfia4teABA3qF">
+    <!-- ===== Sidebar（MainLayout.vue：已登录 + 管理员完整形态；全局组件页无高亮项） ===== -->
+    <aside class="sidebar" data-page-node-id="Zr7O2iRNia8LjqyV9gybJ1">
+      <div class="sidebar-logo" data-page-node-id="xMzU2WLNrHJ4Ut4NcXMYJk">
+        <div class="sidebar-logo-icon" data-page-node-id="QY4FcAfbxTU3ROWegD0T3Z">QS</div>
+        <span class="sidebar-logo-text" data-page-node-id="Vo1BUeKkq1AKKShwGRcUIn">Quick Study</span>
+        <button class="sidebar-toggle" data-tooltip="折叠侧边栏" data-page-node-id="zUIm48MCc6T0guo9emHrFV"><ion-icon name="chevron-back-outline" data-page-node-id="8xYXIVnC5PsjzkKhbi9APz"></ion-icon></button>
+      </div>
+      <nav class="sidebar-nav" data-page-node-id="s4igQri1C2tJkaRxB94CKs">
+        <div class="sidebar-nav-item" onclick="location.href='01-home.html'" data-page-node-id="QR1vgMHrfrIqLqE9IrjTVG"><ion-icon name="home-outline" data-page-node-id="MEf7f20PuSlAOKloHl4gpv"></ion-icon><span data-page-node-id="A9QK3O6sW9E18QcDeOgIbL">首页</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='02-bank-list.html'" data-page-node-id="G2vCidKftaJQB7fPCtroZ6"><ion-icon name="library-outline" data-page-node-id="0ljV2W7inV9c77d7JLarN2"></ion-icon><span data-page-node-id="5Dqrx87M7u5epBIuSMMuY0">题库</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='04-question-list.html'" data-page-node-id="xE4kC16TV9xRR4DGDxjiLS"><ion-icon name="document-text-outline" data-page-node-id="1woYvdOubUuwLcpaR3Ldpb"></ion-icon><span data-page-node-id="CKDgdQytRiaGtf1qjaOZiK">题目</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='05-paper-list.html'" data-page-node-id="5cibXqvTd7Cz6ODsLEqqjq"><ion-icon name="file-tray-full-outline" data-page-node-id="5v0MMApKutvPwpFGEcOeox"></ion-icon><span data-page-node-id="1bsvQuZIOU9oCFBqlhprqD">试卷</span></div>
+        <div class="sidebar-nav-label" data-page-node-id="an79oGmprAiYtN4TtBKUJH">学习中心</div>
+        <div class="sidebar-nav-item" onclick="location.href='24-practice-list.html'" data-page-node-id="rUHalxxhPPJnPVmQzFGaDn"><ion-icon name="game-controller-outline" data-page-node-id="xHHjHc3W25XhsLEYrAL7Yc"></ion-icon><span data-page-node-id="VLh6A99Zm9TvFpkxz4Tmoq">练习</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='19-playground.html'" data-page-node-id="ppFZyvNGDg6uQSGB6P2wgu"><ion-icon name="code-slash-outline" data-page-node-id="JmAv4nfOlpfMUO37FnL4PG"></ion-icon><span data-page-node-id="l1s9MZcm5nLW4crY0aMAiJ">代码运行台</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='10-wrong-questions.html'" data-page-node-id="Wv2iqPW7V6OpD7SeyGl0R0"><ion-icon name="close-circle-outline" data-page-node-id="SGsBGT0IxnRCxmQd1zyD5Q"></ion-icon><span data-page-node-id="msdq8Nzo8RoGSSUkjDeMq7">错题本</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='18-favorites.html'" data-page-node-id="lAnGD7RxbgHEkfMoHO4CFr"><ion-icon name="star-outline" data-page-node-id="BolbwekBNXaf46cOK5Orfi"></ion-icon><span data-page-node-id="dUEv6x9qogRlioSLiEVCOW">收藏题目</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='11-records.html'" data-page-node-id="kZOUd9EUcQ5gijbG1KGtkr"><ion-icon name="time-outline" data-page-node-id="ngsPVpwLia2kEfHEQ3Craf"></ion-icon><span data-page-node-id="Gmq9E8ZJF57OIDAoaiDVSn">做题记录</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='20-exam-records.html'" data-page-node-id="ZaowD5jgt6VaCwwGLE92lQ"><ion-icon name="document-text-outline" data-page-node-id="0RgFybiQKrUqgMkrosdPlY"></ion-icon><span data-page-node-id="FyFlJrjzoHKm37MCTtxfr7">考试记录</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='09-statistics.html'" data-page-node-id="N93vrGG37wuT4rG8x70m1I"><ion-icon name="bar-chart-outline" data-page-node-id="OoxyRAOKmAZeh2BWY1etiG"></ion-icon><span data-page-node-id="CHBgKX8m80tOzXGXRoFBQ5">统计</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='13-notifications.html'" data-page-node-id="BcZcmetYnz4I5SEFAFo1O7"><ion-icon name="notifications-outline" data-page-node-id="3jPclvjUcFUpAVtIz7WVA8"></ion-icon><span data-page-node-id="Q9PFEKPQGcFdTj7y6HEPqL">通知</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='12-search.html'" data-page-node-id="x5si6Bx7BD478t39j9LiJu"><ion-icon name="search-outline" data-page-node-id="QQG4QNWBVgZef21aTopQyU"></ion-icon><span data-page-node-id="mEqKIyEugrCFhb2IGqowFc">搜索</span></div>
+        <div class="sidebar-nav-label" data-page-node-id="syejHqvG0rLw5ayDls4mXV">管理</div>
+        <div class="sidebar-nav-item" onclick="location.href='15-admin-users.html'" data-page-node-id="qr7V4HybFq2pPEwRhIDC7m"><ion-icon name="people-outline" data-page-node-id="Q7TB7UAYEFcWs1Ef774eSG"></ion-icon><span data-page-node-id="vNQ9osrJc5ZE35vytGQBrp">用户管理</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='31-admin-reviews.html'" data-page-node-id="28nhoL7N4iUDCSzrJpEEqJ"><ion-icon name="checkmark-done-outline" data-page-node-id="7sSApk6Vk53F3AGXI8n6TN"></ion-icon><span data-page-node-id="AB7W5499cvDxOXEsz6kBeS">审核列表</span></div>
+      </nav>
+      <div class="sidebar-footer" data-page-node-id="4V5yHpx9ebI15QIgxopoVj">
+        <div class="sidebar-nav-item" data-page-node-id="ElxEHPJS08NGt4jqEFuf1z"><ion-icon name="log-out-outline" data-page-node-id="QxjFZr00M3nRRDlNgxUM1T"></ion-icon><span data-page-node-id="XBXt7Cl2pXGuk3FBOuTlCo">退出登录</span></div>
+      </div>
+    </aside>
 
-    <div class="demo-section">
-      <div class="demo-label">交卷确认 — Warning</div>
-      <div class="demo-bg">
-        <div class="modal-overlay">
-          <div class="modal confirm-dialog">
-            <div class="modal-body" style="text-align:center;">
-              <div class="confirm-icon warning">
-                <ion-icon name="warning-outline"></ion-icon>
+    <div class="main-area" data-page-node-id="XWPIX63tES9SLnSRS5nwrK">
+      <header class="app-header" data-page-node-id="CfHJrWehy4JbxmL7YzY7bD">
+        <div class="app-header-left" data-page-node-id="0k9vFfqZy4mEv43wUA7Tza">
+          <button class="mobile-menu-btn" onclick="document.querySelector('.sidebar').classList.toggle('mobile-open')" data-page-node-id="QXTjTGY9K5sSMLkuSKaUaV"><ion-icon name="menu-outline" data-page-node-id="S555n6XgVyMp9pgRJKvIMq"></ion-icon></button>
+          <!-- 全局 useConfirm 弹窗无固定宿主路由，背景以「通知」页示意 -->
+          <div class="breadcrumb" data-page-node-id="S9hIKHEJ1V7KTEIzEhaHjA"><span class="breadcrumb-current" data-page-node-id="s0SSdz9L3UawYpF1j0eCGz">通知</span></div>
+        </div>
+        <div class="app-header-right" data-page-node-id="3grTEDGKv54FO6IDiS6oHz">
+          <div class="header-search" data-page-node-id="OOqc9OWCKUayF1MLElLOKC">
+            <ion-icon name="search-outline" data-page-node-id="LREpqvYyfoWT9KwKNWHpoP"></ion-icon>
+            <input class="input" type="text" placeholder="搜索题目 / 题库 / 试卷" readonly data-page-node-id="qI5JT0w63vVRW0Z6375HvI">
+          </div>
+          <div style="position:relative;cursor:pointer;" data-page-node-id="oRyzRBeNt3zZ84UJHIsNem">
+            <ion-icon name="notifications-outline" style="font-size:22px;color:var(--text-secondary);" data-page-node-id="3ubKROvhTD5kFzYOMTq06T"></ion-icon>
+            <span class="badge" style="position:absolute;top:-4px;right:-4px;" data-page-node-id="qwp02kyWsZEE8Uxj6duyra">3</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;cursor:pointer;" data-page-node-id="jCMMW35fESgC1BcM2VQDBA">
+            <div class="avatar" style="background:var(--gradient-brand);" data-page-node-id="2GebYRHX1yKWS1mkYnmVP9">张</div>
+            <span style="font-size:14px;font-weight:500;color:var(--text-primary);" data-page-node-id="KCnZDqVjyvkQCwNgAqab6e">张同学</span>
+            <ion-icon name="chevron-down-outline" style="font-size:16px;color:var(--text-tertiary);" data-page-node-id="zlKDKhPiZGeS7wt7KpGmHn"></ion-icon>
+          </div>
+        </div>
+      </header>
+
+      <main class="app-content" data-page-node-id="IoItAki0nVw5nt8dVQqtvf">
+        <h1 style="font-size:var(--text-2xl);font-weight:var(--font-bold);margin:0 0 var(--space-2);" data-page-node-id="k7FSFTZYGE1nrfWleuu59F">确认弹窗组件</h1>
+        <p style="font-size:var(--text-sm);color:var(--text-secondary);margin:0 0 var(--space-6);" data-page-node-id="mYWPVs4HGyV8dpdaHEDwrp">
+          全局统一确认弹窗，基于 Naive UI Dialog（<code style="font-family:var(--font-mono);font-size:12px;" data-page-node-id="i9ArVY0ojuFCQuj3BuU7HN">useDialog</code>）注入设计系统视觉，容器 <code style="font-family:var(--font-mono);font-size:12px;" data-page-node-id="M04xQbqbkkB5BLS0TKQwDt">border-radius: 16px</code>。依赖 App.vue 中的 <code style="font-family:var(--font-mono);font-size:12px;" data-page-node-id="6ygFMeI1DUL5jALxetx2dw">&lt;n-dialog-provider&gt;</code>。
+        </p>
+
+        <!-- ===== 场景一：confirmDanger · 删除通知（NotificationList.vue） ===== -->
+        <div class="state-divider" data-page-node-id="yQeiOGCfq059Ptx7i53oKB"><h2 data-page-node-id="rBeK0wBp4WkbRULDrZFG5s">场景一 · 删除通知（confirmDanger）</h2></div>
+        <div class="state-note" data-page-node-id="3VZV0eiPxNIXFpUjh8F8Gb">
+          来源 <code data-page-node-id="aeNZfMe5IDXzH5GJyGmOps">src/views/notification/NotificationList.vue</code>：
+          <code data-page-node-id="66m2bCtZ8b8kloYDiGwCzg">confirmDanger({ title: '删除通知', content: '确定要删除这条通知吗？', positiveText: '删除' })</code>，
+          negativeText 未传走默认「取消」。dialog.error → positiveButtonProps <code data-page-node-id="t23V9bEmlIlTD5KqhxHtO0">{ type: 'error' }</code>（红色按钮）。
+        </div>
+        <div class="demo-bg card" data-page-node-id="cepQzIC9lxpZuWMSodPhTM">
+          <div class="bg-strip" data-page-node-id="m0Kk1dkDgsrUL4cIUOvs78"><span class="dot" data-page-node-id="1RVI4QTof68fGRFMBSzgGS"></span>张同学提交了「Java基础测试卷」需要批改</div>
+          <div class="bg-strip" data-page-node-id="98NbzCGcdPKHZomnsUmDj8"><span class="dot" data-page-node-id="hsLOuVE2165FuUHAllhBDz"></span>你被添加为「官方Java题库」的协作人</div>
+          <div class="bg-strip" data-page-node-id="OUGE2n88ZuQiduUI7HCFb9"><span class="dot" data-page-node-id="5TRQAJ9sgZ6XB5JWbQtAki"></span>题库「前端面试百题」已转让给你</div>
+          <div class="modal-overlay" data-page-node-id="31LuPbrtEz4kiUubyUIt3s">
+            <div class="modal confirm-dialog" style="border-radius:16px;" data-page-node-id="hnjCBtoF2PYUt0E8mDfqjd">
+              <div class="modal-body" style="text-align:center;" data-page-node-id="X94bFNg3MMlneUaOErQaSB">
+                <div class="confirm-icon danger" data-page-node-id="TkdWgXVjnl4pDEK7vn4PAY">
+                  <ion-icon name="trash-outline" data-page-node-id="MTYAOaI3Czg3jEBc6j8tCJ"></ion-icon>
+                </div>
+                <h2 class="confirm-title" data-page-node-id="hgiI0kFrKBfwewFdVmYy3W">删除通知</h2>
+                <p class="confirm-desc" data-page-node-id="jyN3iDzbjsCbvlPD3Xyk1L">确定要删除这条通知吗？</p>
               </div>
-              <h2 class="confirm-title">确认交卷？</h2>
-              <p class="confirm-desc">你还有 12 题未作答，交卷后将无法修改。确认要提交试卷吗？</p>
-              <div class="alert alert-error" style="margin-top:16px;justify-content:center;">
-                <ion-icon name="alert-circle-outline" style="font-size:18px;flex-shrink:0;"></ion-icon>
-                <span>未作答：12 题</span>
+              <div class="modal-footer" style="justify-content:center;border-top:none;" data-page-node-id="OewWAYuSnenZsebQot7SGY">
+                <button class="btn btn-secondary" data-page-node-id="Gf9tR1qAqTjxzM4ON6z6Vg">取消</button>
+                <button class="btn btn-danger" data-page-node-id="YSnBewI0Lo7ZIcbJAC5gTL">删除</button>
               </div>
-            </div>
-            <div class="modal-footer" style="justify-content:center;">
-              <button class="btn btn-secondary">再检查一下</button>
-              <button class="btn btn-primary">
-                <ion-icon name="checkmark-outline" style="font-size:18px;"></ion-icon>
-                确认交卷
-              </button>
             </div>
           </div>
         </div>
-      </div>
-    </div>
 
-    <div class="demo-section">
-      <div class="demo-label">删除确认 — Danger</div>
-      <div class="demo-bg">
-        <div class="modal-overlay">
-          <div class="modal confirm-dialog">
-            <div class="modal-body" style="text-align:center;">
-              <div class="confirm-icon danger">
-                <ion-icon name="trash-outline"></ion-icon>
+        <!-- ===== 场景二：confirmDanger · 删除标签（TagManageModal.vue，默认文案示例） ===== -->
+        <div class="state-divider" data-page-node-id="9Kjloihp0bIBchCqMrAB0v"><h2 data-page-node-id="24fH8eZ262hN1DpiwiyvGN">场景二 · 删除标签（confirmDanger，默认按钮文案）</h2></div>
+        <div class="state-note" data-page-node-id="8LKIPWkRgxOuui7tGkY5LS">
+          来源 <code data-page-node-id="MTLT3zBXUdBFV0Wy3jAqws">src/components/common/TagManageModal.vue</code>：
+          <code data-page-node-id="wYXaBdnBINVWifqDc4bPwr">confirmDanger({ title: '确认删除', content: '确认删除标签「Vue 基础」？' })</code>，
+          positiveText / negativeText 未传，走默认「删除 / 取消」。确认后 <code data-page-node-id="E9MSFEyB4GwHmeYQEMsQZ5">message.success('标签已删除')</code>，
+          失败 <code data-page-node-id="3eHHpuHgSzJ3t6Av0LA8nD">message.error('删除失败（仅管理员可删除未被引用的标签）')</code>。
+        </div>
+        <div class="demo-bg card" data-page-node-id="dmrOjH07T2uo6xP3YkePKD">
+          <div class="bg-strip" data-page-node-id="bcu0TFACiBxapzZTD3c2nT"><span class="dot" data-page-node-id="KQCcgE2QKrEwQdJZqN9D46"></span>Vue 基础</div>
+          <div class="bg-strip" data-page-node-id="vnqDylBDCERnCQ1FJKwPfu"><span class="dot" data-page-node-id="oXA2dFXB6viDT1NIKI0dCP"></span>数据结构</div>
+          <div class="bg-strip" data-page-node-id="0YCfzz4VeZOqFeeDzvCi0c"><span class="dot" data-page-node-id="VOIfJqz9M3gqbTkLLHQTqO"></span>设计模式</div>
+          <div class="modal-overlay" data-page-node-id="RiCd195B6OlwEu3afR9m9j">
+            <div class="modal confirm-dialog" style="border-radius:16px;" data-page-node-id="xxBBsd6qx93tTXA5d5NGyD">
+              <div class="modal-body" style="text-align:center;" data-page-node-id="62iyrJf99EKiHKaWWbJEXa">
+                <div class="confirm-icon danger" data-page-node-id="txRGMeVHZHQqO6mNANyQMC">
+                  <ion-icon name="trash-outline" data-page-node-id="q4ADMRAaqy0r49uxKEGpBo"></ion-icon>
+                </div>
+                <h2 class="confirm-title" data-page-node-id="3yYXkHMJddlMGH6kCmx7k4">确认删除</h2>
+                <p class="confirm-desc" data-page-node-id="AiF4HIrsbHIJ83lz1OOcgA">确认删除标签「Vue 基础」？</p>
               </div>
-              <h2 class="confirm-title">确认删除题目？</h2>
-              <p class="confirm-desc">删除后不可恢复，该题目关联的所有练习记录也将被清除。</p>
-            </div>
-            <div class="modal-footer" style="justify-content:center;">
-              <button class="btn btn-ghost">取消</button>
-              <button class="btn btn-danger">
-                <ion-icon name="trash-outline" style="font-size:18px;"></ion-icon>
-                确认删除
-              </button>
+              <div class="modal-footer" style="justify-content:center;border-top:none;" data-page-node-id="FPsNTNYlFAllj76yyI9LTx">
+                <button class="btn btn-secondary" data-page-node-id="23wB0xVUFXeiQV1Q2R8abh">取消</button>
+                <button class="btn btn-danger" data-page-node-id="FRS3oSQkpCEI3rBcemiHKq">删除</button>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+
+        <!-- ===== 场景三：confirm · 确认交卷（ExamPage.vue，普通确认） ===== -->
+        <div class="state-divider" data-page-node-id="C1KzJxZ5608whqh7nDYe9a"><h2 data-page-node-id="ygR1sSQ9STVQNxqRj45brX">场景三 · 确认交卷（confirm，dialog.warning）</h2></div>
+        <div class="state-note" data-page-node-id="gSKwhC9T5WIlJhQbj2YtfO">
+          来源 <code data-page-node-id="HA5pF055HQvW96Dq4Dpdph">src/views/exam/ExamPage.vue</code>：未答 &gt; 0 时 content 为
+          <code data-page-node-id="xZAWuXUZOCh0DQLGXmULR5">已答 {answered} 题，还有 {remain} 道题未作答。确定要提交试卷吗？</code>，否则为
+          <code data-page-node-id="jDx0zups2OWGVBxLy35eP6">已答 {answered} 题，确定要提交试卷吗？</code>。
+          <code data-page-node-id="k4ZmJQ3RlgVxihWHLJUtNT">confirm({ title: '确认交卷', content, positiveText: '确认交卷' })</code> → dialog.warning，主按钮为品牌色。
+        </div>
+        <div class="demo-bg card" data-page-node-id="Bel47v43f8oiyBG7G19GNe">
+          <div class="bg-strip" data-page-node-id="gydicsAnfLzuxBrCgxqeDc"><span class="dot" data-page-node-id="8M48KcBsmkSLO0k08moRce"></span>第 1 题 · 单选题</div>
+          <div class="bg-strip" data-page-node-id="bwYMjkNCqfihOOCQuncgcg"><span class="dot" data-page-node-id="Pj8Lp2VPiMxtYLRdeX95iq"></span>第 2 题 · 多选题</div>
+          <div class="bg-strip" data-page-node-id="MdnA3NAcV5u7Cim0wylbq9"><span class="dot" data-page-node-id="OD7raoBUkc5GsWvGw57ymM"></span>第 3 题 · 编程题</div>
+          <div class="modal-overlay" data-page-node-id="iTPmCliurVdH5Z6VwWOfzZ">
+            <div class="modal confirm-dialog" style="border-radius:16px;" data-page-node-id="KGFqePgQfPO6JZUL6TN2uX">
+              <div class="modal-body" style="text-align:center;" data-page-node-id="6kFlfmqA2ylKEQIN0LfM81">
+                <div class="confirm-icon warning" data-page-node-id="LsGKRTSETa9YE2R2EXprOS">
+                  <ion-icon name="warning-outline" data-page-node-id="DkBlXabEAygfjPKaLDZgz9"></ion-icon>
+                </div>
+                <h2 class="confirm-title" data-page-node-id="P4omgE2YnLd8tyBX2JWYwZ">确认交卷</h2>
+                <p class="confirm-desc" data-page-node-id="6y72WWiwcUPbES7EeKntIJ">已答 38 题，还有 2 道题未作答。确定要提交试卷吗？</p>
+              </div>
+              <div class="modal-footer" style="justify-content:center;border-top:none;" data-page-node-id="8jjqDRwFQK0kTLRxE5eAoH">
+                <button class="btn btn-secondary" data-page-node-id="SaTQcu42uMCf1WcdyLZeQT">取消</button>
+                <button class="btn btn-primary" data-page-node-id="EleCYZZFPRE1tepjn4h7NF">确认交卷</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== 参数清单（照抄 useConfirm.ts 的 ConfirmActionOptions 与默认值） ===== -->
+        <div class="state-divider" data-page-node-id="56UejY5lLK2uUrrUQIWC4b"><h2 data-page-node-id="fpD8iBsTIeJtCAtSuYUSh7">参数清单</h2></div>
+        <div class="state-note" data-page-node-id="3PfNupsnELomX9R5kWIShj">
+          <code data-page-node-id="I013kSfkm8fEZVbUzT7uWN">ConfirmActionOptions = Partial&lt;Pick&lt;DialogOptions, 'title' | 'content' | 'positiveText' | 'negativeText' | 'onPositiveClick'&gt;&gt;</code>，全部可选。
+        </div>
+        <table class="param-table" data-page-node-id="5tHRGEoqaSnT0N7M8WbA01">
+          <thead data-page-node-id="pQuejsUchWQSkTg8h7WAHi">
+            <tr data-page-node-id="RXMDResJfL8i6YzxX8lKCs"><th style="width:170px;" data-page-node-id="ZKIJGmkU5JqVjAtpYFYqio">参数</th><th style="width:110px;" data-page-node-id="SmnRHNL0kc1AqCnQtS1OYw">类型</th><th style="width:230px;" data-page-node-id="cGtsixoIeSFUHfT0uXde92">默认值</th><th data-page-node-id="FEJkid1ggikky0HCV0ZLBv">说明</th></tr>
+          </thead>
+          <tbody data-page-node-id="ibD0QfPLBHoatTcNchsOKC">
+            <tr data-page-node-id="UrvGpWxvloTK2AlyGK9aUr">
+              <td class="mono" data-page-node-id="qAAnMTeuj4og40mA62R5U6">title</td><td class="mono" data-page-node-id="vg0PthYzHFlSuzbFjW5iIP">string</td>
+              <td class="mono" data-page-node-id="k4c5LTED5jFXdOaqBjdmJ0">confirm: '确认操作' / confirmDanger: '确认删除'</td>
+              <td data-page-node-id="oV5jq1h5G7gCgHzPLM951n">弹窗标题</td>
+            </tr>
+            <tr data-page-node-id="DjT8D9ORSFBqMLQa9Cs9lv">
+              <td class="mono" data-page-node-id="Bwfy8kdsrsUl6PVbMB0Y0R">content</td><td class="mono" data-page-node-id="TEVP3eQKuHFsBYZHaxulGf">string</td>
+              <td class="mono" data-page-node-id="oZyQrN5tQ6sKM2EufIsiCG">confirm: '确定要执行此操作吗？' / confirmDanger: '此操作不可撤销，确定继续吗？'</td>
+              <td data-page-node-id="q6JP5ASgDmsbq8HQ30crZf">正文描述</td>
+            </tr>
+            <tr data-page-node-id="FBXKMkG9ACxHaFV0Mb2yR7">
+              <td class="mono" data-page-node-id="cqlryESSiA8wrkqEY0zBHG">positiveText</td><td class="mono" data-page-node-id="r2wKlWwbHnUZMaCwhZxfMa">string</td>
+              <td class="mono" data-page-node-id="I0MgOO5Ew3EmhIlQwpG1Da">confirm: '确认' / confirmDanger: '删除'</td>
+              <td data-page-node-id="DjGrUJ2WMLf8k9fnPCNWoh">确认按钮文案（confirmDanger 恒为红色 error 按钮）</td>
+            </tr>
+            <tr data-page-node-id="GMmxzm2lFF8y9EsrWfu0HH">
+              <td class="mono" data-page-node-id="pNAJrZ9DaTsg2Y2YW2Q0de">negativeText</td><td class="mono" data-page-node-id="ig75DMdLJ0jH1AkhnFPxGO">string</td>
+              <td class="mono" data-page-node-id="6V376D1b8XZk9fJ1G9mQqD">'取消'</td>
+              <td data-page-node-id="eCRb2KJipF3bUV7EfhGkPR">取消按钮文案</td>
+            </tr>
+            <tr data-page-node-id="XMCIVH8ejNhdBUIlHWEVjX">
+              <td class="mono" data-page-node-id="r7NUQM7sFhOX9TiQPVvjfP">onPositiveClick</td><td class="mono" data-page-node-id="cwCvBwUPb5LGen8K9teKAa">() =&gt; void</td>
+              <td class="mono" data-page-node-id="64RaCV1jWcSMKgGQHs6mg4">—</td>
+              <td data-page-node-id="Wbc1qdM31QuZhk985jQY6e">点击确认的回调，支持 async（await 返回 Promise）</td>
+            </tr>
+            <tr data-page-node-id="OA529zqAY9tYPB32s2knJX">
+              <td class="mono" data-page-node-id="YI9EwpOOd2tZXf8WTVjxh3">positiveButtonProps</td><td class="mono" data-page-node-id="sHGMjVQIFlu16BFTcGzW3C">固定注入</td>
+              <td class="mono" data-page-node-id="GJSMDaq4nWQ0DlrohGUjj0">{ type: 'error' }（仅 confirmDanger）</td>
+              <td data-page-node-id="kkvH9puvjFm6m9d3xerQKd">confirmDanger 预设，确认按钮呈红色</td>
+            </tr>
+            <tr data-page-node-id="jCxnQjcUf4iQQJqF4vKGjq">
+              <td class="mono" data-page-node-id="7iMe8i1RH2KWrJ1aTm6V1B">style</td><td class="mono" data-page-node-id="w91yaE2NxfegbuJ62bBSwA">固定注入</td>
+              <td class="mono" data-page-node-id="Bf6lkIT8K4fURGM6sz76ct">'border-radius: 16px;'</td>
+              <td data-page-node-id="6zMqI8ZCve3ACItOmRxf8e">confirm / confirmDanger 统一注入的容器圆角</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <!-- ===== 交互逻辑 ===== -->
+        <div class="state-divider" data-page-node-id="ubr867Z0sGyVuhVwYBjPlO"><h2 data-page-node-id="m7fNwL6wILtDFLFz5FOem9">交互逻辑</h2></div>
+        <div class="state-note" data-page-node-id="st6cNHf3j4XRL58iWFcSUQ">
+          调用形态：<code data-page-node-id="jPvdOe5GDt49HB5Hb21sl4">const { confirm, confirmDanger } = useConfirm()</code>。
+        </div>
+        <table class="param-table" data-page-node-id="tN8PZNSUTNvtykHyJhiwNi">
+          <thead data-page-node-id="MfndwyUybd0hcmIwAHKzbC">
+            <tr data-page-node-id="KRQmaFpGVuHYKHBqoQXUYT"><th style="width:180px;" data-page-node-id="qzKpaCGyPpuhn43nmxBrh7">方法</th><th style="width:220px;" data-page-node-id="5SDvPI51Ta5Sfy99qUPPbm">Naive UI 底层</th><th data-page-node-id="EYchh6kcv2s8AJZHFI0UrG">行为</th></tr>
+          </thead>
+          <tbody data-page-node-id="pfBTOVCCuQU2WFStMB7Y0M">
+            <tr data-page-node-id="mJWiPEGqjGNoyvSOF130bz">
+              <td class="mono" data-page-node-id="Ld2a2AfSaLXntSC07ny8zH">confirm(opts)</td>
+              <td class="mono" data-page-node-id="vJCftG0yMvtbFVrAQetAJz">dialog.warning</td>
+              <td data-page-node-id="FyIRQwRTs9eyEOoK5hhDx7">普通确认，图标 warning 色、主按钮品牌色；点击「取消」或遮罩关闭，无回调</td>
+            </tr>
+            <tr data-page-node-id="Z95YniunKbDsIJxPmwizhW">
+              <td class="mono" data-page-node-id="mWljWzz4EE56Smio1zO62n">confirmDanger(opts)</td>
+              <td class="mono" data-page-node-id="oehGfRf3pACWd38s4A0765">dialog.error</td>
+              <td data-page-node-id="G0PDnz0MYwzv2E1BPidFQj">危险操作确认，图标 error 色、确认按钮红色；点击确认执行 <span class="mono" data-page-node-id="1rFabYKfcnxwKeK4kgYqla">onPositiveClick</span>，成功后通常 <span class="mono" data-page-node-id="ZEGLwUxDBoAzszahz67rmt">message.success</span> 并刷新列表</td>
+            </tr>
+          </tbody>
+        </table>
+      </main>
     </div>
   </div>
+  <script>
+    document.querySelector(".sidebar-toggle")?.addEventListener("click", function() {
+      var s = document.querySelector(".sidebar"), m = document.querySelector(".main-area");
+      s.classList.toggle("sidebar-collapsed");
+      m.classList.toggle("main-area-collapsed");
+      var i = this.querySelector("ion-icon");
+      i.setAttribute("name", s.classList.contains("sidebar-collapsed") ? "chevron-forward-outline" : "chevron-back-outline");
+    });
+  </script>
 </body>
 </html>

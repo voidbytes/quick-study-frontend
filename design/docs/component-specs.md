@@ -1,1971 +1,1226 @@
 # Quick Study Web — 组件规格说明书 (Component Specifications)
 
-> **文档目的**：本文档详细定义 Quick Study Web 应用中每一个可复用 UI 组件的 HTML 结构、CSS 类名、视觉状态、Naive UI 组件映射及 Tailwind 工具类映射。AI 开发者在生成 Vue 组件代码时应严格遵循本文档的约定。
+> **文档目的**：本文档定义 `frontend/src` 下所有真实存在的可复用 UI 组件、组合式函数（composables）与 UI 相关工具函数（utils）的规格。AI 开发者在生成或修改代码时应以本文档与源码保持一致。
 >
-> **设计令牌**：所有组件样式基于 `design-tokens.css` 中定义的 CSS 自定义属性。Tailwind 工具类基于 `tailwind.config.js` 中扩展的设计令牌。
+> **唯一事实源**：本文档内容全部依据 `frontend/src` 现有代码（`.vue` 组件、`composables/*`、`utils/*`）逐字整理，新增 / 删除组件以代码为准。任何与代码不符之处，以代码为最终依据；代码未实现的能力，本文如实标注「代码未实现」。
 >
-> **CSS 参考**：所有类名与样式规则来源于 `mockups/styles/mockup.css`。
+> **设计令牌**：组件内联样式引用的 CSS 变量均来自 `design/tokens/design-tokens.css`（如 `--space-*`、`--color-*`、`--text-*`、`--radius-*`、`--border-*`、`--bg-*`、`--font-*`、`--leading-*`、`--transition-base`）。Naive UI 组件自带主题，不在本文重复其样式令牌。
+>
+> **图标来源**：组件直接引用 `@vicons/ionicons5` 的图标组件，已用图标仅 `CubeOutline`、`ArrowBackOutline`、`CloudUploadOutline`、`DocumentTextOutline` 四种，其余请沿用代码内既有名称，勿臆造。
+>
+> **CSS 参考**：基础原子类（btn / card / tag / input / table 等）的说明见 `design/mockups/styles/mockup.css`，不在本文重复；本文只描述代码库中已封装为 SFC 的组件。
 
 ---
 
 ## 目录
 
-1. [按钮 (Button)](#1-按钮-button)
-2. [卡片 (Card)](#2-卡片-card)
-3. [标签 (Tag)](#3-标签-tag)
-4. [输入框 (Input)](#4-输入框-input)
-5. [表格 (Data Table)](#5-表格-data-table)
-6. [分页 (Pagination)](#6-分页-pagination)
-7. [统计卡片 (Stat Card)](#7-统计卡片-stat-card)
-8. [答题选项 (Question Option)](#8-答题选项-question-option)
-9. [题目导航网格 (Question Nav Grid)](#9-题目导航网格-question-nav-grid)
-10. [头像 (Avatar)](#10-头像-avatar)
-11. [徽章 (Badge)](#11-徽章-badge)
-12. [侧边栏 (Sidebar)](#12-侧边栏-sidebar)
-13. [顶部导航栏 (Header)](#13-顶部导航栏-header)
-14. [模态框 (Modal)](#14-模态框-modal)
-15. [空状态 (Empty State)](#15-空状态-empty-state)
-16. [进度条 (Progress)](#16-进度条-progress)
-17. [警告提示 (Alert)](#17-警告提示-alert)
+1. [EmptyState（空状态）](#1-emptystate空状态)
+2. [FilterBar（筛选栏）](#2-filterbar筛选栏)
+3. [PageHeader（页面标题栏）](#3-pageheader页面标题栏)
+4. [ProviderBridge（Naive UI 反馈桥接）](#4-providerbridgenaive-ui-反馈桥接)
+5. [QuestionNavGrid（答题导航网格）](#5-questionnavgrid答题导航网格)
+6. [QuestionOption（答题选项）](#6-questionoption答题选项)
+7. [QuestionPreviewDrawer（题目预览抽屉）](#7-questionpreviewdrawer题目预览抽屉)
+8. [RichText（富文本安全渲染）](#8-richtext富文本安全渲染)
+9. [SkeletonList（骨架列表）](#9-skeletonlist骨架列表)
+10. [StatCard（统计卡片）](#10-statcard统计卡片)
+11. [TagManageModal（标签管理弹窗）](#11-tagmanagemodal标签管理弹窗)
+12. [UserSearchSelect（用户远程搜索选择器）](#12-usersearchselect用户远程搜索选择器)
+13. [FileUpload（文件上传）](#13-fileupload文件上传)
+14. [LoadError（加载失败）](#14-loaderror加载失败)
+15. [MarkdownEditor（Markdown 编辑器）](#15-markdowneditormarkdown-编辑器)
+16. [BankImportDialog（导入题库弹窗）](#16-bankimportdialog导入题库弹窗)
+17. [ImportResultPanel（导入结果面板）](#17-importresultpanel导入结果面板)
+18. [QuestionImportDialog（导入题目弹窗）](#18-questionimportdialog导入题目弹窗)
+19. [useConfirm（确认弹窗组合式函数）](#19-useconfirm确认弹窗组合式函数)
+20. [usePagination（分页列表组合式函数）](#20-usepagination分页列表组合式函数)
+21. [useBankOptions（题库下拉选项组合式函数）](#21-usebankoptions题库下拉选项组合式函数)
+22. [utils/format（格式化工具）](#22-utilsformat格式化工具)
+23. [utils/tagOptions（标签分组选项工具）](#23-utilstagoptions标签分组选项工具)
+24. [utils/practiceTitle（练习会话标题工具）](#24-utilspracticetitle练习会话标题工具)
+25. [utils/constants（枚举字典）](#25-utilsconstants枚举字典)
 
 ---
 
-## 1. 按钮 (Button)
+## 1. EmptyState（空状态）
 
-### 组件描述
+### 组件路径
 
-按钮是应用中最基础的交互元素，用于触发操作。支持多种语义变体（主操作、次操作、幽灵、危险、成功）和尺寸（小、默认、大、块级）。
+`src/components/common/EmptyState.vue`
 
-### 视觉状态
+### 用途
 
-| 状态 | 描述 |
-|------|------|
-| `default` | 默认可点击状态 |
-| `hover` | 鼠标悬停，背景色加深 |
-| `disabled` | 禁用，`opacity: 0.5`，`cursor: not-allowed` |
-| `loading` | 加载中，显示旋转图标，禁用交互 |
+列表无数据、搜索无结果、权限/内容缺失等场景下的占位展示。由图标、标题、描述（可选）与操作区插槽（可选）组成，整体垂直居中。
 
-### 变体 (Variants)
-
-| 变体 | 背景色 | 文字色 | 适用场景 |
-|------|--------|--------|----------|
-| `btn-primary` | `--color-primary-500` (#5B5FE9) | 白色 | 主操作（提交、保存、开始考试） |
-| `btn-secondary` | `--bg-card` (白色) | `--text-primary` | 次操作（取消、返回） |
-| `btn-ghost` | 透明 | `--text-secondary` | 辅助操作（筛选、排序） |
-| `btn-danger` | `--color-error-500` (#F0503C) | 白色 | 危险操作（删除） |
-| `btn-success` | `--color-success-500` (#22B570) | 白色 | 成功操作（通过审核） |
-
-### 尺寸 (Sizes)
-
-| 尺寸 | 内边距 | 字号 | 圆角 |
-|------|--------|------|------|
-| `btn-sm` | 8px 12px | `--text-sm` (13px) | `--radius-md` (8px) |
-| 默认 | 12px 20px | `--text-base` (14px) | `--radius-lg` (12px) |
-| `btn-lg` | 16px 24px | `--text-lg` (16px) | `--radius-lg` (12px) |
-| `btn-block` | 同默认 | 同默认 | 同默认 (width: 100%) |
-
-### Props 定义
+### Props
 
 | Prop | 类型 | 默认值 | 说明 |
 |------|------|--------|------|
-| `variant` | `'primary' \| 'secondary' \| 'ghost' \| 'danger' \| 'success'` | `'primary'` | 按钮语义变体 |
-| `size` | `'sm' \| 'default' \| 'lg' \| 'block'` | `'default'` | 按钮尺寸 |
-| `disabled` | `boolean` | `false` | 是否禁用 |
-| `loading` | `boolean` | `false` | 是否加载中 |
-| `icon` | `string` | — | Ionicons 图标名称 |
+| `title` | `string` | `'暂无数据'` | 主标题 |
+| `description` | `string` | `''` | 描述文字；为空时不渲染 `<p>` |
+| `icon` | `any`（`Component`） | `CubeOutline` | 图标组件，经 `<component :is="icon" />` 渲染 |
 
-### HTML 结构示例
+> 默认图标 `CubeOutline` 来自 `@vicons/ionicons5`。
 
-```html
-<!-- 主按钮 -->
-<button class="btn btn-primary">
-  <ion-icon name="save-outline"></ion-icon>
-  <span>保存</span>
-</button>
+### Emits / Slots
 
-<!-- 次按钮 + 小尺寸 -->
-<button class="btn btn-secondary btn-sm">取消</button>
+- Emits：无。
+- Slots：`action` —— 操作区（如"新建"按钮），渲染在描述下方。
 
-<!-- 危险按钮 -->
-<button class="btn btn-danger">
-  <ion-icon name="trash-outline"></ion-icon>
-  <span>删除</span>
-</button>
+### 关键实现要点
 
-<!-- 幽灵按钮 -->
-<button class="btn btn-ghost">筛选</button>
-
-<!-- 块级按钮 -->
-<button class="btn btn-primary btn-block">提交试卷</button>
-
-<!-- 禁用 -->
-<button class="btn btn-primary" disabled>不可用</button>
-```
+- 容器 `.empty-state` 使用 `display:flex; flex-direction:column; align-items:center; justify-content:center`，内边距 `var(--space-12) var(--space-6)`。
+- 图标 `.es-icon` 颜色 `var(--color-neutral-300)`（中性灰 300），尺寸由 `<n-icon :size="56">` 控制。
+- 标题 `.es-title`：`var(--text-base)`、`var(--font-semibold)`、`var(--text-secondary)`。
+- 描述 `.es-desc`：`var(--text-sm)`、`var(--text-tertiary)`。
+- 操作区 `.es-action` 上间距 `var(--space-5)`，仅当父级提供 `action` 插槽时存在。
 
 ### Naive UI 组件映射
 
+- 图标渲染依赖 `<n-icon>`，传入组件而非 name。
+- 非 `n-empty`：本组件为自定义 flex 布局，未使用 Naive UI 的空状态组件。
+
+### 用法示例
+
 ```vue
-<n-button type="primary" size="medium" :loading="loading" :disabled="disabled">
-  <template #icon>
-    <n-icon><SaveOutline /></n-icon>
+<EmptyState title="暂无题目" description="该题库下还没有题目" :icon="DocumentTextOutline">
+  <template #action>
+    <n-button type="primary" @click="handleCreate">新建题目</n-button>
   </template>
-  保存
-</n-button>
+</EmptyState>
 ```
-
-| Mockup 变体 | Naive UI `type` | Naive UI `ghost` | 说明 |
-|-------------|-----------------|-------------------|------|
-| `btn-primary` | `"primary"` | `false` | 主操作 |
-| `btn-secondary` | `"default"` | `false` | Naive UI 默认 type 即为次按钮 |
-| `btn-ghost` | `"default"` | `true` | 幽灵按钮 |
-| `btn-danger` | `"error"` | `false` | 危险操作 |
-| `btn-success` | `"success"` | `false` | Naive UI 支持 success type |
-
-| Mockup 尺寸 | Naive UI `size` |
-|-------------|-----------------|
-| `btn-sm` | `"small"` |
-| 默认 | `"medium"` |
-| `btn-lg` | `"large"` |
-| `btn-block` | `"medium"` + `block` prop |
-
-### Tailwind 工具类映射
-
-```html
-<!-- 等效 Tailwind 写法（使用 @apply 或原生类） -->
-<button class="btn btn-primary">保存</button>
-<button class="btn btn-secondary btn-sm">取消</button>
-<button class="btn btn-danger">删除</button>
-<button class="btn btn-ghost">筛选</button>
-<button class="btn btn-success">通过</button>
-<button class="btn btn-primary btn-block">提交试卷</button>
-```
-
-> **Tailwind 类名**：`btn`, `btn-primary`, `btn-secondary`, `btn-ghost`, `btn-danger`, `btn-success`, `btn-sm`, `btn-lg`, `btn-block`
->
-> 这些类名应在 Tailwind 配置的 `components` 层或全局 CSS 中通过 `@layer components` 定义，引用设计令牌变量。
-
-### AI 实现指南
-
-- `variant` prop 映射到 CSS 类 `btn-{variant}`，通过 computed 属性拼接。
-- `size` 为 `'default'` 时不追加尺寸类名，其余追加 `btn-{size}`。
-- `btn-block` 与其他尺寸可组合使用（先加尺寸类，再加 block 类）。
-- `loading` 状态时在按钮内部最前方插入旋转的 `ion-icon name="refresh-outline"` 或使用 Naive UI 内置 loading 图标，同时设置 `disabled` 防止重复提交。
-- 图标使用 Ionicons 5.5.2，通过 `<ion-icon>` Web Component 渲染。
-- 按钮内文字与图标之间使用 `gap: var(--space-2)` 间距。
 
 ---
 
-## 2. 卡片 (Card)
+## 2. FilterBar（筛选栏）
 
-### 组件描述
+### 组件路径
 
-卡片是承载内容的容器组件，用于分组相关信息。支持默认样式和可悬停（hoverable）样式。由卡片头部（标题 + 操作区）和卡片主体组成。
+`src/components/common/FilterBar.vue`
 
-### 视觉状态
+### 用途
 
-| 状态 | 描述 |
-|------|------|
-| `default` | 白色背景，默认边框 |
-| `hoverable` | 悬停时边框变为主题色浅色，出现小阴影 |
+筛选条件行的统一容器。仅提供一个带 `flex-wrap` 的横向布局插槽，本身不含任何业务逻辑或 Props。
 
-### HTML 结构示例
+### Props / Emits / Slots
 
-```html
-<!-- 基础卡片 -->
-<div class="card">
-  <div class="card-header">
-    <h3 class="card-title">题目列表</h3>
-    <div class="flex gap-2">
-      <button class="btn btn-ghost btn-sm">导出</button>
-      <button class="btn btn-primary btn-sm">新建</button>
-    </div>
-  </div>
-  <div class="card-body">
-    <p>卡片内容区域</p>
-  </div>
-</div>
+- Props：无。
+- Emits：无。
+- Slots：`default` —— 筛选控件（如 `n-select`、`n-input`）直接放入即可。
 
-<!-- 可悬停卡片（无头部） -->
-<div class="card card-hover">
-  <div class="card-body">
-    <p>悬停我试试</p>
-  </div>
-</div>
+### 关键实现要点
 
-<!-- 紧凑卡片（小内边距） -->
-<div class="card">
-  <div class="card-body card-body-sm">
-    <p>紧凑内容</p>
-  </div>
-</div>
-```
+- `.filter-bar`：`display:flex; align-items:center; gap:var(--space-3); flex-wrap:wrap; margin-bottom:var(--space-5)`。
+- 内部子元素之间的间距由 `gap` 自动处理，无需手动加 margin。
 
 ### Naive UI 组件映射
 
+无（纯布局包裹）。内部通常放 `n-select`、`n-input` 等。
+
+### 用法示例
+
 ```vue
-<n-card title="题目列表" :bordered="true" :hoverable="false">
-  <template #header-extra>
-    <n-button size="small" @click="handleCreate">新建</n-button>
+<FilterBar>
+  <n-select v-model:value="type" :options="typeOptions" placeholder="题型" clearable style="width: 160px" />
+  <n-input v-model:value="keyword" placeholder="搜索" clearable style="width: 200px" />
+  <n-button type="primary" @click="search">查询</n-button>
+</FilterBar>
+```
+
+---
+
+## 3. PageHeader（页面标题栏）
+
+### 组件路径
+
+`src/components/common/PageHeader.vue`
+
+### 用途
+
+各页面顶部的标题栏：左侧为返回按钮（可选）+ 标题 + 副标题，右侧为操作区插槽。返回按钮调用 `router.back()`。
+
+### Props
+
+| Prop | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `title` | `string` | —（必填） | 页面主标题 |
+| `subtitle` | `string` | `''` | 副标题；为空时不渲染 |
+| `showBack` | `boolean` | `false` | 是否显示左上角返回按钮 |
+
+### Emits / Slots
+
+- Emits：无。
+- Slots：`actions` —— 右侧操作按钮区。
+
+### 关键实现要点
+
+- `.page-header`：`display:flex; justify-content:space-between; align-items:center; gap:var(--space-4); margin-bottom:var(--space-6); flex-wrap:wrap`。
+- 返回按钮用 `<n-button quaternary circle size="small">`，图标 `ArrowBackOutline`（来自 `@vicons/ionicons5`），点击 `router.back()`。
+- 标题 `.ph-title`：`var(--text-2xl)`、`var(--font-bold)`、`var(--text-primary)`。
+- 副标题 `.ph-subtitle`：`var(--text-sm)`、`var(--text-tertiary)`。
+
+### Naive UI 组件映射
+
+- 返回按钮：`<n-button quaternary circle size="small">` + `<n-icon><ArrowBackOutline /></n-icon>`。
+- 操作区为普通插槽，通常放 `n-button`。
+
+### 用法示例
+
+```vue
+<PageHeader title="题库详情" subtitle="共 120 道题目" :show-back="true">
+  <template #actions>
+    <n-button type="primary" @click="createQuestion">新建题目</n-button>
   </template>
-  <p>卡片内容区域</p>
-</n-card>
+</PageHeader>
 ```
-
-| Mockup 类 | Naive UI Prop | 说明 |
-|-----------|---------------|------|
-| `card` | 默认渲染 | Naive UI `n-card` 默认带边框 |
-| `card-hover` | `:hoverable="true"` | 悬停高亮效果 |
-| `card-header` | `#header` + `#header-extra` slot | 头部标题与操作区 |
-| `card-title` | `title` prop | 卡片标题 |
-| `card-body` | 默认 slot | 卡片主体内容 |
-| `card-body-sm` | `content-style` 调整 padding | 紧凑模式 |
-
-### Tailwind 工具类映射
-
-| 类名 | 用途 |
-|------|------|
-| `card` | 卡片容器：白底、边框、圆角 12px |
-| `card-hover` | 悬停修饰类 |
-| `card-header` | 头部区域：flex 两端对齐、底部边框 |
-| `card-title` | 标题：16px、semibold |
-| `card-body` | 主体：padding 20px |
-| `card-body-sm` | 紧凑主体：padding 16px |
-
-### AI 实现指南
-
-- 卡片头部 (`card-header`) 使用 `flex` + `justify-between` 布局，左侧放 `card-title`，右侧放操作按钮组。
-- `card-hover` 作为修饰类追加在 `card` 之后，不单独使用。
-- 无头部的卡片直接使用 `card` > `card-body` 结构。
-- 卡片圆角为 `--radius-lg` (12px)，`overflow: hidden` 确保内部元素不溢出圆角。
-- 使用 Naive UI 时，通过 `#header-extra` slot 实现右侧操作区。
 
 ---
 
-## 3. 标签 (Tag)
+## 4. ProviderBridge（Naive UI 反馈桥接）
 
-### 组件描述
+### 组件路径
 
-标签用于标记状态、类型或分类信息。在 Quick Study 中广泛用于题目类型标记、难度标记和状态标记。
+`src/components/common/ProviderBridge.vue`
 
-### 视觉状态
+### 用途
 
-| 变体 | 背景色 | 文字色 | 用途 |
-|------|--------|--------|------|
-| `tag-primary` | `--color-primary-50` (#EEF0FF) | `--text-brand` (#5B5FE9) | 简答题类型 |
-| `tag-success` | `--color-success-50` (#E8F9F0) | `--color-success-600` (#1A965C) | 判断题 / 简单难度 / 已发布 |
-| `tag-error` | `--color-error-50` (#FFEFEC) | `--color-error-600` (#D63A28) | 困难难度 |
-| `tag-warning` | `--color-warning-50` (#FFF8E6) | `--color-warning-600` (#E68A00) | 多选题 / 中等难度 / 已关闭 |
-| `tag-info` | `--color-info-50` (#E8F1FF) | `--color-info-600` (#1E6FE0) | 单选题 |
-| `tag-default` | `--color-neutral-100` (#F4F4F6) | `--text-secondary` (#6B6B76) | 填空题 / 草稿状态 |
+将 Naive UI 的 `useMessage` / `useDialog` / `useNotification` / `useLoadingBar` 实例挂载到 `window`，供组件上下文之外的模块（如 axios 拦截器 `api/request.ts`）调用全局反馈 API。
 
-### 业务映射规则
+### Props / Emits / Slots
 
-**题目类型标签**
+- Props：无。
+- Emits：无。
+- Slots：`default` —— 透传渲染（`<slot />`），本身不注入任何 DOM。
 
-| 题型 | Tag 变体 | 显示文字 |
-|------|----------|----------|
-| 单选题 | `tag-info` | 单选 |
-| 多选题 | `tag-warning` | 多选 |
-| 判断题 | `tag-success` | 判断 |
-| 填空题 | `tag-default` | 填空 |
-| 简答题 | `tag-primary` | 简答 |
+### 关键实现要点
 
-**难度标签**
-
-| 难度 | Tag 变体 | 显示文字 |
-|------|----------|----------|
-| 简单 | `tag-success` | 简单 |
-| 中等 | `tag-warning` | 中等 |
-| 困难 | `tag-error` | 困难 |
-
-**状态标签**
-
-| 状态 | Tag 变体 | 显示文字 |
-|------|----------|----------|
-| 已发布 | `tag-success` | 已发布 |
-| 草稿 | `tag-default` | 草稿 |
-| 已关闭 | `tag-warning` | 已关闭 |
-
-### HTML 结构示例
-
-```html
-<!-- 题目类型标签 -->
-<span class="tag tag-info">单选</span>
-<span class="tag tag-warning">多选</span>
-<span class="tag tag-success">判断</span>
-<span class="tag tag-default">填空</span>
-<span class="tag tag-primary">简答</span>
-
-<!-- 难度标签 -->
-<span class="tag tag-success">简单</span>
-<span class="tag tag-warning">中等</span>
-<span class="tag tag-error">困难</span>
-
-<!-- 状态标签 -->
-<span class="tag tag-success">已发布</span>
-<span class="tag tag-default">草稿</span>
-<span class="tag tag-warning">已关闭</span>
-```
+- 必须在各 Naive UI Provider（`n-message-provider` / `n-dialog-provider` / `n-notification-provider` / `n-loading-bar-provider`）**内部**挂载，且只应挂载一次。
+- 挂载内容：`window.$message`、`window.$dialog`、`window.$notification`、`window.$loadingBar`。
+- 模板仅为 `<slot />`，无可见 UI；脚本在 `setup` 阶段同步执行挂载。
 
 ### Naive UI 组件映射
 
+- 依赖 `useMessage`、`useDialog`、`useNotification`、`useLoadingBar`（均来自 `naive-ui`）。
+
+### 用法示例
+
 ```vue
-<n-tag :type="tagType" :bordered="false" size="small">
-  {{ label }}
-</n-tag>
+<!-- 在 App.vue 的 Provider 内部 -->
+<n-message-provider>
+  <n-dialog-provider>
+    <n-notification-provider>
+      <n-loading-bar-provider>
+        <ProviderBridge />
+        <RouterView />
+      </n-loading-bar-provider>
+    </n-notification-provider>
+  </n-dialog-provider>
+</n-message-provider>
 ```
-
-| Mockup 变体 | Naive UI `type` |
-|-------------|-----------------|
-| `tag-primary` | `"primary"` |
-| `tag-success` | `"success"` |
-| `tag-error` | `"error"` |
-| `tag-warning` | `"warning"` |
-| `tag-info` | `"info"` |
-| `tag-default` | `"default"` |
-
-> 使用 `:bordered="false"` 关闭边框，保持与 mockup 一致的浅色背景填充风格。
-
-### Tailwind 工具类映射
-
-| 类名 | 用途 |
-|------|------|
-| `tag` | 基础标签：inline-flex、圆角 6px、字号 12px、semibold |
-| `tag-primary` | 主色变体 |
-| `tag-success` | 成功变体 |
-| `tag-error` | 错误变体 |
-| `tag-warning` | 警告变体 |
-| `tag-info` | 信息变体 |
-| `tag-default` | 默认变体 |
-
-### AI 实现指南
-
-- 建议封装一个 `<QuestionTypeTag :type="questionType" />` 组件，内部通过映射表自动选择正确的 tag 变体。
-- 同理封装 `<DifficultyTag :level="difficulty" />` 和 `<StatusTag :status="status" />`。
-- 标签内边距为 `2px 8px`，行高 1.4，字体大小 12px。
-- 所有标签变体均使用浅色背景 + 深色文字的组合（non-solid 风格）。
-- 在 Naive UI 中配合 `:bordered="false"` 和 `size="small"` 以匹配 mockup 视觉。
 
 ---
 
-## 4. 输入框 (Input)
+## 5. QuestionNavGrid（答题导航网格）
 
-### 组件描述
+### 组件路径
 
-输入框用于接收用户文本输入。支持标签、占位符、前缀/后缀图标、错误状态和帮助文字。包含文本输入 (`input`)、文本域 (`textarea`) 和下拉选择 (`select`) 三种形态。
+`src/components/common/QuestionNavGrid.vue`
 
-### 视觉状态
+### 用途
 
-| 状态 | 边框色 | 阴影 | 说明 |
-|------|--------|------|------|
-| `default` | `--border-default` (#E8E8EC) | 无 | 默认可输入 |
-| `focus` | `--color-primary-500` (#5B5FE9) | `0 0 0 3px rgba(91,95,233,0.12)` | 聚焦输入 |
-| `error` | `--color-error-500` (#F0503C) | `0 0 0 3px rgba(240,80,60,0.12)` (聚焦时) | 校验失败 |
-| `disabled` | `--border-default` | — | 不可输入 |
+考试 / 练习页面侧边展示所有题目答题进度。每格显示题号，按状态着色；点击触发 `select` 事件跳题。
 
-### HTML 结构示例
+### Props
 
-```html
-<!-- 基础输入框 -->
-<div class="input-group">
-  <label class="input-label">用户名<span class="req">*</span></label>
-  <input type="text" class="input" placeholder="请输入用户名" />
-  <p class="input-hint">3-20 个字符</p>
-</div>
+| Prop | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `items` | `QuestionNavStatus[]` | —（必填） | 每题状态数组，长度即题数 |
+| `disabled` | `boolean` | `false` | 是否禁用点击（如交卷后） |
 
-<!-- 错误状态 -->
-<div class="input-group">
-  <label class="input-label">邮箱<span class="req">*</span></label>
-  <input type="email" class="input input-error" placeholder="请输入邮箱" />
-  <p class="input-hint" style="color: var(--color-error-600);">邮箱格式不正确</p>
-</div>
+> `QuestionNavStatus` 类型定义于 `src/components/common/questionNav.ts`：
+> `export type QuestionNavStatus = 'unanswered' | 'answered' | 'current' | 'review'`
 
-<!-- 密码输入 -->
-<div class="input-group">
-  <label class="input-label">密码</label>
-  <input type="password" class="input" placeholder="请输入密码" />
-</div>
+### Emits / Slots
 
-<!-- 文本域 -->
-<div class="input-group">
-  <label class="input-label">题目解析</label>
-  <textarea class="textarea" placeholder="请输入解析内容"></textarea>
-</div>
+- Emits：`select: [index: number]` —— 点击某格时返回其下标（从 0 起）。
+- Slots：无。
 
-<!-- 下拉选择 -->
-<div class="input-group">
-  <label class="input-label">题目类型</label>
-  <select class="select">
-    <option value="">请选择</option>
-    <option value="single">单选题</option>
-    <option value="multiple">多选题</option>
-  </select>
-</div>
+### 关键实现要点
 
-<!-- 带前缀图标的输入框（自定义实现） -->
-<div class="input-group">
-  <label class="input-label">搜索</label>
-  <div style="position: relative;">
-    <ion-icon name="search-outline"
-      style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-size: 18px; color: var(--text-tertiary);">
-    </ion-icon>
-    <input type="text" class="input" placeholder="搜索题目..."
-      style="padding-left: 40px;" />
-  </div>
-</div>
-```
+- 单元格类名由 `cellClass(status)` 映射：
+  - `current` → `is-current`
+  - `answered` → `is-answered`
+  - `review`（标记待复查）→ `is-review`
+  - 默认 `unanswered` → `is-unanswered`
+
+  > **与旧文档差异**：状态语义值为 `review`（非旧文档的 `marked`）；`current` / `answered` / `unanswered` 保留。
+- 网格布局使用 `grid-template-columns: repeat(auto-fill, minmax(36px, 1fr))`（旧文档写死 5 列，代码为自适应列宽）。
+- 单元格 `.q-nav-cell`：`aspect-ratio:1`、圆角 `var(--radius-md)`、字体 `var(--text-sm)`、`var(--font-semibold)`。
+- 颜色令牌：
+  - `is-unanswered`：背景 `var(--bg-card)`、边框 `var(--border-default)`、文字 `var(--text-tertiary)`，hover 边框 `var(--color-primary-300)`、文字 `var(--text-brand)`。
+  - `is-answered`：背景 `var(--color-success-50)`、边框 `var(--color-success-500)`、文字 `var(--color-success-600)`。
+  - `is-current`：背景 / 边框 `var(--color-primary-500)`、文字 `#fff`。
+  - `is-review`：背景 / 边框 `var(--color-warning-500)`、文字 `#fff`。
+- `disabled` 时 `:disabled` 生效，单元格 `cursor:not-allowed; opacity:0.6`。
 
 ### Naive UI 组件映射
 
-```vue
-<!-- 基础输入框 -->
-<n-form-item label="用户名" :feedback="errorMessage" :validation-status="errorMessage ? 'error' : undefined">
-  <n-input
-    v-model:value="username"
-    placeholder="请输入用户名"
-    :maxlength="20"
-    clearable
-  />
-</n-form-item>
+无（纯自定义 `<button>` 网格）。
 
-<!-- 密码输入框 -->
-<n-input
-  v-model:value="password"
-  type="password"
-  show-password-on="click"
-  placeholder="请输入密码"
-/>
-
-<!-- 文本域 -->
-<n-input
-  v-model:value="analysis"
-  type="textarea"
-  placeholder="请输入解析内容"
-  :autosize="{ minRows: 4 }"
-/>
-
-<!-- 带前缀图标 -->
-<n-input v-model:value="keyword" placeholder="搜索题目...">
-  <template #prefix>
-    <n-icon><SearchOutline /></n-icon>
-  </template>
-</n-input>
-```
-
-| Mockup 类 | Naive UI 组件 | 对应 Prop / Slot |
-|-----------|---------------|-------------------|
-| `input-group` | `n-form-item` | 容器组件 |
-| `input-label` | `n-form-item` `label` prop | 标签文字 |
-| `input` | `n-input` | 文本输入 |
-| `textarea` | `n-input type="textarea"` | 多行文本 |
-| `select` | `n-select` | 下拉选择 |
-| `input-error` | `n-form-item` `validation-status="error"` | 错误状态 |
-| `input-hint` | `n-form-item` `feedback` prop | 帮助/错误文字 |
-| `.req` (必填星号) | `n-form-item` `required` prop | 必填标记 |
-
-### Tailwind 工具类映射
-
-| 类名 | 用途 |
-|------|------|
-| `input-group` | 输入组容器，底部 margin 16px |
-| `input-label` | 标签：13px、medium、底部 margin 8px |
-| `input` | 输入框：全宽、内边距 12px 16px、圆角 8px |
-| `textarea` | 文本域：最小高度 100px、垂直可调 |
-| `select` | 下拉框：同 input 样式 |
-| `input-error` | 错误修饰类：红色边框 |
-| `input-hint` | 提示文字：12px、tertiary 色 |
-
-### AI 实现指南
-
-- 必填字段的标签后添加 `<span class="req">*</span>`，颜色为 `--color-error-500`。
-- 前缀/后缀图标通过绝对定位实现，需调整 input 的 `padding-left` / `padding-right`。
-- `focus` 状态的阴影为品牌色半透明 ring 效果，使用 `box-shadow` 而非 `outline`。
-- `textarea` 设置 `resize: vertical` 仅允许垂直调整大小。
-- 使用 Naive UI 时，校验状态通过 `n-form-item` 的 `validation-status` prop 控制，错误信息通过 `feedback` prop 传入。
-- `clearable` prop 对应 mockup 中的清空按钮功能。
-
----
-
-## 5. 表格 (Data Table)
-
-### 组件描述
-
-数据表格用于展示结构化列表数据，如题目列表、试卷列表、用户列表等。支持文本列、标签列、操作列及不同对齐方式的列。
-
-### 视觉状态
-
-| 区域 | 背景色 | 说明 |
-|------|--------|------|
-| 表头 (`thead`) | `--bg-subtle` (#FAFAFB) | 大写字母、semibold |
-| 表体行 (默认) | `--bg-card` (白色) | 默认行 |
-| 表体行 (悬停) | `--bg-subtle` (#FAFAFB) | 悬停高亮 |
-| 最后一行 | 无底边框 | 去除多余分割线 |
-
-### HTML 结构示例
-
-```html
-<div class="table-wrapper">
-  <table class="data-table">
-    <thead>
-      <tr>
-        <th>题目内容</th>
-        <th>类型</th>
-        <th>难度</th>
-        <th class="col-center">状态</th>
-        <th class="col-narrow col-right">操作</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td>以下哪个不是 JavaScript 的数据类型？</td>
-        <td><span class="tag tag-info">单选</span></td>
-        <td><span class="tag tag-success">简单</span></td>
-        <td class="col-center"><span class="tag tag-success">已发布</span></td>
-        <td class="col-right">
-          <button class="btn btn-ghost btn-sm">编辑</button>
-          <button class="btn btn-ghost btn-sm">删除</button>
-        </td>
-      </tr>
-      <tr>
-        <td>请简述 MVC 架构模式的核心思想。</td>
-        <td><span class="tag tag-primary">简答</span></td>
-        <td><span class="tag tag-error">困难</span></td>
-        <td class="col-center"><span class="tag tag-default">草稿</span></td>
-        <td class="col-right">
-          <button class="btn btn-ghost btn-sm">编辑</button>
-          <button class="btn btn-ghost btn-sm">删除</button>
-        </td>
-      </tr>
-    </tbody>
-  </table>
-</div>
-```
-
-### 列类型说明
-
-| 列类型 | 对齐类 | 说明 |
-|--------|--------|------|
-| 文本列 | 默认左对齐 | 题目内容、名称等 |
-| 标签列 | `col-center` | 类型、难度、状态标签居中 |
-| 操作列 | `col-right` + `col-narrow` | 编辑、删除按钮右对齐 |
-| 数字列 | `col-right` | 分数、数量等右对齐 |
-
-### Naive UI 组件映射
+### 用法示例
 
 ```vue
-<n-data-table
-  :columns="columns"
-  :data="data"
-  :pagination="paginationConfig"
-  :bordered="false"
+<QuestionNavGrid
+  :items="navStatusList"
+  :disabled="submitted"
+  @select="jumpTo"
 />
 ```
 
-```typescript
-// columns 配置示例
-const columns: DataTableColumns<Question> = [
-  {
-    title: '题目内容',
-    key: 'content',
-    ellipsis: { tooltip: true },
-  },
-  {
-    title: '类型',
-    key: 'type',
-    width: 80,
-    align: 'center',
-    render(row) {
-      const typeMap: Record<string, { label: string; type: string }> = {
-        single:   { label: '单选', type: 'info' },
-        multiple: { label: '多选', type: 'warning' },
-        judge:    { label: '判断', type: 'success' },
-        fill:     { label: '填空', type: 'default' },
-        short:    { label: '简答', type: 'primary' },
-      }
-      const item = typeMap[row.type]
-      return h(NTag, { type: item.type, bordered: false, size: 'small' }, { default: () => item.label })
-    },
-  },
-  {
-    title: '难度',
-    key: 'difficulty',
-    width: 80,
-    align: 'center',
-    render(row) {
-      const diffMap: Record<string, { label: string; type: string }> = {
-        easy:   { label: '简单', type: 'success' },
-        medium: { label: '中等', type: 'warning' },
-        hard:   { label: '困难', type: 'error' },
-      }
-      const item = diffMap[row.difficulty]
-      return h(NTag, { type: item.type, bordered: false, size: 'small' }, { default: () => item.label })
-    },
-  },
-  {
-    title: '操作',
-    key: 'actions',
-    width: 120,
-    align: 'right',
-    render(row) {
-      return h('div', { class: 'flex gap-2 justify-end' }, [
-        h(NButton, { size: 'small', quaternary: true, onClick: () => handleEdit(row) }, { default: () => '编辑' }),
-        h(NButton, { size: 'small', quaternary: true, type: 'error', onClick: () => handleDelete(row) }, { default: () => '删除' }),
-      ])
-    },
-  },
-]
-```
-
-| Mockup 类 | Naive UI 配置 | 说明 |
-|-----------|---------------|------|
-| `table-wrapper` | `n-data-table` 外层自动渲染 | 带边框圆角容器 |
-| `col-center` | `align: 'center'` | 列居中对齐 |
-| `col-right` | `align: 'right'` | 列右对齐 |
-| `col-narrow` | `width: number` + `ellipsis` | 窄列，不换行 |
-| `data-table th` | Naive UI 默认表头样式 | 大写、semibold |
-
-### Tailwind 工具类映射
-
-| 类名 | 用途 |
-|------|------|
-| `table-wrapper` | 表格容器：白底、边框、圆角 12px、溢出隐藏 |
-| `data-table` | 表格本体：全宽、border-collapse |
-| `col-center` | 列居中 |
-| `col-right` | 列右对齐 |
-| `col-narrow` | 窄列：宽度自适应、不换行 |
-
-### AI 实现指南
-
-- 表格必须包裹在 `.table-wrapper` 中以获得圆角和边框。
-- 表头文字使用 `text-transform: uppercase` + `letter-spacing: 0.03em`。
-- 标签列和操作列使用 `render` 函数返回自定义 VNode。
-- 使用 Naive UI 的 `n-data-table` 时，`:bordered="false"` 去除内部竖线，保持与 mockup 一致。
-- 长文本列配置 `ellipsis: { tooltip: true }` 实现省略号 + 悬停提示。
-- 行悬停高亮由 Naive UI 内置实现，无需额外配置。
-
 ---
 
-## 6. 分页 (Pagination)
+## 6. QuestionOption（答题选项）
 
-### 组件描述
+### 组件路径
 
-分页组件用于表格数据分页导航，通常位于表格底部。包含页码按钮、上一页/下一页按钮，以及当前页高亮状态。
+`src/components/common/QuestionOption.vue`
 
-### 视觉状态
+### 用途
 
-| 状态 | 描述 |
-|------|------|
-| `default` | 默认按钮：白底、默认边框、灰色文字 |
-| `hover` | 悬停：边框变主题色浅色、文字变品牌色 |
-| `active` | 当前页：品牌色背景、白色文字 |
-| `disabled` | 禁用（首页/末页）：`opacity: 0.4` |
+客观题（单选 / 多选 / 判断）的单个选项。统一处理默认 / 选中 / 正确 / 错误 / 禁用态，选项内容经默认插槽渲染（通常配合 `RichText`）。
 
-### HTML 结构示例
+### Props
 
-```html
-<div class="pagination">
-  <button class="page-btn" disabled>
-    <ion-icon name="chevron-back-outline"></ion-icon>
-  </button>
-  <button class="page-btn active">1</button>
-  <button class="page-btn">2</button>
-  <button class="page-btn">3</button>
-  <button class="page-btn">4</button>
-  <button class="page-btn">5</button>
-  <button class="page-btn">
-    <ion-icon name="chevron-forward-outline"></ion-icon>
-  </button>
-</div>
-```
+| Prop | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `marker` | `string` | —（必填） | 选项序号字母：`A` / `B` / `C` … |
+| `selected` | `boolean` | `false` | 是否用户选中 |
+| `correct` | `boolean \| null` | `null` | 揭晓答案后：是否为正确答案 |
+| `wrong` | `boolean \| null` | `null` | 揭晓答案后：是否被用户选中但错误 |
+| `disabled` | `boolean` | `false` | 是否禁用点击 |
+
+### Emits / Slots
+
+- Emits：`select: []` —— 点击选项时触发（仅在非 `disabled` 时）。
+- Slots：`default` —— 选项内容（题干 / 选项文本）。
+
+### 关键实现要点
+
+- 容器类 `containerClass` 优先级：`correct === true` → `is-correct` > `wrong === true` → `is-wrong` > `selected` → `is-selected` > `disabled` → `is-disabled` > 否则 `is-idle`。
+- 标记类 `markerClass`：`marker-correct` / `marker-wrong` / `marker-selected` / `marker-idle`。
+- 状态色令牌：
+  - `is-selected`：边框 `var(--color-primary-500)`、背景 `var(--bg-selected)`。
+  - `is-correct`：边框 `var(--color-success-500)`、背景 `var(--color-success-50)`。
+  - `is-wrong`：边框 `var(--color-error-500)`、背景 `var(--color-error-50)`。
+  - `is-disabled`：`opacity:0.6; cursor:not-allowed`。
+- `.q-option`：边框 `2px solid var(--border-default)`、圆角 `var(--radius-lg)`、内边距 `var(--space-4)`；`.q-option-marker` 为 28×28 圆形（`var(--radius-full)`），选中 / 正确 / 错误时填充对应语义色并白字。
+- 选项内容 `.q-option-content`：`var(--text-base)`、行高 `var(--leading-normal)`。
+- 点击逻辑：`@click="!disabled && emit('select')"`，正确 / 错误态下仍可点击（由父级决定是否忽略）。
+- **代码未实现**：旧文档提到的对勾 / 叉号图标（`checkmark-outline` / `close-outline`）在代码中并未使用，标记区始终只显示 `marker` 字母，结果态仅靠背景 / 边框色区分。
 
 ### Naive UI 组件映射
 
-**方式一：内嵌于 n-data-table（推荐）**
+无（纯自定义 div 选项）。
+
+### 用法示例
 
 ```vue
-<n-data-table
-  :columns="columns"
-  :data="data"
-  :pagination="{
-    page: currentPage,
-    pageSize: pageSize,
-    itemCount: total,
-    showSizePicker: false,
-    prefix: ({ itemCount }) => `共 ${itemCount} 条`,
-  }"
-  remote
-  @update:page="handlePageChange"
-/>
-```
-
-**方式二：独立使用 n-pagination**
-
-```vue
-<n-pagination
-  v-model:page="currentPage"
-  :page-count="totalPages"
-  :page-slot="5"
-  show-quick-jumper
-/>
-```
-
-| Mockup 类 | Naive UI 配置 | 说明 |
-|-----------|---------------|------|
-| `pagination` | `n-data-table` 的 `pagination` prop | 分页配置 |
-| `page-btn` | Naive UI 内置分页按钮 | 自动渲染 |
-| `active` | Naive UI 内置当前页样式 | 自动高亮 |
-| `disabled` | Naive UI 内置禁用样式 | 首末页自动禁用 |
-
-### Tailwind 工具类映射
-
-| 类名 | 用途 |
-|------|------|
-| `pagination` | 分页容器：flex 右对齐、gap 8px、顶部边框 |
-| `page-btn` | 页码按钮：32x32px、圆角 8px、边框 |
-| `active` | 当前页修饰类：品牌色背景 |
-
-### AI 实现指南
-
-- 分页组件通常与 `table-wrapper` 配合使用，位于表格底部，通过 `border-top` 分隔。
-- 在使用 Naive UI `n-data-table` 时，分页通过 `pagination` prop 配置，无需单独引入 `n-pagination`。
-- 服务端分页需设置 `remote` 属性，并在 `@update:page` 事件中重新请求数据。
-- 分页容器默认 `justify-content: flex-end`（右对齐）。
-- 页码按钮最小宽度 32px，高度 32px，圆角 8px。
-
----
-
-## 7. 统计卡片 (Stat Card)
-
-### 组件描述
-
-统计卡片用于展示关键数字指标，如题目总数、正确率、练习次数等。由标签（描述）和数值组成，可附加后缀单位和趋势指示器。
-
-### 视觉状态
-
-| 变体 | 描述 |
-|------|------|
-| 基础 | 标签 + 数值 |
-| 带后缀 | 标签 + 数值 + 后缀单位（如 %、道、次） |
-| 带趋势 | 标签 + 数值 + 趋势指示器（上升/下降箭头） |
-| 小尺寸 | 使用 `stat-value-sm` 替代 `stat-value` |
-
-### HTML 结构示例
-
-```html
-<!-- 基础统计卡片 -->
-<div class="stat-card">
-  <div class="stat-label">题目总数</div>
-  <div class="stat-value">1,248</div>
-</div>
-
-<!-- 带后缀 -->
-<div class="stat-card">
-  <div class="stat-label">正确率</div>
-  <div class="stat-value">85.2<span class="stat-suffix">%</span></div>
-</div>
-
-<!-- 带趋势指示器 -->
-<div class="stat-card">
-  <div class="stat-label">本周练习</div>
-  <div class="flex items-center gap-2">
-    <div class="stat-value">32</div>
-    <span class="tag tag-success">
-      <ion-icon name="trending-up-outline"></ion-icon>
-      +12%
-    </span>
-  </div>
-</div>
-
-<!-- 小尺寸数值 -->
-<div class="stat-card">
-  <div class="stat-label">平均分</div>
-  <div class="stat-value stat-value-sm">78.5</div>
-</div>
-```
-
-### Naive UI 组件映射
-
-```vue
-<n-card :bordered="true" size="small">
-  <n-statistic label="题目总数" :value="1248" />
-</n-card>
-
-<!-- 带后缀 -->
-<n-card :bordered="true" size="small">
-  <n-statistic label="正确率" :value="85.2">
-    <template #suffix>
-      <span style="font-size: 14px; color: var(--text-tertiary);">%</span>
-    </template>
-  </n-statistic>
-</n-card>
-```
-
-| Mockup 类 | Naive UI 组件 | 说明 |
-|-----------|---------------|------|
-| `stat-card` | `n-card` + `n-statistic` | 卡片容器 |
-| `stat-label` | `n-statistic` `label` prop | 统计标签 |
-| `stat-value` | `n-statistic` `value` prop | 统计数值 |
-| `stat-suffix` | `n-statistic` `#suffix` slot | 后缀单位 |
-| `stat-value-sm` | 自定义 `tabular-numbers` class | 小号数值 |
-
-### Tailwind 工具类映射
-
-| 类名 | 用途 |
-|------|------|
-| `stat-card` | 容器：白底、边框、圆角 12px、padding 20px |
-| `stat-label` | 标签：12px、medium、tertiary、大写、字间距 |
-| `stat-value` | 数值：28px、bold、primary 色 |
-| `stat-value-sm` | 小数值：24px、bold |
-| `stat-suffix` | 后缀：14px、normal、tertiary、左间距 4px |
-
-### AI 实现指南
-
-- 标签使用 `text-transform: uppercase` + `letter-spacing: 0.03em` 营造数据仪表盘风格。
-- 数值默认为 28px (`--text-3xl`)，小尺寸为 24px (`--text-2xl`)。
-- 后缀单位紧跟数值，使用较小字号和较细字重以区分主次。
-- 趋势指示器可使用 `tag` 组件 + Ionicons 箭头图标组合实现。
-- 多个统计卡片通常在页面顶部以网格排列（如 `grid grid-cols-4 gap-4`）。
-
----
-
-## 8. 答题选项 (Question Option)
-
-### 组件描述
-
-答题选项是考试/练习页面中展示题目选项的核心交互组件。每个选项由圆形标记和选项内容组成，支持选中、正确、错误等多种状态。
-
-### 视觉状态
-
-| 状态 | 边框色 | 背景色 | 标记样式 | 说明 |
-|------|--------|--------|----------|------|
-| `default` | `--border-default` | 透明 | 灰色边框 | 未选择 |
-| `hover` | `--color-primary-300` | 透明 | — | 悬停预选 |
-| `selected` | `--color-primary-500` | `--color-primary-50` | 品牌色填充 + 白字 | 已选择 |
-| `correct` | `--color-success-500` | `--color-success-50` | 成功色填充 + 白字 | 正确答案 |
-| `wrong` | `--color-error-500` | `--color-error-50` | 错误色填充 + 白字 | 错误选择 |
-
-### HTML 结构示例
-
-```html
-<!-- 默认状态 -->
-<div class="option-item">
-  <div class="option-marker">A</div>
-  <div class="option-content">选项 A 的内容</div>
-</div>
-
-<!-- 选中状态 -->
-<div class="option-item selected">
-  <div class="option-marker">B</div>
-  <div class="option-content">选项 B 的内容</div>
-</div>
-
-<!-- 正确状态（答题结果展示） -->
-<div class="option-item correct">
-  <div class="option-marker">
-    <ion-icon name="checkmark-outline"></ion-icon>
-  </div>
-  <div class="option-content">选项 C 的内容（正确答案）</div>
-</div>
-
-<!-- 错误状态（答题结果展示） -->
-<div class="option-item wrong">
-  <div class="option-marker">
-    <ion-icon name="close-outline"></ion-icon>
-  </div>
-  <div class="option-content">选项 D 的内容（你的选择）</div>
-</div>
-```
-
-### CSS 类说明
-
-| 类名 | 用途 |
-|------|------|
-| `option-item` | 选项容器：flex、2px 边框、圆角 12px、padding 16px、底部间距 12px |
-| `option-marker` | 圆形标记：28x28px、圆形、2px 边框、居中 |
-| `option-content` | 选项内容：flex-1、14px、行高 1.5 |
-| `selected` | 选中状态修饰类 |
-| `correct` | 正确状态修饰类 |
-| `wrong` | 错误状态修饰类 |
-
-> **注意**：`selected`、`correct`、`wrong` 作为修饰类追加在 `option-item` 上，同时影响 `option-marker` 的样式（通过 `.option-item.selected .option-marker` 选择器）。
-
-### Naive UI 组件映射
-
-```vue
-<!-- 使用自定义组件实现，不直接映射到单一 Naive UI 组件 -->
-<template>
-  <div
-    class="option-item"
-    :class="optionClass"
-    @click="handleSelect"
+<div v-for="(opt, i) in options" :key="i">
+  <QuestionOption
+    :marker="String.fromCharCode(65 + i)"
+    :selected="isSelected(i)"
+    :correct="revealed ? isCorrect(i) : null"
+    :wrong="revealed ? (isSelected(i) && !isCorrect(i)) : null"
+    :disabled="revealed"
+    @select="choose(i)"
   >
-    <div class="option-marker">
-      <ion-icon v-if="status === 'correct'" name="checkmark-outline" />
-      <ion-icon v-else-if="status === 'wrong'" name="close-outline" />
-      <template v-else>{{ marker }}</template>
-    </div>
-    <div class="option-content">{{ content }}</div>
-  </div>
-</template>
-
-<script setup lang="ts">
-const props = defineProps<{
-  marker: string      // 'A' | 'B' | 'C' | 'D'
-  content: string
-  status?: 'default' | 'selected' | 'correct' | 'wrong'
-}>()
-
-const optionClass = computed(() => {
-  if (props.status && props.status !== 'default') {
-    return props.status
-  }
-  return ''
-})
-</script>
+    <RichText :content="opt" />
+  </QuestionOption>
+</div>
 ```
-
-### AI 实现指南
-
-- `option-item` 使用 2px 边框（比普通 1px 更粗）以增强选中态的视觉反馈。
-- `option-marker` 为 28x28px 圆形，默认灰色边框，选中/正确/错误时变为对应颜色填充 + 白色文字。
-- 答题模式下只有 `selected` 状态可切换；查看结果模式下 `correct` 和 `wrong` 为只读展示。
-- 选项标记在结果模式下用对勾 (`checkmark-outline`) 和叉号 (`close-outline`) 图标替代字母。
-- 多选题的标记可改为方形圆角以区分单选/多选（可扩展 `option-marker-square` 修饰类）。
-- 此组件不直接映射到 Naive UI 组件，建议作为自定义组件实现。
 
 ---
 
-## 9. 题目导航网格 (Question Nav Grid)
+## 7. QuestionPreviewDrawer（题目预览抽屉）
 
-### 组件描述
+### 组件路径
 
-题目导航网格在考试/练习页面侧边展示所有题目的答题进度。以 5 列网格排列，通过颜色区分当前题、已答、未答和标记题。
+`src/components/common/QuestionPreviewDrawer.vue`
 
-### 视觉状态
+### 用途
 
-| 状态 | 背景色 | 文字色 | 说明 |
-|------|--------|--------|------|
-| `default` | `--bg-card` (白色) | `--text-secondary` | 默认状态 |
-| `current` | `--color-primary-500` (#5B5FE9) | 白色 | 当前所在题目 |
-| `answered` | `--color-success-500` (#22B570) | 白色 | 已作答题目 |
-| `unanswered` | `--color-neutral-100` (#F4F4F6) | `--text-tertiary` | 未作答题目 |
-| `marked` | `--color-warning-500` (#FFA42B) | 白色 | 标记待复查题目 |
+在抽屉（`n-drawer`）中预览题目详情。支持传入最小字段（列表项 / 组卷回填项），缺答案等字段时自动拉取题目详情补全。
 
-> **优先级**：`current` > `marked` > `answered` > `unanswered` > `default`。当前题始终以品牌色高亮，即使该题已答或已标记。
+### Props
 
-### HTML 结构示例
+| Prop | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `show` | `boolean` | —（必填） | 抽屉显隐，支持 `v-model:show` |
+| `question` | `PreviewQuestion \| null` | —（必填） | 待预览题目 |
 
-```html
-<div class="q-nav-grid">
-  <div class="q-nav-cell current">1</div>
-  <div class="q-nav-cell answered">2</div>
-  <div class="q-nav-cell answered">3</div>
-  <div class="q-nav-cell unanswered">4</div>
-  <div class="q-nav-cell marked">5</div>
-  <div class="q-nav-cell unanswered">6</div>
-  <div class="q-nav-cell answered">7</div>
-  <div class="q-nav-cell unanswered">8</div>
-  <div class="q-nav-cell answered">9</div>
-  <div class="q-nav-cell unanswered">10</div>
-</div>
+> `PreviewQuestion` 接口（`QuestionPreviewDrawer.vue` 内导出）：
+> ```ts
+> export interface PreviewQuestion {
+>   id: number
+>   type?: string | null
+>   difficulty?: string | null
+>   content?: string | null
+>   options?: unknown
+>   answer?: string | null
+>   referenceAnswer?: string | null
+>   analysis?: string | null
+>   bankName?: string | null
+> }
+> ```
 
-<!-- 图例说明 -->
-<div class="nav-legend">
-  <div class="nav-legend-item">
-    <span class="nav-legend-dot" style="background: var(--color-primary-500);"></span>
-    当前
-  </div>
-  <div class="nav-legend-item">
-    <span class="nav-legend-dot" style="background: var(--color-success-500);"></span>
-    已答
-  </div>
-  <div class="nav-legend-item">
-    <span class="nav-legend-dot" style="background: var(--color-neutral-100); border: 1px solid var(--border-default);"></span>
-    未答
-  </div>
-  <div class="nav-legend-item">
-    <span class="nav-legend-dot" style="background: var(--color-warning-500);"></span>
-    标记
-  </div>
-</div>
-```
+### Emits / Slots
 
-### CSS 类说明
+- Emits：`update:show: [value: boolean]` —— 配合 `v-model:show`。
+- Slots：无（内部复用 `RichText`）。
 
-| 类名 | 用途 |
-|------|------|
-| `q-nav-grid` | 网格容器：CSS Grid、5 列等宽、gap 8px |
-| `q-nav-cell` | 单元格：正方形 (`aspect-ratio: 1`)、圆角 8px、居中文字 |
-| `current` | 当前题修饰类 |
-| `answered` | 已答题修饰类 |
-| `unanswered` | 未答题修饰类 |
-| `marked` | 标记题修饰类 |
+### 关键实现要点
+
+- 抽屉宽度固定 `520px`，标题为 `题目预览 #${id}`（`detail` 为空时显示「题目预览」）。
+- 标签行用 `n-tag round size="small"`，题型 / 难度映射见 `TYPE_TAG` / `DIFFICULTY_TAG`（`SINGLE→info`、`MULTIPLE→warning`、`TRUE_FALSE→success`、`FILL_BLANK→default`、`SHORT_ANSWER→primary`；难度 `EASY→success`、`MEDIUM→warning`、`HARD→error`）。
+- 选项区仅当 `type` 为 `SINGLE` / `MULTIPLE` 渲染；`options` 支持字符串（JSON）或数组，正确项以 `border-success-500 bg-success-50` 高亮（`isCorrectOption` 按 `A/B/C` 字母比对 `answer`）。
+- 正确答案区：判断题显示「正确 / 错误」`n-tag`；其余渲染 `answer` 文本。
+- 内部标签 / 难度中文取自 `utils/constants` 的 `QUESTION_TYPE_MAP` / `DIFFICULTY_MAP`。
+- 自动补全：`watch(props.question)`，当 `question.answer == null` 时调用 `getQuestionDetail(id)` 拉全字段；失败则按已有字段展示（权限变化场景）。
+- 整体用 `<n-spin :show="fetching">` 包裹加载态。
 
 ### Naive UI 组件映射
 
+- 容器：`n-drawer`（`width=520`）+ `n-drawer-content`（`title`、`closable`）。
+- 加载：`n-spin`；标签：`n-tag`；富文本：`RichText`（见第 8 节）。
+
+### 用法示例
+
 ```vue
-<!-- 使用自定义组件实现 -->
-<template>
-  <div class="q-nav-grid">
-    <div
-      v-for="(question, index) in questions"
-      :key="question.id"
-      class="q-nav-cell"
-      :class="getCellClass(index)"
-      @click="$emit('jump', index)"
-    >
-      {{ index + 1 }}
-    </div>
-  </div>
-</template>
-
-<script setup lang="ts">
-interface QuestionState {
-  answered: boolean
-  marked: boolean
-}
-
-const props = defineProps<{
-  questions: QuestionState[]
-  currentIndex: number
-}>()
-
-defineEmits<{
-  jump: [index: number]
-}>()
-
-function getCellClass(index: number): string {
-  if (index === props.currentIndex) return 'current'
-  const q = props.questions[index]
-  if (q.marked) return 'marked'
-  if (q.answered) return 'answered'
-  return 'unanswered'
-}
-</script>
+<QuestionPreviewDrawer v-model:show="previewShow" :question="currentQuestion" />
 ```
-
-### AI 实现指南
-
-- 网格固定 5 列 (`grid-template-columns: repeat(5, 1fr)`)，题目数量多时自动换行。
-- 每个 cell 使用 `aspect-ratio: 1` 保持正方形，无需手动设置高度。
-- 点击 cell 跳转到对应题目（通过 emit 事件或路由跳转）。
-- 状态优先级逻辑：先判断 `current`，再判断 `marked`，再判断 `answered`，最后 `unanswered`。
-- 图例 (`nav-legend`) 不是 CSS 类库中的标准组件，在 mockup 中通过内联样式实现。建议封装为独立小组件。
 
 ---
 
-## 10. 头像 (Avatar)
+## 8. RichText（富文本安全渲染）
 
-### 组件描述
+### 组件路径
 
-头像用于展示用户标识。当用户无自定义头像时，根据姓名首字符自动生成带背景色的圆形头像。支持四种尺寸。
+`src/components/common/RichText.vue`
 
-### 尺寸规格
+### 用途
 
-| 尺寸类 | 宽高 | 字号 | 使用场景 |
-|--------|------|------|----------|
-| `avatar-sm` | 28px | `--text-xs` (12px) | 表格内、列表项 |
-| 默认 | 32px | `--text-sm` (13px) | 顶部导航栏、评论 |
-| `avatar-lg` | 48px | `--text-lg` (16px) | 个人资料卡片 |
-| `avatar-xl` | 72px | `--text-2xl` (24px) | 个人资料页大头像 |
+统一的富文本 / Markdown 渲染出口。所有 `v-html` 都应改用它：内容经 DOMPurify 净化防 XSS，数学公式经 KaTeX 自动渲染（`$...$` / `$$...$$` 等）。
 
-### 颜色生成算法
+### Props
 
-当无图片头像时，根据姓名首字符的 charCode 哈希选择预设背景色：
+| Prop | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `content` | `string \| null` | `''` | 原始 HTML / Markdown 富文本 |
 
-```typescript
-const AVATAR_COLORS = [
-  '#5B5FE9', // primary-500
-  '#22B570', // success-500
-  '#FFA42B', // warning-500
-  '#F0503C', // error-500
-  '#3B8BFF', // info-500
-  '#7C4FD4', // 紫色
-  '#E68A00', // warning-600
-  '#1A965C', // success-600
-]
+### Emits / Slots
 
-function getAvatarColor(name: string): string {
-  const charCode = name.charCodeAt(0)
-  return AVATAR_COLORS[charCode % AVATAR_COLORS.length]
-}
+- Emits：无。
+- Slots：无（通过 `v-html` 渲染 `sanitized`）。
 
-function getAvatarInitial(name: string): string {
-  return name.charAt(0).toUpperCase()
-}
-```
+### 关键实现要点
 
-### HTML 结构示例
-
-```html
-<!-- 不同尺寸 -->
-<div class="avatar avatar-sm" style="background: #5B5FE9;">张</div>
-<div class="avatar" style="background: #22B570;">李</div>
-<div class="avatar avatar-lg" style="background: #FFA42B;">王</div>
-<div class="avatar avatar-xl" style="background: #F0503C;">赵</div>
-
-<!-- 顶部导航栏中使用 -->
-<div style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-  <div class="avatar" style="background: #5B5FE9;">张</div>
-  <span style="font-size: 14px; font-weight: 500;">张同学</span>
-  <ion-icon name="chevron-down-outline" style="font-size: 16px; color: var(--text-tertiary);"></ion-icon>
-</div>
-```
+- 纯文本兜底：若 `content` 不含 HTML 标签，则包 `<p>` 并转义 `&` / `<` / `>`、把 `\n` 转 `<br>`（避免 DOMPurify 丢弃裸文本前导文本的问题）。
+- 净化：`DOMPurify.sanitize(normalized, { USE_PROFILES: { html: true }, ADD_ATTR: ['target'] })`。
+- 公式：`renderMathInElement`（KaTeX `auto-render`），`throwOnError:false`，分隔符含 `$$`、`$`、`\(`、`\[`；失败仅降级为原文。
+- 渲染监听：`watch(sanitized)` 与 `watch(root)` 后 `nextTick(renderMath)`。
+- 容器类 `.markdown-body`（样式由 KaTeX / 全局 markdown 样式提供，本组件无 scoped 样式）。
 
 ### Naive UI 组件映射
 
-```vue
-<!-- 文字头像 -->
-<n-avatar
-  round
-  :size="avatarSize"
-  :color="getAvatarColor(user.name)"
-  :style="{ backgroundColor: getAvatarColor(user.name) }"
->
-  {{ user.name.charAt(0) }}
-</n-avatar>
+无（纯 DOMPurify + KaTeX）。
 
-<!-- 图片头像 -->
-<n-avatar
-  round
-  :size="avatarSize"
-  :src="user.avatar"
-  fallback-src="/default-avatar.png"
+### 用法示例
+
+```vue
+<RichText :content="question.content" />
+```
+
+---
+
+## 9. SkeletonList（骨架列表）
+
+### 组件路径
+
+`src/components/common/SkeletonList.vue`
+
+### 用途
+
+列表 / 卡片加载占位。按 `count` 渲染若干骨架卡片，按 `cols` 控制网格列数。
+
+### Props
+
+| Prop | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `count` | `number` | `3` | 骨架卡片数量 |
+| `cols` | `number` | `3` | 网格列数（`1`/`2`/`3` 三档） |
+
+> 关键实现要点：`count` / `cols` 即旧需求提到的两个核心参数。
+
+### Emits / Slots
+
+- Emits：无。
+- Slots：无。
+
+### 关键实现要点
+
+- 容器 `.skeleton-list`：`display:grid; gap:var(--space-4)`；列数类 `grid-cols-1/2/3` 仅支持这 3 档，分别 `repeat(1/2/3, 1fr)`。
+- 响应式：`max-width:768px` 时 `grid-cols-2` 与 `grid-cols-3` 自动降为单列。
+- 单卡 `.sk-item`：背景 `var(--bg-card)`、边框 `var(--border-default)`、圆角 `var(--radius-lg)`、内边距 `var(--space-5)`。
+- 骨架条用 `<n-skeleton text>`：头部 1 条（`.sk-line-head`，下间距 `var(--space-4)`），正文 3 条，末条 `width:40%`。
+
+### Naive UI 组件映射
+
+- 骨架条：`<n-skeleton text :repeat="n">`。
+
+### 用法示例
+
+```vue
+<!-- 卡片网格场景 -->
+<SkeletonList :count="6" :cols="3" />
+
+<!-- 列表（单列）场景 -->
+<SkeletonList :count="5" :cols="1" />
+```
+
+---
+
+## 10. StatCard（统计卡片）
+
+### 组件路径
+
+`src/components/common/StatCard.vue`
+
+### 用途
+
+展示关键数字指标（题目总数、正确率、练习次数等）。标签 + 数值 + 可选后缀，数值颜色按 `tone` 取语义色。
+
+### Props
+
+| Prop | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `label` | `string` | —（必填） | 统计标签 |
+| `value` | `string \| number` | `undefined` | 统计数值；缺省时由默认插槽渲染 |
+| `tone` | `'default' \| 'brand' \| 'success' \| 'error' \| 'warning'` | `'default'` | 数值颜色主题 |
+
+### Emits / Slots
+
+- Emits：无。
+- Slots：
+  - `default` —— 覆盖 `value` 的自定义内容。
+  - `suffix` —— 数值下方的后缀单位 / 说明。
+
+### 关键实现要点
+
+- 数值颜色 `TONE_COLORS`：
+  - `default` → `var(--text-primary)`
+  - `brand` → `var(--text-brand)`
+  - `success` → `var(--color-success-600)`
+  - `error` → `var(--color-error-600)`
+  - `warning` → `var(--color-warning-600)`
+- `.stat-card`：背景 `var(--bg-card)`、边框 `var(--border-default)`、圆角 `var(--radius-lg)`、内边距 `var(--space-5)`。
+- `.stat-label`：`var(--text-xs)`、`var(--font-medium)`、`var(--text-tertiary)`、`text-transform:uppercase`、`letter-spacing:0.05em`。
+- `.stat-value`：`var(--text-3xl)`、`var(--font-bold)`、行高 `1.2`。
+- `.stat-suffix`：`var(--text-sm)`、`var(--text-tertiary)`，上间距 `var(--space-1)`。
+
+### Naive UI 组件映射
+
+无（纯自定义卡片 + CSS 变量）。
+
+### 用法示例
+
+```vue
+<div class="grid grid-cols-4 gap-4">
+  <StatCard label="题目总数" :value="1248" tone="brand" />
+  <StatCard label="正确率" :value="85.2" tone="success">
+    <template #suffix>%</template>
+  </StatCard>
+  <StatCard label="本周练习" :value="32" tone="warning" />
+</div>
+```
+
+---
+
+## 11. TagManageModal（标签管理弹窗）
+
+### 组件路径
+
+`src/components/common/TagManageModal.vue`
+
+### 用途
+
+管理标签：搜索、新建（管理员）、改分组、删除（管理员、未被引用）。弹窗内直接调用标签相关 API。
+
+### Props
+
+| Prop | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `show` | `boolean` | —（必填） | 弹窗显隐，支持 `v-model:show` |
+
+### Emits
+
+- `update:show: [v: boolean]`
+- `updated: []` —— 标签变更（增 / 改组 / 删）后触发，供父级刷新列表
+
+> Emits 定义同时以类型签名 `(e: 'update:show', v: boolean): void` 与 `(e: 'updated'): void` 给出。
+
+### 关键实现要点
+
+- 容器 `<n-modal preset="card" title="标签管理" style="width:560px">`，`@update:show` 转交 `emit('update:show')`。
+- 非管理员（`authStore.isAdmin === false`）仅能查看分组，无新建 / 改组 / 删除入口。
+- 搜索：`keyword` 对 `name` 与 `groupName` 做不区分大小写包含过滤。
+- 新建：管理员可填「新标签名」+「分组（可选）」，回车或点「添加」调用 `create`。
+- 改组：点分组标签或「改组」进入编辑态，调用 `updateTagGroup`；清空保存即取消分组。
+- 删除：调用 `useConfirm().confirmDanger` 二次确认；已使用（`usageCount > 0`）的标签禁用删除。
+- 数据：`getTagList` 拉取，打开时（`watch(show)`）重载。
+- 列表项展示 `name`、`usageCount` 与 `groupName`（已分组显示 `info` 色 `n-tag`，未分组显示「未分组」`default` 色）。
+
+### Naive UI 组件映射
+
+- 弹窗：`n-modal preset="card"`。
+- 表单：`n-input`（搜索 / 新建 / 分组编辑）、`n-button`、`n-tag`、`n-empty`（代码未直接使用，列表为空用纯文本「暂无标签 / 无匹配标签」）。
+- 校验 / 反馈：`useMessage` + `useConfirm`（见第 19 节）。
+
+### 用法示例
+
+```vue
+<TagManageModal v-model:show="tagModalShow" @updated="reloadTags" />
+```
+
+---
+
+## 12. UserSearchSelect（用户远程搜索选择器）
+
+### 组件路径
+
+`src/components/common/UserSearchSelect.vue`
+
+### 用途
+
+按 `username` / `nickname` 模糊远程搜索用户（如指定批改人）。输入即搜，选项展示「昵称 (username)」。
+
+### Props
+
+| Prop | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `modelValue` | `number \| null` | —（必填） | 选中用户 id，支持 `v-model` |
+| `placeholder` | `string` | — | 占位文字 |
+
+### Emits
+
+- `update:modelValue: [value: number | null]`
+
+### 关键实现要点
+
+- 内部基于 `<n-select>`：`filterable` `clearable` `remote` `@search` `@update:value` `@clear`。
+- 远程搜索：`searchUsers(keyword, 20)`，`300ms` 防抖（`handleSearch` → `doSearch`）；失败时静默保留已有选项。
+- 选项格式：`{ label: '${nickname} (${username})', value: id }`（无 nickname 时仅 username）。
+- 预置：`defineExpose({ preset, currentLabel })`。
+  - `preset(id, label)`：编辑场景下直接注入已选项，无需再搜索。
+  - `currentLabel`（computed）：当前选中项的展示名，供父级确认页直接展示。
+
+### Naive UI 组件映射
+
+- `<n-select>`（`remote` + `filterable` + `clearable`）。
+
+### 用法示例
+
+```vue
+<UserSearchSelect v-model="graderId" placeholder="选择批改人" />
+
+<!-- 编辑场景预置 -->
+<userSearchSelect ref="selector" v-model="graderId" />
+<!-- setup: selector.value.preset(row.graderId, row.graderName) -->
+```
+
+---
+
+## 13. FileUpload（文件上传）
+
+### 组件路径
+
+`src/components/FileUpload.vue`
+
+### 用途
+
+单文件上传，上传完成后把服务端返回的文件 URL 写入 `v-model`。支持图片预览与上传进度条。
+
+### Props
+
+| Prop | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `modelValue` | `string` | —（必填） | 已上传文件 URL，支持 `v-model` |
+| `accept` | `string` | — | 限制的文件类型（传给 `n-upload` 的 `accept`） |
+
+### Emits
+
+- `update:modelValue: [value: string]`
+
+### 关键实现要点
+
+- 上传端点：`/api/v1/files/upload`（`action`），`headers` 带 `Authorization: Bearer ${authStore.token}`，`max=1`，默认不显示文件列表（`showFileList=false`）。
+- 图标按钮：`CloudUploadOutline`（来自 `@vicons/ionicons5`）。
+- 完成 `handleFinish`：解析响应取 `response.data.url` → `emit('update:modelValue', url)`，否则提示失败。
+- 图片预览：`modelValue` 匹配图片扩展名时显示 `<img max-w-[200px] max-h-[200px]>`。
+- 进度：`handleProgress` 置 `uploading=true` 并更新 `uploadProgress`，`<n-progress type="line" :height="4">` 展示。
+- 失败 `handleError` / `handleFinish` 异常：提示「上传失败」并重置状态。
+
+### Naive UI 组件映射
+
+- `<n-upload>`（`action` / `headers` / `data` / `max` / `accept` / `show-file-list` + `@finish` / `@error` / `@progress`）。
+- `<n-button>` + `<n-icon>`；进度：`<n-progress>`。
+
+### 用法示例
+
+```vue
+<FileUpload v-model="avatarUrl" accept="image/*" />
+```
+
+---
+
+## 14. LoadError（加载失败）
+
+### 组件路径
+
+`src/components/LoadError.vue`
+
+### 用途
+
+数据加载失败时占位：错误结果卡片 + 重试 / 返回按钮。
+
+### Props
+
+| Prop | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `description` | `string` | `''` | 失败描述；为空时回退 `n-result` 默认「请稍后重试」 |
+| `retrying` | `boolean` | `false` | 重试按钮 loading 态 |
+
+### Emits
+
+- `retry: []`
+
+### 关键实现要点
+
+- 容器 `<n-card>` 内放 `<n-result status="error" title="加载失败" :description="...">`。
+- 底部 `<template #footer>`：左侧「重试」`<n-button :loading="retrying" @click="$emit('retry')">`，右侧「返回上一页」`<n-button quaternary @click="router.back()">`。
+- `router` 来自 `vue-router` 的 `useRouter()`。
+
+### Naive UI 组件映射
+
+- `<n-card>` + `<n-result status="error">`；按钮 `<n-button>`。
+
+### 用法示例
+
+```vue
+<LoadError :description="errorMsg" :retrying="loading" @retry="reload" />
+```
+
+---
+
+## 15. MarkdownEditor（Markdown 编辑器）
+
+### 组件路径
+
+`src/components/MarkdownEditor.vue`
+
+### 用途
+
+基于 `@kangc/v-md-editor`（VMdEditor）的 Markdown 编辑 / 预览组件。支持图片上传、KaTeX 公式、行号；答题场景可限制图片数与禁用部分工具栏。
+
+### Props
+
+| Prop | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `modelValue` | `string` | —（必填） | 编辑器内容，支持 `v-model` |
+| `height` | `string` | `'400px'` | 编辑器高度 |
+| `mode` | `'edit' \| 'editable' \| 'preview'` | 不传（`undefined`） | 形态：不传=编辑+预览双栏；`'edit'`=单栏编辑+工具栏（答题卡用）；`'preview'`=仅预览 |
+| `placeholder` | `string` | `''` | 占位文字 |
+| `disabledMenus` | `string[]` | `() => []` | 禁用的工具栏菜单（如答题模式禁用标题 / 表格） |
+| `maxImages` | `number` | — | 图片张数上限（答题场景限制 9 张），不传则不限 |
+
+### Emits
+
+- `update:modelValue: [value: string]`
+
+### 关键实现要点
+
+- 插件：注册 `vuepressTheme`、KaTeX 插件、行号插件（模块加载阶段 `VMdEditor.use(...)`）。
+- 外层 `.markdown-editor` 显式 `w-full`（否则在 `n-form-item-blank` flex 容器内会收缩到内容固有宽度）。
+- 图片上传 `@upload-image`：构造 `FormData`，`fetch('/api/v1/files/upload')`，`headers.Authorization` 取自 `localStorage[TOKEN_KEY]`；成功后 `insertImage(url, '图片')`。
+- 张数限制：`imageCount`（计算 `![...](...)` 与 `<img>` 数量）达 `maxImages` 时 `message.warning` 拦截。
+- `@change` 直接透传最新文本给 `update:modelValue`。
+
+### Naive UI 组件映射
+
+无（第三方 `v-md-editor`）；反馈用 `useMessage`。
+
+### 用法示例
+
+```vue
+<!-- 题目创建 / 编辑：双栏 -->
+<MarkdownEditor v-model="content" />
+
+<!-- 答题卡：单栏、限制 9 图、禁用部分菜单 -->
+<MarkdownEditor
+  v-model="answer"
+  mode="edit"
+  :max-images="9"
+  :disabled-menus="['h1', 'h2', 'table']"
 />
-
-<script setup lang="ts">
-const props = defineProps<{
-  size?: 'sm' | 'default' | 'lg' | 'xl'
-}>()
-
-const avatarSize = computed(() => {
-  const sizeMap = { sm: 28, default: 32, lg: 48, xl: 72 }
-  return sizeMap[props.size ?? 'default']
-})
-</script>
 ```
-
-| Mockup 尺寸 | Naive UI `size` |
-|-------------|-----------------|
-| `avatar-sm` | `28` |
-| 默认 | `32` |
-| `avatar-lg` | `48` |
-| `avatar-xl` | `72` |
-
-### Tailwind 工具类映射
-
-| 类名 | 用途 |
-|------|------|
-| `avatar` | 基础头像：32x32px、圆形、白色文字、居中 |
-| `avatar-sm` | 小尺寸：28x28px |
-| `avatar-lg` | 大尺寸：48x48px |
-| `avatar-xl` | 超大尺寸：72x72px |
-
-### AI 实现指南
-
-- 头像始终使用 `border-radius: var(--radius-full)` (9999px) 呈现为圆形。
-- 文字颜色固定为白色，通过背景色提供对比度。
-- 姓名首字符应转为大写。
-- 使用 Naive UI `n-avatar` 时，`round` prop 对应圆形。
-- 尺寸通过数字（像素）传递给 Naive UI 的 `size` prop。
-- 头像与用户名通常组合使用，中间间距为 `var(--space-2)` (8px)。
 
 ---
 
-## 11. 徽章 (Badge)
+## 16. BankImportDialog（导入题库弹窗）
 
-### 组件描述
+### 组件路径
 
-徽章用于展示通知未读数量等数字信息，通常叠加在图标右上角。使用红色背景的圆形/胶囊形小标签。
+`src/components/importExport/BankImportDialog.vue`
 
-### 视觉状态
+### 用途
 
-| 状态 | 描述 |
-|------|------|
-| 数字 | 显示具体数字（如 3、99+） |
-| 圆点 | 不显示数字，仅显示红点（无未读数详情时） |
+导入本系统导出的题库 JSON 文件，在其名下创建私有题库。两步流程：选文件预览 → 结果面板。
 
-### HTML 结构示例
+### Props
 
-```html
-<!-- 通知图标上的数字徽章 -->
-<div style="position: relative; cursor: pointer;">
-  <ion-icon name="notifications-outline"
-    style="font-size: 22px; color: var(--text-secondary);">
-  </ion-icon>
-  <span class="badge"
-    style="position: absolute; top: -4px; right: -4px;">3</span>
-</div>
+| Prop | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `show` | `boolean` | —（必填） | 弹窗显隐，支持 `v-model:show` |
 
-<!-- 大数字显示为 99+ -->
-<div style="position: relative; cursor: pointer;">
-  <ion-icon name="mail-outline"
-    style="font-size: 22px; color: var(--text-secondary);">
-  </ion-icon>
-  <span class="badge"
-    style="position: absolute; top: -4px; right: -4px;">99+</span>
-</div>
-```
+### Emits
+
+- `update:show: [value: boolean]`
+- `imported: []` —— 导入成功后触发
+
+### 关键实现要点
+
+- `<n-modal preset="card" style="width:540px; max-width:94vw" title="导入题库">`。
+- 图标：`CloudUploadOutline`（上传区）、`DocumentTextOutline`（文件预览），均来自 `@vicons/ionicons5`。
+- 步骤 `step: 'pick' | 'result'`。
+  - `pick`：隐藏 `<input type="file" accept=".json,application/json">`，点击虚线区触发选择；`parseImportFile` 解析，若 `format !== 'quick-study-bank'` 提示「请使用『导入题目』功能」。
+  - 预览展示 `bankName` / `questionCount` / `tagCount` / `bankDescription`。
+  - `result`：渲染 `<ImportResultPanel :result="importResult" @done="close">`。
+- 导入：`importBank(file)` → 写 `importResult` 切到 `result` 并 `emit('imported')`。
+- 打开时（`watch(show)`）重置步骤、文件、解析结果与 `fileInput.value`。
 
 ### Naive UI 组件映射
 
+- `<n-modal preset="card">`、`<n-icon>`、`<n-button>`、`<ImportResultPanel>`（第 17 节）。
+
+### 用法示例
+
 ```vue
-<n-badge :value="unreadCount" :max="99">
-  <n-icon size="22" :color="themeVars.textColor2">
-    <NotificationsOutline />
-  </n-icon>
-</n-badge>
-
-<!-- 圆点模式 -->
-<n-badge dot :show="hasUnread">
-  <n-icon size="22">
-    <MailOutline />
-  </n-icon>
-</n-badge>
+<BankImportDialog v-model:show="importBankShow" @imported="reloadBanks" />
 ```
-
-| Mockup 类 | Naive UI 组件 | 说明 |
-|-----------|---------------|------|
-| `badge` | `n-badge` `:value` | 数字徽章 |
-| `badge` (无数字) | `n-badge` `dot` | 圆点模式 |
-
-### Tailwind 工具类映射
-
-| 类名 | 用途 |
-|------|------|
-| `badge` | 徽章：最小宽 18px、高 18px、圆角 9999px、红色背景、白字、11px bold |
-
-### AI 实现指南
-
-- 徽章默认背景色为 `--color-error-500` (#F0503C)，文字为白色。
-- 使用绝对定位 (`position: absolute`) 叠加在父元素右上角，偏移量 `top: -4px; right: -4px`。
-- 数字超过 99 时显示 `99+`（Naive UI 的 `max` prop 自动处理）。
-- 最小宽度 18px，当数字为单字符时保持圆形；多字符时变为胶囊形（`padding: 0 5px`）。
-- 字号为 11px、bold。
-- 使用 Naive UI `n-badge` 时，`value` 为 0 时自动隐藏徽章。
 
 ---
 
-## 12. 侧边栏 (Sidebar)
+## 17. ImportResultPanel（导入结果面板）
 
-### 组件描述
+### 组件路径
 
-侧边栏是应用的主导航容器，固定在页面左侧。由 Logo 区、导航菜单和底部区域组成。菜单项支持分组标签，当前页对应的菜单项高亮显示。在移动端以抽屉形式展开。
+`src/components/importExport/ImportResultPanel.vue`
 
-### 视觉状态
+### 用途
 
-| 元素 | 状态 | 样式 |
+展示一次导入的结果汇总：成功 / 重复跳过 / 失败计数，及失败、跳过明细列表。
+
+### Props
+
+| Prop | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `result` | `ImportResult \| null` | —（必填） | 导入结果对象 |
+
+> `ImportResult` 来自 `@/types`，含 `successCount` / `skipCount` / `failCount` / `bankName` / `errors[]`（`index` + `message`）/ `skipped[]`（`index` + `content` + `reason`）。
+
+### Emits
+
+- `done: []` —— 点「完成」关闭上层弹窗
+
+### 关键实现要点
+
+- 顶部三栏统计：`successCount`（绿）、`skipCount`（黄）、`failCount`（红），配 `bg-*-50` / `border-*-200` 背景令牌。
+- 全部成功且无跳过时显示 `<n-empty description="全部题目导入成功" size="small">`。
+- 失败明细：序号 `#index+1` + `err.message`（红色）。
+- 跳过明细：序号 + `skip.content`（两行截断）+ `skip.reason`（黄）。
+- 底部「完成」`<n-button type="primary" @click="emit('done')">`。
+- 无任何 `result` 时不渲染（模板 `v-if="result"`）。
+
+### Naive UI 组件映射
+
+- 统计区为纯 div + Tailwind 类；`<n-empty>`；`<n-button>`。
+
+### 用法示例
+
+```vue
+<ImportResultPanel :result="importResult" @done="close" />
+```
+
+---
+
+## 18. QuestionImportDialog（导入题目弹窗）
+
+### 组件路径
+
+`src/components/importExport/QuestionImportDialog.vue`
+
+### 用途
+
+向指定题库导入题目 JSON（支持题目导出文件或题库导出文件中的题目）。两步流程同题库导入。
+
+### Props
+
+| Prop | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `show` | `boolean` | —（必填） | 弹窗显隐，支持 `v-model:show` |
+| `bankId` | `number \| string` | — | 指定目标题库（题库详情页场景）；为空则显示题库选择器 |
+| `bankName` | `string` | — | 目标题库名称（展示用） |
+
+### Emits
+
+- `update:show: [value: boolean]`
+- `imported: []`
+
+### 关键实现要点
+
+- `<n-modal preset="card" style="width:560px; max-width:94vw" title="导入题目">`。
+- 图标同题库导入：`CloudUploadOutline`、`DocumentTextOutline`。
+- 目标题库：若 `presetBankId`（即 `bankId` 非空且非 `''`）则只读展示 `bankName || bankId`；否则 `<n-select>` 拉 `getBankList` 筛选「我的题库」（管理员可见全部），空时 `<n-empty title="暂无可导入的题库">`。
+- 文件解析：`parseImportFile`，预览展示 `questionCount` / `tagCount`；「题库导出」文件提示「将导入其中的全部题目」，并说明题干重复者跳过。
+- 导入：`importQuestions(targetId, file)` → 结果写入 `ImportResultPanel`。
+- 打开时重置并（非预设时）`fetchBankOptions()`；`onMounted` 同样在非预设且 `show` 时拉取。
+
+### Naive UI 组件映射
+
+- `<n-modal preset="card">`、`<n-select>`、`<n-empty>`、`<n-icon>`、`<n-button>`、`<ImportResultPanel>`。
+
+### 用法示例
+
+```vue
+<!-- 通用入口 -->
+<QuestionImportDialog v-model:show="importShow" @imported="reload" />
+
+<!-- 题库详情页指定目标 -->
+<QuestionImportDialog v-model:show="importShow" :bank-id="bank.id" :bank-name="bank.name" @imported="reload" />
+```
+
+---
+
+## 19. useConfirm（确认弹窗组合式函数）
+
+### 组件路径
+
+`src/composables/useConfirm.ts`
+
+### 用途
+
+统一封装基于 Naive UI Dialog 的确认弹窗，注入设计系统视觉（品牌色主按钮、圆角 16px）。
+
+### 类型
+
+```ts
+export type ConfirmActionOptions = Partial<
+  Pick<DialogOptions, 'title' | 'content' | 'positiveText' | 'negativeText' | 'onPositiveClick'>
+>
+```
+
+### 返回值
+
+| 方法 | 签名 | 说明 |
 |------|------|------|
-| 菜单项 | `default` | 透明背景、`--text-secondary` 文字 |
-| 菜单项 | `hover` | `--bg-hover` 背景、`--text-primary` 文字 |
-| 菜单项 | `active` | `--bg-selected` 背景、`--text-brand` 文字、semibold |
+| `confirm` | `(opts: ConfirmActionOptions) => void` | 普通确认，`dialog.warning`，主按钮品牌色，默认 `title='确认操作'`、`positiveText='确认'`、`negativeText='取消'` |
+| `confirmDanger` | `(opts: ConfirmActionOptions) => void` | 危险确认，`dialog.error`，`positiveButtonProps:{type:'error'}`，默认 `title='确认删除'`、`positiveText='删除'` |
 
-### HTML 结构示例
+> 两者均注入 `style: 'border-radius: 16px;'`。依赖 `App.vue` 中的 `<n-dialog-provider>`。
 
-```html
-<aside class="sidebar">
-  <!-- Logo 区域 -->
-  <div class="sidebar-logo">
-    <div class="sidebar-logo-icon">QS</div>
-    <span class="sidebar-logo-text">Quick Study</span>
-  </div>
+### 用法示例
 
-  <!-- 导航菜单 -->
-  <nav class="sidebar-nav">
-    <!-- 第一组 -->
-    <div class="sidebar-nav-section">
-      <div class="sidebar-nav-item active">
-        <ion-icon name="home-outline"></ion-icon>
-        <span>首页</span>
-      </div>
-      <div class="sidebar-nav-item">
-        <ion-icon name="library-outline"></ion-icon>
-        <span>题库</span>
-      </div>
-      <div class="sidebar-nav-item">
-        <ion-icon name="document-text-outline"></ion-icon>
-        <span>题目</span>
-      </div>
-      <div class="sidebar-nav-item">
-        <ion-icon name="file-tray-full-outline"></ion-icon>
-        <span>试卷</span>
-      </div>
-    </div>
+```ts
+const { confirm, confirmDanger } = useConfirm()
 
-    <!-- 分组标签 -->
-    <div class="sidebar-nav-label">学习中心</div>
-    <div class="sidebar-nav-item">
-      <ion-icon name="game-controller-outline"></ion-icon>
-      <span>练习</span>
-    </div>
-    <div class="sidebar-nav-item">
-      <ion-icon name="close-circle-outline"></ion-icon>
-      <span>错题本</span>
-    </div>
-    <div class="sidebar-nav-item">
-      <ion-icon name="time-outline"></ion-icon>
-      <span>做题记录</span>
-    </div>
-
-    <!-- 管理组标签 -->
-    <div class="sidebar-nav-label">管理</div>
-    <div class="sidebar-nav-item">
-      <ion-icon name="people-outline"></ion-icon>
-      <span>用户管理</span>
-    </div>
-  </nav>
-
-  <!-- 底部区域 -->
-  <div class="sidebar-footer">
-    <div class="sidebar-nav-item">
-      <ion-icon name="log-out-outline"></ion-icon>
-      <span>退出登录</span>
-    </div>
-  </div>
-</aside>
-```
-
-### Naive UI 组件映射
-
-```vue
-<n-layout has-sider>
-  <!-- 桌面端侧边栏 -->
-  <n-layout-sider
-    bordered
-    collapse-mode="width"
-    :collapsed-width="64"
-    :width="240"
-    show-trigger
-    @collapse="collapsed = true"
-    @expand="collapsed = false"
-  >
-    <!-- Logo -->
-    <div class="sidebar-logo">
-      <div class="sidebar-logo-icon">QS</div>
-      <span v-if="!collapsed" class="sidebar-logo-text">Quick Study</span>
-    </div>
-
-    <!-- 菜单 -->
-    <n-menu
-      v-model:value="activeKey"
-      :collapsed="collapsed"
-      :collapsed-width="64"
-      :collapsed-icon-size="22"
-      :options="menuOptions"
-    />
-  </n-layout-sider>
-
-  <n-layout>
-    <!-- 主内容区域 -->
-    <n-layout-header bordered>...</n-layout-header>
-    <n-layout-content>...</n-layout-content>
-  </n-layout>
-</n-layout>
-
-<!-- 移动端抽屉 -->
-<n-drawer v-model:show="mobileSidebarVisible" :width="240" placement="left">
-  <n-drawer-content>
-    <n-menu v-model:value="activeKey" :options="menuOptions" />
-  </n-drawer-content>
-</n-drawer>
-```
-
-```typescript
-// 菜单配置
-const menuOptions: MenuOption[] = [
-  {
-    label: '首页',
-    key: 'home',
-    icon: () => h(NIcon, null, { default: () => h(HomeOutline) }),
-  },
-  {
-    label: '题库',
-    key: 'bank',
-    icon: () => h(NIcon, null, { default: () => h(LibraryOutline) }),
-  },
-  {
-    type: 'group',
-    label: '学习中心',
-    key: 'study-group',
-    children: [
-      {
-        label: '练习',
-        key: 'practice',
-        icon: () => h(NIcon, null, { default: () => h(GameControllerOutline) }),
-      },
-      {
-        label: '错题本',
-        key: 'wrong-questions',
-        icon: () => h(NIcon, null, { default: () => h(CloseCircleOutline) }),
-      },
-    ],
-  },
-]
-```
-
-| Mockup 类 | Naive UI 组件 | 说明 |
-|-----------|---------------|------|
-| `sidebar` | `n-layout-sider` | 侧边栏容器 |
-| `sidebar-logo` | 自定义 div | Logo 区域 |
-| `sidebar-nav` | `n-menu` | 导航菜单 |
-| `sidebar-nav-item` | `n-menu` `menu-item` | 菜单项 |
-| `sidebar-nav-label` | `n-menu` `type: 'group'` | 分组标签 |
-| `sidebar-footer` | 自定义 div | 底部区域 |
-| `active` | `n-menu` `v-model:value` | 当前激活项 |
-
-### CSS 类完整列表
-
-| 类名 | 用途 |
-|------|------|
-| `sidebar` | 容器：宽 240px、白底、固定定位、flex-col |
-| `sidebar-logo` | Logo 区：高 64px、flex 居中、底部边框 |
-| `sidebar-logo-icon` | Logo 图标：36x36px、品牌渐变背景、圆角 12px |
-| `sidebar-logo-text` | Logo 文字：16px、bold |
-| `sidebar-nav` | 导航区：flex-1、padding 12px、可滚动 |
-| `sidebar-nav-section` | 分组容器：底部间距 |
-| `sidebar-nav-label` | 分组标签：12px、semibold、tertiary、大写 |
-| `sidebar-nav-item` | 菜单项：flex、gap 12px、padding 12px、圆角 8px |
-| `sidebar-nav-item.active` | 激活态：选中背景 + 品牌色文字 |
-| `sidebar-footer` | 底部区：padding 12px、顶部边框 |
-
-### 响应式设计
-
-| 断点 | 行为 |
-|------|------|
-| 桌面 (>= 768px) | 侧边栏固定显示，宽度 240px |
-| 移动 (< 768px) | 侧边栏隐藏，通过汉堡菜单触发 `n-drawer` 抽屉 |
-
-### AI 实现指南
-
-- 侧边栏使用 `position: fixed` 固定在左侧，主内容区通过 `margin-left: var(--sidebar-width)` 避让。
-- Logo 图标使用 `--gradient-brand` 渐变背景。
-- 菜单项图标大小固定 20px，与文字间距 12px (`--space-3`)。
-- 激活态使用 `--bg-selected` (#EEF0FF) 浅色背景而非品牌色实色填充，保持轻量感。
-- 使用 Naive UI `n-menu` 时，分组通过 `type: 'group'` 的菜单项实现 `sidebar-nav-label` 效果。
-- 移动端通过监听窗口宽度切换为 `n-drawer` 模式，抽屉打开时需添加半透明遮罩层。
-- 底部 "退出登录" 项使用与普通菜单项相同的样式，放在 `sidebar-footer` 中通过顶部边框分隔。
-
----
-
-## 13. 顶部导航栏 (Header)
-
-### 组件描述
-
-顶部导航栏是主内容区的头部，固定在页面顶部。左侧展示面包屑导航，右侧展示通知图标（带徽章）和用户菜单（头像 + 下拉菜单）。
-
-### HTML 结构示例
-
-```html
-<header class="app-header">
-  <!-- 左侧：面包屑 -->
-  <div class="app-header-left">
-    <div class="breadcrumb">
-      <span>题库</span>
-      <ion-icon name="chevron-forward-outline" style="font-size: 14px;"></ion-icon>
-      <span class="breadcrumb-current">题目列表</span>
-    </div>
-  </div>
-
-  <!-- 右侧：通知 + 用户菜单 -->
-  <div class="app-header-right">
-    <!-- 通知图标 -->
-    <div style="position: relative; cursor: pointer;">
-      <ion-icon name="notifications-outline"
-        style="font-size: 22px; color: var(--text-secondary);">
-      </ion-icon>
-      <span class="badge"
-        style="position: absolute; top: -4px; right: -4px;">3</span>
-    </div>
-
-    <!-- 用户菜单 -->
-    <div style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-      <div class="avatar" style="background: #5B5FE9;">张</div>
-      <span style="font-size: 14px; font-weight: 500; color: var(--text-primary);">张同学</span>
-      <ion-icon name="chevron-down-outline"
-        style="font-size: 16px; color: var(--text-tertiary);">
-      </ion-icon>
-    </div>
-  </div>
-</header>
-```
-
-### Naive UI 组件映射
-
-```vue
-<n-layout-header bordered class="app-header">
-  <!-- 左侧面包屑 -->
-  <div class="app-header-left">
-    <n-breadcrumb>
-      <n-breadcrumb-item @click="$router.push('/banks')">题库</n-breadcrumb-item>
-      <n-breadcrumb-item>题目列表</n-breadcrumb-item>
-    </n-breadcrumb>
-  </div>
-
-  <!-- 右侧操作区 -->
-  <div class="app-header-right">
-    <!-- 通知 -->
-    <n-badge :value="unreadCount" :max="99">
-      <n-icon size="22" style="cursor: pointer;" @click="$router.push('/notifications')">
-        <NotificationsOutline />
-      </n-icon>
-    </n-badge>
-
-    <!-- 用户下拉菜单 -->
-    <n-dropdown :options="userMenuOptions" @select="handleUserMenuSelect">
-      <div style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-        <n-avatar round :size="32" :style="{ backgroundColor: getAvatarColor(userName) }">
-          {{ userName.charAt(0) }}
-        </n-avatar>
-        <span style="font-size: 14px; font-weight: 500;">{{ userName }}</span>
-        <n-icon size="16"><ChevronDownOutline /></n-icon>
-      </div>
-    </n-dropdown>
-  </div>
-</n-layout-header>
-```
-
-```typescript
-const userMenuOptions: DropdownOption[] = [
-  { label: '个人资料', key: 'profile', icon: () => h(NIcon, null, { default: () => h(PersonOutline) }) },
-  { label: '我的设置', key: 'settings', icon: () => h(NIcon, null, { default: () => h(SettingsOutline) }) },
-  { type: 'divider', key: 'd1' },
-  { label: '退出登录', key: 'logout', icon: () => h(NIcon, null, { default: () => h(LogOutOutline) }) },
-]
-```
-
-| Mockup 类 | Naive UI 组件 | 说明 |
-|-----------|---------------|------|
-| `app-header` | `n-layout-header` | 顶部栏容器 |
-| `breadcrumb` | `n-breadcrumb` | 面包屑导航 |
-| `breadcrumb-current` | 最后一个 `n-breadcrumb-item` | 当前页（无链接） |
-| `badge` | `n-badge` | 通知徽章 |
-| `avatar` | `n-avatar` | 用户头像 |
-| 用户菜单 | `n-dropdown` | 下拉菜单 |
-
-### CSS 类完整列表
-
-| 类名 | 用途 |
-|------|------|
-| `app-header` | 容器：高 64px、白底、底部边框、flex 两端对齐、sticky 定位 |
-| `app-header-left` | 左侧区域：flex、gap 12px |
-| `app-header-right` | 右侧区域：flex、gap 16px |
-| `breadcrumb` | 面包屑：flex、gap 8px、13px、tertiary 色 |
-| `breadcrumb-current` | 当前页：primary 色、medium |
-
-### AI 实现指南
-
-- Header 高度为 `--header-height` (64px)，使用 `position: sticky; top: 0` 固定。
-- 面包屑中非当前页可点击跳转，当前页不可点击（无链接）。
-- 通知图标与徽章组合使用绝对定位，徽章偏移 `top: -4px; right: -4px`。
-- 用户菜单通过 `n-dropdown` 实现，触发器为头像 + 用户名 + 下拉箭头的组合。
-- Header 的 `z-index` 为 `--z-sticky` (1100)，确保在内容之上。
-- 左右区域通过 `justify-content: space-between` 分离。
-
----
-
-## 14. 模态框 (Modal)
-
-### 组件描述
-
-模态框用于在当前页面之上展示需要用户关注的内容或表单，如确认删除、编辑表单等。由遮罩层、模态框容器、头部、主体和底部操作区组成。
-
-### 视觉状态
-
-| 元素 | 描述 |
-|------|------|
-| `modal-overlay` | 半透明黑色遮罩 (`rgba(0,0,0,0.4)`)，居中弹窗 |
-| `modal` | 白色圆角容器，最大宽度 480px，最大高度 90vh |
-| `modal-header` | 标题 + 关闭按钮，底部边框分隔 |
-| `modal-body` | 主体内容区，padding 24px |
-| `modal-footer` | 底部操作按钮区，右对齐，顶部边框分隔 |
-
-### HTML 结构示例
-
-```html
-<div class="modal-overlay">
-  <div class="modal">
-    <!-- 头部 -->
-    <div class="modal-header">
-      <h3 style="font-size: var(--text-lg); font-weight: var(--font-semibold);">删除题目</h3>
-      <button class="btn btn-ghost btn-sm" style="padding: 4px;">
-        <ion-icon name="close-outline" style="font-size: 20px;"></ion-icon>
-      </button>
-    </div>
-
-    <!-- 主体 -->
-    <div class="modal-body">
-      <p>确定要删除这道题目吗？此操作不可撤销。</p>
-    </div>
-
-    <!-- 底部 -->
-    <div class="modal-footer">
-      <button class="btn btn-secondary">取消</button>
-      <button class="btn btn-danger">确认删除</button>
-    </div>
-  </div>
-</div>
-```
-
-### Naive UI 组件映射
-
-```vue
-<n-modal v-model:show="showModal" preset="card" :style="{ maxWidth: '480px' }" :title="modalTitle">
-  <p>确定要删除这道题目吗？此操作不可撤销。</p>
-
-  <template #footer>
-    <div class="flex justify-end gap-3">
-      <n-button @click="showModal = false">取消</n-button>
-      <n-button type="error" @click="handleConfirm">确认删除</n-button>
-    </div>
-  </template>
-</n-modal>
-```
-
-| Mockup 类 | Naive UI 配置 | 说明 |
-|-----------|---------------|------|
-| `modal-overlay` | `n-modal` 内置遮罩 | 自动渲染 |
-| `modal` | `n-modal preset="card"` | 卡片预设 |
-| `modal-header` | `preset="card"` 的 `title` prop | 头部标题 |
-| `modal-body` | `n-modal` 默认 slot | 主体内容 |
-| `modal-footer` | `#footer` slot | 底部操作区 |
-
-### CSS 类完整列表
-
-| 类名 | 用途 |
-|------|------|
-| `modal-overlay` | 遮罩层：fixed 全屏、黑色半透明、flex 居中、z-index 1300 |
-| `modal` | 模态框：白底、圆角 16px、大阴影、最大宽 480px、最大高 90vh |
-| `modal-header` | 头部：padding 20px 24px、flex 两端对齐、底部边框 |
-| `modal-body` | 主体：padding 24px |
-| `modal-footer` | 底部：padding 16px 24px、flex 右对齐、gap 12px、顶部边框 |
-
-### AI 实现指南
-
-- 模态框 `z-index` 为 `--z-modal` (1300)，在所有内容之上。
-- 使用 Naive UI `n-modal` 时，`preset="card"` 自动生成带标题栏和关闭按钮的卡片式弹窗，与 mockup 结构一致。
-- 模态框最大宽度默认 480px，大表单可调整为 640px 或更宽。
-- 底部按钮区使用 `justify-content: flex-end` 右对齐，按钮间 gap 为 `--space-3` (12px)。
-- 确认类操作（删除、提交）放在最右侧，取消按钮在其左侧。
-- 模态框内容超过 `max-height: 90vh` 时，`overflow-y: auto` 自动出现滚动条。
-
----
-
-## 15. 空状态 (Empty State)
-
-### 组件描述
-
-空状态用于在列表无数据、搜索无结果等场景下展示占位内容。由图标、标题和描述文字组成，居中排列。
-
-### 视觉状态
-
-| 元素 | 样式 |
-|------|------|
-| 图标 | 48px、`--color-neutral-300` 灰色 |
-| 标题 | 16px、semibold、`--text-secondary` |
-| 描述 | 13px、`--text-tertiary` |
-
-### HTML 结构示例
-
-```html
-<div class="empty-state">
-  <ion-icon name="document-text-outline" class="empty-state-icon"></ion-icon>
-  <div class="empty-state-title">暂无题目</div>
-  <div class="empty-state-desc">该题库下还没有题目，点击上方按钮新建题目</div>
-</div>
-
-<!-- 带操作按钮的空状态 -->
-<div class="empty-state">
-  <ion-icon name="search-outline" class="empty-state-icon"></ion-icon>
-  <div class="empty-state-title">未找到匹配结果</div>
-  <div class="empty-state-desc">试试调整搜索条件或清除筛选器</div>
-  <button class="btn btn-secondary btn-sm mt-4">清除筛选</button>
-</div>
-```
-
-### Naive UI 组件映射
-
-```vue
-<n-empty description="该题库下还没有题目，点击上方按钮新建题目">
-  <template #icon>
-    <n-icon :size="48" :color="themeVars.textColor3">
-      <DocumentTextOutline />
-    </n-icon>
-  </template>
-  <template #extra>
-    <n-button size="small" @click="handleCreate">新建题目</n-button>
-  </template>
-</n-empty>
-```
-
-| Mockup 类 | Naive UI 组件 | 说明 |
-|-----------|---------------|------|
-| `empty-state` | `n-empty` | 空状态容器 |
-| `empty-state-icon` | `#icon` slot | 图标 |
-| `empty-state-title` | 内置标题样式 | 标题 |
-| `empty-state-desc` | `description` prop | 描述文字 |
-
-### CSS 类完整列表
-
-| 类名 | 用途 |
-|------|------|
-| `empty-state` | 容器：flex-col、居中、padding 48px 24px、文字居中 |
-| `empty-state-icon` | 图标：48px、灰色、底部间距 16px |
-| `empty-state-title` | 标题：16px、semibold、secondary 色 |
-| `empty-state-desc` | 描述：13px、tertiary 色 |
-
-### AI 实现指南
-
-- 空状态整体垂直居中排列，水平居中对齐。
-- 图标颜色为 `--color-neutral-300` (#D5D5DC)，保持低调不抢眼。
-- 可在描述下方添加操作按钮（如"新建"、"清除筛选"），按钮上方添加 `mt-4` (16px) 间距。
-- 通常放在卡片内部或列表区域中央替代无数据时的空白。
-- 使用 Naive UI `n-empty` 时，`description` prop 对应描述文字，`#extra` slot 放置操作按钮。
-
----
-
-## 16. 进度条 (Progress)
-
-### 组件描述
-
-进度条用于展示任务完成度、考试进度、上传进度等。由轨道和填充条组成，支持不同语义颜色变体。
-
-### 视觉状态
-
-| 变体 | 填充色 | 用途 |
-|------|--------|------|
-| `default` | `--color-primary-500` (#5B5FE9) | 默认进度 |
-| `success` | `--color-success-500` (#22B570) | 完成/通过 |
-| `warning` | `--color-warning-500` (#FFA42B) | 接近超时/低分 |
-| `error` | `--color-error-500` (#F0503C) | 失败/超时 |
-
-### HTML 结构示例
-
-```html
-<!-- 默认进度条 -->
-<div class="progress">
-  <div class="progress-bar" style="width: 45%;"></div>
-</div>
-
-<!-- 成功进度条 -->
-<div class="progress">
-  <div class="progress-bar success" style="width: 100%;"></div>
-</div>
-
-<!-- 警告进度条 -->
-<div class="progress">
-  <div class="progress-bar warning" style="width: 75%;"></div>
-</div>
-
-<!-- 错误进度条 -->
-<div class="progress">
-  <div class="progress-bar error" style="width: 30%;"></div>
-</div>
-
-<!-- 带标签的进度条 -->
-<div class="flex items-center justify-between mb-2">
-  <span style="font-size: var(--text-sm); color: var(--text-secondary);">答题进度</span>
-  <span style="font-size: var(--text-sm); font-weight: var(--font-semibold); color: var(--text-primary);">9/20</span>
-</div>
-<div class="progress">
-  <div class="progress-bar" style="width: 45%;"></div>
-</div>
-```
-
-### Naive UI 组件映射
-
-```vue
-<n-progress
-  type="line"
-  :percentage="percentage"
-  :status="progressStatus"
-  :height="8"
-  :border-radius="4"
-  :show-indicator="false"
-/>
-
-<script setup lang="ts">
-const props = defineProps<{
-  current: number
-  total: number
-}>()
-
-const percentage = computed(() => Math.round((props.current / props.total) * 100))
-
-const progressStatus = computed<'default' | 'success' | 'warning' | 'error'>(() => {
-  if (percentage.value >= 100) return 'success'
-  return 'default'
+confirm({
+  title: '发布试卷',
+  content: '发布后学生可开始考试',
+  positiveText: '发布',
+  onPositiveClick: () => publish()
 })
-</script>
+
+confirmDanger({
+  title: '确认删除',
+  content: `确认删除标签「${tag.name}」？`,
+  onPositiveClick: async () => { await deleteTag(tag.id) }
+})
 ```
-
-| Mockup 变体 | Naive UI `status` |
-|-------------|-------------------|
-| `default` | `"default"` |
-| `success` | `"success"` |
-| `warning` | `"warning"` |
-| `error` | `"error"` |
-
-### CSS 类完整列表
-
-| 类名 | 用途 |
-|------|------|
-| `progress` | 轨道：高 8px、灰色背景、圆角 9999px、溢出隐藏 |
-| `progress-bar` | 填充条：高 100%、品牌色、圆角 9999px、宽度过渡动画 |
-| `progress-bar.success` | 成功色填充 |
-| `progress-bar.warning` | 警告色填充 |
-| `progress-bar.error` | 错误色填充 |
-
-### AI 实现指南
-
-- 进度条高度固定 8px，使用 `border-radius: var(--radius-full)` (9999px) 呈现为胶囊形。
-- 填充条宽度通过内联 `style="width: X%"` 或 Naive UI `percentage` prop 控制。
-- 宽度变化使用 `transition: width var(--transition-slow)` (300ms) 实现平滑动画。
-- `success` / `warning` / `error` 作为修饰类追加在 `progress-bar` 上。
-- 使用 Naive UI 时，`:show-indicator="false"` 隐藏内置百分比文字，保持与 mockup 一致的纯条形样式。
-- 进度条上方通常搭配文字标签（如"答题进度 9/20"），使用 flex 布局水平排列。
 
 ---
 
-## 17. 警告提示 (Alert)
+## 20. usePagination（分页列表组合式函数）
 
-### 组件描述
+### 组件路径
 
-警告提示用于在页面内展示重要的提示信息，如操作成功/失败通知、表单校验汇总等。支持四种语义变体，每种使用浅色背景 + 对应语义色文字。
+`src/composables/usePagination.ts`
 
-### 视觉状态
+### 用途
 
-| 变体 | 背景色 | 文字色 | 用途 |
-|------|--------|--------|------|
-| `alert-info` | `--color-info-50` (#E8F1FF) | `--color-info-600` (#1E6FE0) | 一般提示 |
-| `alert-success` | `--color-success-50` (#E8F9F0) | `--color-success-600` (#1A965C) | 成功提示 |
-| `alert-warning` | `--color-warning-50` (#FFF8E6) | `--color-warning-600` (#E68A00) | 警告提示 |
-| `alert-error` | `--color-error-50` (#FFEFEC) | `--color-error-600` (#D63A28) | 错误提示 |
+分页列表通用逻辑：维护页码 / 页大小 / 总数 / 加载态 / 数据，对外提供 `n-pagination` 可直接绑定的 `pagination` 对象。
 
-### HTML 结构示例
+### 签名
 
-```html
-<!-- 信息提示 -->
-<div class="alert alert-info">
-  <ion-icon name="information-circle-outline" style="font-size: 20px; flex-shrink: 0;"></ion-icon>
-  <span>该试卷包含 50 道题目，考试时长 90 分钟。</span>
-</div>
-
-<!-- 成功提示 -->
-<div class="alert alert-success">
-  <ion-icon name="checkmark-circle-outline" style="font-size: 20px; flex-shrink: 0;"></ion-icon>
-  <span>试卷已成功发布，学生可以开始考试。</span>
-</div>
-
-<!-- 警告提示 -->
-<div class="alert alert-warning">
-  <ion-icon name="warning-outline" style="font-size: 20px; flex-shrink: 0;"></ion-icon>
-  <span>距离考试结束还有 5 分钟，请尽快完成答题。</span>
-</div>
-
-<!-- 错误提示 -->
-<div class="alert alert-error">
-  <ion-icon name="close-circle-outline" style="font-size: 20px; flex-shrink: 0;"></ion-icon>
-  <span>提交失败，网络连接异常，请重试。</span>
-</div>
+```ts
+function usePagination<T>(
+  fetcher: (params: { page: number; pageSize: number }) => Promise<PageResult<T>>
+): UsePaginationReturn<T>
 ```
 
-### Naive UI 组件映射
+### 返回值
+
+| 字段 | 类型 | 默认值 / 说明 |
+|------|------|--------------|
+| `page` | `Ref<number>` | 当前页码，默认 `1` |
+| `pageSize` | `Ref<number>` | 每页条数，默认 `10` |
+| `itemCount` | `Ref<number>` | 总记录数 |
+| `loading` | `Ref<boolean>` | 加载中 |
+| `data` | `Ref<T[]>` | 数据列表 |
+| `fetchList` | `(reset?: boolean) => Promise<void>` | 拉取；`reset=true` 时页码回到 1 |
+| `pagination` | `Ref<{ page: number; pageSize: number; itemCount: number }>` | 供 `n-pagination` 绑定 |
+
+> `PageResult<T>` 来自 `@/types`，含 `records: T[]` 与 `total: number`。
+
+### 关键实现要点
+
+- `fetchList`：`loading=true` 后调用 `fetcher`，结果写 `data.value=result.records`、`itemCount.value=result.total`，`finally` 复位 `loading`。
+- 服务端分页：配合 `n-pagination` 的 `v-model:page` / `@update:page` 调用 `fetchList`。
+
+### 用法示例
+
+```ts
+const { page, pageSize, itemCount, loading, data, fetchList, pagination } = usePagination(
+  async (p) => {
+    const res = await getQuestionList({ page: p.page, size: p.pageSize })
+    return res.data
+  }
+)
+
+onMounted(() => fetchList())
+```
 
 ```vue
-<n-alert :type="alertType" :bordered="false">
-  {{ message }}
-</n-alert>
-
-<!-- 带图标 -->
-<n-alert :type="alertType" :bordered="false" show-icon>
-  {{ message }}
-</n-alert>
+<n-data-table
+  :columns="columns"
+  :data="data"
+  :loading="loading"
+  :pagination="pagination"
+  remote
+/>
 ```
-
-| Mockup 变体 | Naive UI `type` |
-|-------------|-----------------|
-| `alert-info` | `"info"` |
-| `alert-success` | `"success"` |
-| `alert-warning` | `"warning"` |
-| `alert-error` | `"error"` |
-
-### CSS 类完整列表
-
-| 类名 | 用途 |
-|------|------|
-| `alert` | 基础样式：flex、gap 12px、padding 12px 16px、圆角 12px、13px |
-| `alert-info` | 信息变体：蓝色浅底 + 蓝色文字 |
-| `alert-success` | 成功变体：绿色浅底 + 绿色文字 |
-| `alert-warning` | 警告变体：黄色浅底 + 黄色文字 |
-| `alert-error` | 错误变体：红色浅底 + 红色文字 |
-
-### AI 实现指南
-
-- Alert 使用浅色背景 + 深色文字的配色方案（非实色填充），保持页面整体轻盈。
-- 图标位于文字左侧，使用 `gap: var(--space-3)` (12px) 间距，图标大小 20px。
-- 使用 `align-items: flex-start` 确保多行文字时图标顶部对齐。
-- 使用 Naive UI `n-alert` 时，`:bordered="false"` 去除边框，`show-icon` 自动添加对应语义图标。
-- Alert 不是自动消失的 Toast，它持续展示直到用户关闭或条件变化。
-- 圆角为 `--radius-lg` (12px)，与卡片保持一致。
 
 ---
 
-## 附录：CSS 类名速查表
+## 21. useBankOptions（题库下拉选项组合式函数）
 
-### 布局类
+### 组件路径
 
-| 类名 | 说明 |
+`src/composables/useBankOptions.ts`
+
+### 用途
+
+获取当前用户可用的题库下拉选项（`{ label: name, value: id }`）。
+
+### 返回值
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `bankOptions` | `Ref<SelectOption[]>` | 题库选项 |
+| `loading` | `Ref<boolean>` | 加载中 |
+| `loadBankOptions` | `() => Promise<void>` | 手动重载 |
+
+### 关键实现要点
+
+- `onMounted` 自动调用 `loadBankOptions()`。
+- 拉取 `getBankList({ page: 1, size: 200 })`，映射为 `SelectOption[]`。
+- 「全部 / 不限」选项是否插入由调用方决定（本 composable 不插入）。
+
+### 用法示例
+
+```ts
+const { bankOptions, loading, loadBankOptions } = useBankOptions()
+// <n-select :options="bankOptions" :loading="loading" />
+```
+
+---
+
+## 22. utils/format（格式化工具）
+
+### 组件路径
+
+`src/utils/format.ts`
+
+### 用途
+
+通用展示格式化（依赖 `dayjs`）。
+
+### 导出函数
+
+| 函数 | 签名 | 说明 |
+|------|------|------|
+| `formatDate` | `(date, format='YYYY-MM-DD') => string` | 日期格式化；空值返回 `'-'` |
+| `formatDateTime` | `(date) => string` | 等价于 `formatDate(date, 'YYYY-MM-DD HH:mm:ss')` |
+| `formatDuration` | `(minutes: number \| null \| undefined) => string` | 时长：`<60` 输出「N分钟」，否则「N小时M分钟」；空值 `'-'` |
+| `formatScore` | `(score: number \| null \| undefined) => string` | 分数：`score.toFixed(1)`；空值 `'-'` |
+| `truncateText` | `(text, maxLength=50) => string` | 超长截断加 `...`；空值 `'-'` |
+
+### 用法示例
+
+```ts
+import { formatDateTime, formatDuration, truncateText } from '@/utils/format'
+
+formatDateTime(record.createdAt) // '2026-09-07 10:30:00'
+formatDuration(95)              // '1小时35分钟'
+truncateText(longText, 20)
+```
+
+---
+
+## 23. utils/tagOptions（标签分组选项工具）
+
+### 组件路径
+
+`src/utils/tagOptions.ts`
+
+### 用途
+
+将标签列表转为 Naive UI 分组 `SelectOption[]`，用于标签筛选 / 选择器。
+
+### 导出函数
+
+| 函数 | 签名 | 说明 |
+|------|------|------|
+| `buildGroupedTagOptions` | `(tags: Tag[]) => SelectOption[]` | 有分组标签按 `groupName` 分区，未分组归入「未分组」分区放最后；`value` 仍为标签 id，筛选语义不变 |
+
+### 关键实现要点
+
+- 分组 key 形如 `tag-group-${label}`、未分组 `tag-group-ungrouped`。
+- 仅做导航辅助层级，不改变多选筛选的 `value` 语义。
+
+### 用法示例
+
+```ts
+import { buildGroupedTagOptions } from '@/utils/tagOptions'
+
+const options = buildGroupedTagOptions(tagList)
+// <n-select multiple :options="options" />
+```
+
+---
+
+## 24. utils/practiceTitle（练习会话标题工具）
+
+### 组件路径
+
+`src/utils/practiceTitle.ts`
+
+### 用途
+
+按「题库 · 标签 · 题量 · 随机练习」组合生成练习会话标题。
+
+### 类型
+
+```ts
+export interface PracticeTitleInput {
+  bankNames?: string[] | null
+  tagNames?: string[] | null
+  totalCount?: number | null
+}
+```
+
+### 导出函数
+
+| 函数 | 签名 | 说明 |
+|------|------|------|
+| `buildPracticeSessionTitle` | `(input: PracticeTitleInput) => string` | 组合规则见下 |
+| `buildPracticeSessionTitleFromSummary` | `(summary: Pick<PracticeSessionSummary,'bankNames'\|'tagNames'\|'totalCount'>) => string` | 便捷重载，直接吃会话列表行 |
+
+### 组合规则
+
+- 题库：取首名，多个时追加「等N个题库」。
+- 标签：取首名，多个时追加「等N个标签」。
+- 题量：`totalCount > 0` 时输出「N题」。
+- 各段用「 · 」连接，末尾固定追加「随机练习」；前置全空时标题即「随机练习」。
+
+### 用法示例
+
+```ts
+buildPracticeSessionTitle({ bankNames: ['高数'], tagNames: ['极限'], totalCount: 20 })
+// '高数 · 极限 · 20题 · 随机练习'
+```
+
+---
+
+## 25. utils/constants（枚举字典）
+
+### 组件路径
+
+`src/utils/constants.ts`
+
+### 用途
+
+全站唯一枚举字典（题型 / 难度 / 状态 label 与 Tag 语义色），取值与后端大写枚举一致，禁止页面内另写本地字典。
+
+### 导出内容
+
+| 导出 | 类型 / 结构 | 说明 |
+|------|------------|------|
+| `QUESTION_TYPE_OPTIONS` | `{ label; value: QuestionType }[]` | 题型下拉：`SINGLE` 单选 / `MULTIPLE` 多选 / `TRUE_FALSE` 判断 / `FILL_BLANK` 填空 / `SHORT_ANSWER` 简答 |
+| `QUESTION_TYPE_MAP` | `Record<QuestionType, string>` | 题型中文映射 |
+| `DIFFICULTY_OPTIONS` | `{ label; value: Difficulty }[]` | 难度下拉：`EASY` 简单 / `MEDIUM` 中等 / `HARD` 困难 |
+| `DIFFICULTY_MAP` | `Record<Difficulty, string>` | 难度中文映射 |
+| `QUESTION_STATUS_OPTIONS` | `{ label; value: string }[]` | 题目状态：`DRAFT` 草稿 / `PENDING_REVIEW` 待审核 / `PUBLISHED` 已发布 |
+| `SESSION_STATUS_MAP` | `Record<SessionStatus, {label; type}>` | 练习会话状态：`IN_PROGRESS` 进行中(info) / `PENDING_REVIEW` 待批改(warning) / `COMPLETED` 已完成(success) / `ABANDONED` 已放弃(default) |
+| `PAPER_STATUS_MAP` | `Record<PaperStatus, {label; type}>` | 试卷状态：`DRAFT` 草稿(default) / `PUBLISHED` 已发布(success) / `CLOSED` 已关闭(error) |
+| `TOKEN_KEY` | `'quick-study-token'` | 登录 token 的 localStorage key |
+| `REFRESH_TOKEN_KEY` | `'quick-study-refresh-token'` | 刷新 token key |
+| `USER_INFO_KEY` | `'quick-study-user-info'` | 用户信息 key |
+
+> `Tag` 语义色（题型 / 难度）在前端另有映射处：如 `QuestionPreviewDrawer` 的 `TYPE_TAG` / `DIFFICULTY_TAG`（见第 7 节），与 `constants` 的 label 映射互补，颜色字典以各组件内实现为准。
+
+### 用法示例
+
+```ts
+import { QUESTION_TYPE_MAP, DIFFICULTY_MAP, SESSION_STATUS_MAP } from '@/utils/constants'
+
+QUESTION_TYPE_MAP['SINGLE']   // '单选题'
+DIFFICULTY_MAP['HARD']        // '困难'
+SESSION_STATUS_MAP['COMPLETED'].label // '已完成'
+```
+
+---
+
+## 附录 A：已用设计令牌核对
+
+下列 CSS 变量被上述组件直接引用，均可在 `design/tokens/design-tokens.css` 中找到（未改动 tokens 文件）：
+
+| 变量 | 用途 |
 |------|------|
-| `app-shell` | 应用外壳：flex、最小高度 100vh |
-| `main-area` | 主内容区：flex-1、左边距 240px |
-| `app-content` | 内容区：padding 24px、最大宽 1280px、居中 |
+| `--space-1` / `--space-2` / `--space-3` / `--space-4` / `--space-5` / `--space-6` / `--space-12` | 间距 |
+| `--color-neutral-300` | 空状态图标灰 |
+| `--text-primary` / `--text-secondary` / `--text-tertiary` / `--text-brand` / `--text-xs` / `--text-sm` / `--text-base` / `--text-2xl` / `--text-3xl` | 文字色与字号 |
+| `--font-medium` / `--font-semibold` / `--font-bold` / `--leading-normal` | 字重 / 行高 |
+| `--radius-md` / `--radius-lg` / `--radius-full` | 圆角 |
+| `--border-default` / `--border-strong` | 边框 |
+| `--bg-card` / `--bg-selected` | 背景 |
+| `--color-primary-300` / `--color-primary-500` / `--color-success-50` / `--color-success-500` / `--color-success-600` / `--color-error-50` / `--color-error-500` / `--color-warning-500` | 语义色 |
+| `--transition-base` | 过渡 |
 
-### 组件类
+## 附录 B：组件清单（代码事实源）
 
-| 类名 | 说明 |
-|------|------|
-| `btn`, `btn-{variant}`, `btn-{size}` | 按钮 |
-| `card`, `card-hover`, `card-header`, `card-title`, `card-body` | 卡片 |
-| `tag`, `tag-{variant}` | 标签 |
-| `input`, `textarea`, `select`, `input-error` | 表单控件 |
-| `table-wrapper`, `data-table`, `col-{align}` | 表格 |
-| `pagination`, `page-btn`, `active` | 分页 |
-| `stat-card`, `stat-label`, `stat-value` | 统计卡片 |
-| `option-item`, `option-marker`, `option-content` | 答题选项 |
-| `q-nav-grid`, `q-nav-cell` | 题目导航网格 |
-| `avatar`, `avatar-{size}` | 头像 |
-| `badge` | 徽章 |
-| `empty-state`, `empty-state-icon` | 空状态 |
-| `progress`, `progress-bar` | 进度条 |
-| `modal`, `modal-overlay`, `modal-header` | 模态框 |
-| `alert`, `alert-{variant}` | 警告提示 |
+- **common/（12）**：EmptyState、FilterBar、PageHeader、ProviderBridge、QuestionNavGrid、QuestionOption、QuestionPreviewDrawer、RichText、SkeletonList、StatCard、TagManageModal、UserSearchSelect
+- **根级（3）**：FileUpload、LoadError、MarkdownEditor
+- **importExport/（3）**：BankImportDialog、ImportResultPanel、QuestionImportDialog
+- **composables/（3）**：useConfirm、usePagination、useBankOptions
+- **utils/（4，UI 相关）**：format、tagOptions、practiceTitle、constants
 
-### 侧边栏/头部类
-
-| 类名 | 说明 |
-|------|------|
-| `sidebar`, `sidebar-logo`, `sidebar-nav`, `sidebar-footer` | 侧边栏 |
-| `sidebar-nav-item`, `sidebar-nav-label` | 菜单项/分组标签 |
-| `app-header`, `app-header-left`, `app-header-right` | 顶部导航栏 |
-| `breadcrumb`, `breadcrumb-current` | 面包屑 |
-
-### 设计令牌速查
-
-| 令牌 | 值 | 用途 |
-|------|-----|------|
-| `--color-primary-500` | #5B5FE9 | 主色 |
-| `--color-success-500` | #22B570 | 成功色 |
-| `--color-error-500` | #F0503C | 错误色 |
-| `--color-warning-500` | #FFA42B | 警告色 |
-| `--color-info-500` | #3B8BFF | 信息色 |
-| `--text-primary` | #242428 | 主文字 |
-| `--text-secondary` | #6B6B76 | 次文字 |
-| `--text-tertiary` | #8A8A96 | 辅助文字 |
-| `--bg-card` | #FFFFFF | 卡片背景 |
-| `--bg-page` | #F4F4F6 | 页面背景 |
-| `--border-default` | #E8E8EC | 默认边框 |
-| `--radius-lg` | 12px | 卡片圆角 |
-| `--radius-md` | 8px | 按钮/输入框圆角 |
-| `--space-4` | 16px | 默认间距 |
-| `--header-height` | 64px | 顶部栏高度 |
-| `--sidebar-width` | 240px | 侧边栏宽度 |
+> 旧文档中描述的原子组件（Button / Card / Tag / Input / Data Table / Pagination / Avatar / Badge / Sidebar / Header / Modal / Progress / Alert 等）均**未在 `src` 中封装为 SFC**，其 CSS 类规范见 `design/mockups/styles/mockup.css`，不在本文以组件章节形式收录。

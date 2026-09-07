@@ -1,436 +1,506 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<html lang="zh-CN" data-page-node-id="6riHFA5TJpsRjqWuJxkjVy">
+<head data-page-node-id="xuXFZTqCNFkeOtVBKC2SY6">
+  <meta charset="UTF-8" data-page-node-id="6K95hf5VKE5W04Myd3XUme">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" data-page-node-id="tJkqVPJ29ttrVH4SAWIMQK">
   <title>做题记录 — Quick Study</title>
-  <link rel="stylesheet" href="styles/mockup.css">
+  <link rel="stylesheet" href="styles/mockup.css" data-page-node-id="Kcf0WnC87l2MLHc4ob3zEp">
   <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
   <script nomodule src="https://cdn.jsdelivr.net/npm/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
   <style>
-    .page-title {
-      font-size: var(--text-2xl);
-      font-weight: var(--font-bold);
-      color: var(--text-primary);
-      margin-bottom: var(--space-6);
-    }
-
-    /* --- Filter Bar --- */
+    /* --- FilterBar.vue：flex + gap-3 + wrap + mb-5 --- */
     .filter-bar {
-      background: var(--bg-card);
-      border: 1px solid var(--border-default);
-      border-radius: var(--radius-lg);
-      padding: var(--space-4);
-      margin-bottom: var(--space-5);
       display: flex;
       align-items: center;
       gap: var(--space-3);
       flex-wrap: wrap;
+      margin-bottom: var(--space-5);
     }
-    .filter-select {
-      padding: var(--space-2) var(--space-3);
-      border: 1px solid var(--border-default);
-      border-radius: var(--radius-md);
-      background: var(--bg-card);
-      font-size: var(--text-sm);
+
+    /* --- PageHeader.vue 标题/副标题 --- */
+    .page-header-title {
+      font-size: var(--text-2xl);
+      font-weight: var(--font-bold);
       color: var(--text-primary);
-      cursor: pointer;
-      outline: none;
-      transition: all var(--transition-base);
+      line-height: 1.25;
+      margin: 0;
     }
-    .filter-select:hover { border-color: var(--color-primary-300); }
-    .filter-select:focus { border-color: var(--color-primary-500); box-shadow: 0 0 0 3px rgba(91, 95, 233, 0.12); }
-    .type-tabs {
-      display: flex;
-      gap: 2px;
-      background: var(--color-neutral-100);
-      border-radius: var(--radius-md);
-      padding: 3px;
-    }
-    .type-tab {
-      padding: var(--space-2) var(--space-3);
-      border-radius: var(--radius-sm);
+    .page-header-subtitle {
       font-size: var(--text-sm);
+      color: var(--text-tertiary);
+      margin: 4px 0 0;
+    }
+
+    /* --- n-tabs type="line" --- */
+    .nav-tabs {
+      display: flex;
+      gap: var(--space-6);
+      border-bottom: 1px solid var(--border-default);
+      margin-bottom: var(--space-4);
+    }
+    .nav-tab {
+      position: relative;
+      padding: 0 0 12px;
+      font-size: var(--text-base);
       font-weight: var(--font-medium);
       color: var(--text-secondary);
       cursor: pointer;
-      transition: all var(--transition-base);
+      transition: color var(--transition-base);
+    }
+    .nav-tab:hover { color: var(--text-primary); }
+    .nav-tab.active { color: var(--text-brand); font-weight: var(--font-semibold); }
+    .nav-tab.active::after {
+      content: '';
+      position: absolute;
+      left: 0; right: 0; bottom: -1px;
+      height: 2px;
+      background: var(--color-primary-500);
+    }
+
+    .min-w-0 { min-width: 0; }
+    .flex-shrink-0 { flex-shrink: 0; }
+
+    /* 结果/状态角标：px-2 py-0.5 rounded text-xs font-semibold */
+    .result-chip {
+      display: inline-block;
+      padding: 2px var(--space-2);
+      border-radius: var(--radius-sm);
+      font-size: var(--text-xs);
+      font-weight: var(--font-semibold);
       white-space: nowrap;
     }
-    .type-tab:hover { color: var(--text-primary); }
-    .type-tab.active {
-      background: var(--bg-card);
-      color: var(--text-brand);
-      box-shadow: var(--shadow-xs);
-    }
-    .filter-divider {
-      width: 1px;
-      height: 24px;
-      background: var(--border-default);
-    }
-    .search-input-wrap {
-      position: relative;
+
+    /* n-date-picker type="daterange"（只读展示框） */
+    .date-picker {
+      width: 260px;
       display: flex;
       align-items: center;
-    }
-    .search-input-wrap ion-icon {
-      position: absolute;
-      left: var(--space-3);
-      font-size: 18px;
+      gap: var(--space-2);
       color: var(--text-tertiary);
-      pointer-events: none;
+      cursor: pointer;
     }
-    .search-input {
-      padding: var(--space-2) var(--space-3) var(--space-2) var(--space-8);
-      border: 1px solid var(--border-default);
-      border-radius: var(--radius-md);
-      background: var(--bg-card);
-      font-size: var(--text-sm);
-      color: var(--text-primary);
-      outline: none;
-      transition: all var(--transition-base);
-      width: 220px;
-    }
-    .search-input::placeholder { color: var(--text-tertiary); }
-    .search-input:focus { border-color: var(--color-primary-500); box-shadow: 0 0 0 3px rgba(91, 95, 233, 0.12); }
+    .date-picker:hover { border-color: var(--color-primary-300); }
 
-    /* --- Summary Cards --- */
-    .summary-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: var(--space-5);
-      margin-bottom: var(--space-6);
-    }
-    .summary-card {
+    /* 加载骨架：SkeletonList(:count=3, :cols=1) */
+    .sk-list { display: grid; grid-template-columns: 1fr; gap: var(--space-4); }
+    .sk-item {
       background: var(--bg-card);
       border: 1px solid var(--border-default);
       border-radius: var(--radius-lg);
       padding: var(--space-5);
-      display: flex;
-      align-items: center;
-      gap: var(--space-4);
     }
-    .summary-card-icon {
-      width: 48px;
-      height: 48px;
-      border-radius: var(--radius-md);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 24px;
-      flex-shrink: 0;
-    }
-    .summary-card-icon.brand { background: var(--color-primary-50); color: var(--text-brand); }
-    .summary-card-icon.info { background: var(--color-info-50); color: var(--color-info-600); }
-    .summary-card-icon.success { background: var(--color-success-50); color: var(--color-success-600); }
-    .summary-card-info { flex: 1; }
-    .summary-card-label {
-      font-size: var(--text-sm);
-      color: var(--text-tertiary);
-      margin-bottom: var(--space-1);
-    }
-    .summary-card-value {
-      font-size: var(--text-3xl);
-      font-weight: var(--font-bold);
-      color: var(--text-primary);
-      line-height: 1.2;
-    }
+    .sk-line-head { height: 20px; margin-bottom: var(--space-4); }
+    .sk-line { height: 14px; margin-bottom: var(--space-2); }
 
-    /* --- Records Table --- */
-    .records-table .time-cell {
-      white-space: nowrap;
-      color: var(--text-secondary);
-      font-size: var(--text-sm);
-    }
-    .records-table .summary-cell {
-      max-width: 260px;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      color: var(--text-primary);
-    }
-    .records-table .answer-cell {
-      font-family: var(--font-mono);
-      font-size: var(--text-sm);
-    }
-    .records-table .score-cell {
-      font-weight: var(--font-bold);
-    }
-    .records-table .action-link {
-      color: var(--text-brand);
-      font-size: var(--text-sm);
-      font-weight: var(--font-medium);
-      cursor: pointer;
-    }
-    .records-table .action-link:hover { text-decoration: underline; }
+    /* 空态：EmptyState.vue */
+    .es-icon { font-size: 56px; color: var(--color-neutral-300); margin-bottom: var(--space-4); }
+    .es-title { font-size: var(--text-base); font-weight: var(--font-semibold); color: var(--text-secondary); margin: 0 0 var(--space-1); }
+    .es-desc { font-size: var(--text-sm); color: var(--text-tertiary); margin: 0; }
+    .es-action { margin-top: var(--space-5); }
   </style>
 </head>
-<body>
-  <div class="app-shell">
-    <!-- Sidebar -->
-    <aside class="sidebar">
-      <div class="sidebar-logo">
-        <div class="sidebar-logo-icon">QS</div>
-        <span class="sidebar-logo-text">Quick Study</span>
-      <button class="sidebar-toggle" data-tooltip="折叠侧边栏">
-        <ion-icon name="chevron-back-outline"></ion-icon>
-      </button>
+<body data-page-node-id="sCFWnuUGquMZTGjWgJARZ8">
+  <div class="app-shell" data-page-node-id="eAsB0KhpeipqRdFQgbLidD">
+    <!-- ===== Sidebar（已登录 + 管理员，与 MainLayout 一致；/records 高亮「做题记录」） ===== -->
+    <aside class="sidebar" data-page-node-id="UlHldmgJ3CmhXdylvRI8VA">
+      <div class="sidebar-logo" data-page-node-id="Txaf9WiYR75ta0Z1NeerJT">
+        <div class="sidebar-logo-icon" data-page-node-id="lMwwpThujyBskmb9VwegVy">QS</div>
+        <span class="sidebar-logo-text" data-page-node-id="ZOeGrSzB6f2m80hLRcEnlC">Quick Study</span>
+        <button class="sidebar-toggle" data-tooltip="折叠侧边栏" data-page-node-id="ZqRLLUbe0sEygbDBQWnHCZ"><ion-icon name="chevron-back-outline" data-page-node-id="79pzUNlGbmriiDBxpGxeE0"></ion-icon></button>
       </div>
-      <nav class="sidebar-nav">
-        <div class="sidebar-nav-item" onclick="window.location.href='01-home.html'"><ion-icon name="home-outline"></ion-icon><span>首页</span></div>
-        <div class="sidebar-nav-item" onclick="window.location.href='02-bank-list.html'"><ion-icon name="library-outline"></ion-icon><span>题库</span></div>
-        <div class="sidebar-nav-item" onclick="window.location.href='04-question-list.html'"><ion-icon name="document-text-outline"></ion-icon><span>题目</span></div>
-        <div class="sidebar-nav-item" onclick="window.location.href='05-paper-list.html'"><ion-icon name="file-tray-full-outline"></ion-icon><span>试卷</span></div>
-        <div class="sidebar-nav-label">学习中心</div>
-        <div class="sidebar-nav-item" onclick="window.location.href='24-practice-list.html'"><ion-icon name="game-controller-outline"></ion-icon><span>练习</span></div>
-        <div class="sidebar-nav-item" onclick="window.location.href='10-wrong-questions.html'"><ion-icon name="close-circle-outline"></ion-icon><span>错题本</span></div>
-        <div class="sidebar-nav-item" onclick="window.location.href='18-favorites.html'"><ion-icon name="star-outline"></ion-icon><span>收藏题目</span></div>
-        <div class="sidebar-nav-item active" onclick="window.location.href='11-records.html'"><ion-icon name="time-outline"></ion-icon><span>做题记录</span></div>
-        <div class="sidebar-nav-item" onclick="window.location.href='09-statistics.html'"><ion-icon name="bar-chart-outline"></ion-icon><span>统计</span></div>
-        <div class="sidebar-nav-item" onclick="window.location.href='13-notifications.html'"><ion-icon name="notifications-outline"></ion-icon><span>通知</span></div>
-        <div class="sidebar-nav-item" onclick="window.location.href='12-search.html'"><ion-icon name="search-outline"></ion-icon><span>搜索</span></div>
-        <div class="sidebar-nav-label">管理</div>
-        <div class="sidebar-nav-item" onclick="window.location.href='15-admin-users.html'"><ion-icon name="people-outline"></ion-icon><span>用户管理</span></div>
-        <div class="sidebar-nav-item" onclick="window.location.href='28-admin-reviews.html'"><ion-icon name="checkmark-done-outline"></ion-icon><span>审核列表</span></div>
+      <nav class="sidebar-nav" data-page-node-id="DM8F3D4aD4wf3FSH7rREYz">
+        <div class="sidebar-nav-item" onclick="location.href='01-home.html'" data-page-node-id="2xRRTbFrNbegHJ2qTHhFwh"><ion-icon name="home-outline" data-page-node-id="varC2xwC9A62lv3FqxHqxc"></ion-icon><span data-page-node-id="eUThxyb3ER82rKB3rjTR5E">首页</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='02-bank-list.html'" data-page-node-id="lixdp7Dn5jyyyOsfpYIoA4"><ion-icon name="library-outline" data-page-node-id="MP2GRLJHVvRS1MRouZM8q7"></ion-icon><span data-page-node-id="gJNWj7y4EEUxsnkjVD3O5b">题库</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='04-question-list.html'" data-page-node-id="lDqZlx0ZxyyNRQ7ERaRBEc"><ion-icon name="document-text-outline" data-page-node-id="1VBa5N44wH4i1Xp9lwsr3F"></ion-icon><span data-page-node-id="NYcUKZ2ismVUhRE7oBv9ra">题目</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='05-paper-list.html'" data-page-node-id="5AHFiDClc5eNzKEHjWKAtW"><ion-icon name="file-tray-full-outline" data-page-node-id="a6YsFuaCFjkSlTmAQF1MiX"></ion-icon><span data-page-node-id="xA2r1cnz7KFJOLCCM22SNp">试卷</span></div>
+        <div class="sidebar-nav-label" data-page-node-id="erAepYhJumwQ0MVd6B2MPV">学习中心</div>
+        <div class="sidebar-nav-item" onclick="location.href='24-practice-list.html'" data-page-node-id="Q0wH1gsYLRKGMr8YtUIz7U"><ion-icon name="game-controller-outline" data-page-node-id="cRJD1Gjaa72yOybF3hzJ3x"></ion-icon><span data-page-node-id="zLm0CJDcO4WtTYmMnRod3J">练习</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='19-playground.html'" data-page-node-id="gC0HzVIxgCh18qZOz8oHqD"><ion-icon name="code-slash-outline" data-page-node-id="6YTU0C0kYUPc5GZLm8WsAg"></ion-icon><span data-page-node-id="A6R37OxDoj4UdqGd6gbs4d">代码运行台</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='10-wrong-questions.html'" data-page-node-id="mvSF2BeHFkqaaE5Hew1pr3"><ion-icon name="close-circle-outline" data-page-node-id="Gv9aR5LREbiI0XdtUOYxRf"></ion-icon><span data-page-node-id="ZLtQnEqrpqVWPOzMWgLMxp">错题本</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='18-favorites.html'" data-page-node-id="04BCvzegCr6eTeCHA32i93"><ion-icon name="star-outline" data-page-node-id="VBjYRtjPZ5PJGwRr2DXIxL"></ion-icon><span data-page-node-id="0wE7woFBZu2eSjYIaRJfvF">收藏题目</span></div>
+        <div class="sidebar-nav-item active" onclick="location.href='11-records.html'" data-page-node-id="31xCtHWXjpdhzGldvOlUd3"><ion-icon name="time-outline" data-page-node-id="AbmGrXNVMcO3eHKEEi8qp7"></ion-icon><span data-page-node-id="DVaDpFwTE0Mcjc8tv4rrZF">做题记录</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='20-exam-records.html'" data-page-node-id="vVAR41w5HUQKXrAzPFhtaJ"><ion-icon name="document-text-outline" data-page-node-id="qTvuMHb8hz4IGPcnv3riGc"></ion-icon><span data-page-node-id="UdCSJfYysmOBjfkQB7grfk">考试记录</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='09-statistics.html'" data-page-node-id="4kUlf6Cdua9I7EFbzPXAqA"><ion-icon name="bar-chart-outline" data-page-node-id="ra8Yb1Bx8uNbBkz8EB0xiq"></ion-icon><span data-page-node-id="JNEcvwzPNW0w3iZkNvZ7LE">统计</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='13-notifications.html'" data-page-node-id="upYAVIBhxbsMxJ4jxhKuJS"><ion-icon name="notifications-outline" data-page-node-id="qWSCtc7Dh5H2RS51RHYdMo"></ion-icon><span data-page-node-id="iISnktm0gAHJUJgDCkHT1n">通知</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='12-search.html'" data-page-node-id="bqz2NWX7Ulk3PDVhDKFN0o"><ion-icon name="search-outline" data-page-node-id="mA98TpTqzPp2jHAVqBMBrJ"></ion-icon><span data-page-node-id="lKpDDHTmnETic3w07ehKZJ">搜索</span></div>
+        <div class="sidebar-nav-label" data-page-node-id="AWX0Bhh5AdkFa1E2XX99r8">管理</div>
+        <div class="sidebar-nav-item" onclick="location.href='15-admin-users.html'" data-page-node-id="dSllrvsdfF7s8clJmOW61h"><ion-icon name="people-outline" data-page-node-id="qsXYcPzD0f4P2zrS1wa9RD"></ion-icon><span data-page-node-id="vKaadJF3Uw1cwltH8aziIW">用户管理</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='31-admin-reviews.html'" data-page-node-id="U3nLmsEBNgXnQD2qkCbSKS"><ion-icon name="checkmark-done-outline" data-page-node-id="e89ktGeSJwrcnSi1ykrJ98"></ion-icon><span data-page-node-id="2czHu1CJOIB4aO0CbdaCE2">审核列表</span></div>
       </nav>
-      <div class="sidebar-footer">
-        <div class="sidebar-nav-item"><ion-icon name="log-out-outline"></ion-icon><span>退出登录</span></div>
-      </div>
+      <div class="sidebar-footer" data-page-node-id="VFhtyivOm6yh8P5nfLFqko"><div class="sidebar-nav-item" data-page-node-id="EuLcBHRkZUOAJ4xA9QKQdB"><ion-icon name="log-out-outline" data-page-node-id="YDumtyFCsJanuyLFAHvpk0"></ion-icon><span data-page-node-id="7vj53cdPIuI8umsUlKjkSx">退出登录</span></div></div>
     </aside>
 
-    <!-- Main Area -->
-    <div class="main-area">
-      <header class="app-header">
-        <div class="app-header-left">
-          <button class="mobile-menu-btn" onclick="document.querySelector('.sidebar').classList.toggle('mobile-open')"><ion-icon name="menu-outline"></ion-icon></button>
-          <button class="mobile-menu-btn" onclick="document.querySelector('.sidebar').classList.toggle('mobile-open')"><ion-icon name="menu-outline"></ion-icon></button>
-          <div class="breadcrumb">
-            <span class="breadcrumb-current">做题记录</span>
-          </div>
+    <div class="main-area" data-page-node-id="yl5zzibkKzEpb7C4JWnG2D">
+      <header class="app-header" data-page-node-id="7UUdKwcDcAkgeaDwCTP8xn">
+        <div class="app-header-left" data-page-node-id="9zv0EqdWcWwekNidwhHEHi">
+          <button class="mobile-menu-btn" onclick="document.querySelector('.sidebar').classList.toggle('mobile-open')" data-page-node-id="Em3BBdezt1v6akRqgANZ9M"><ion-icon name="menu-outline" data-page-node-id="8iH1tnCOKTt9rvl1cocpom"></ion-icon></button>
+          <!-- MENU_TITLES: /records → 做题记录 -->
+          <div class="breadcrumb" data-page-node-id="IYf2dOqxUFeb5CdPnFYiCx"><span class="breadcrumb-current" data-page-node-id="XidDwPBhNrCy0O2OqZjpaz">做题记录</span></div>
         </div>
-        <div class="app-header-right">
-          <div class="header-search">
-            <ion-icon name="search-outline"></ion-icon>
-            <input class="input" type="text" placeholder="搜索题目 / 题库 / 试卷" readonly style="cursor:pointer;" onclick="window.location.href='12-search.html'">
+        <div class="app-header-right" data-page-node-id="xUel3GCbpF961kM6lINpOB">
+          <div class="header-search" data-page-node-id="1XretpU4VIbfD8pGWA1PhV">
+            <ion-icon name="search-outline" data-page-node-id="sFoxJpMdPGN0hrhYqB88Pn"></ion-icon>
+            <input class="input" type="text" placeholder="搜索题目 / 题库 / 试卷" readonly style="cursor:pointer;" onclick="location.href='12-search.html'" data-page-node-id="n3EKM0GLOPctkRbCd5GHz1">
           </div>
-          <div style="position:relative;cursor:pointer;" onclick="window.location.href='13-notifications.html'">
-            <ion-icon name="notifications-outline" style="font-size:22px;color:var(--text-secondary);"></ion-icon>
-            <span class="badge" style="position:absolute;top:-4px;right:-4px;">3</span>
+          <div style="position:relative;cursor:pointer;" onclick="location.href='13-notifications.html'" data-page-node-id="QtR4ZiuQ4YoHSozSCSD9tH">
+            <ion-icon name="notifications-outline" style="font-size:22px;color:var(--text-secondary);" data-page-node-id="CuDVYoj70uh1jIBCs6smHk"></ion-icon>
+            <span class="badge" style="position:absolute;top:-4px;right:-4px;" data-page-node-id="QjzrtHlEpF7KpnqayzrJDh">3</span>
           </div>
-          <div style="display:flex;align-items:center;gap:8px;cursor:pointer;" onclick="window.location.href='14-profile.html'">
-            <div class="avatar" style="background:var(--gradient-brand);">张</div>
-            <span style="font-size:14px;font-weight:500;color:var(--text-primary);">张同学</span>
-            <ion-icon name="chevron-down-outline" style="font-size:16px;color:var(--text-tertiary);"></ion-icon>
+          <div style="display:flex;align-items:center;gap:8px;cursor:pointer;" onclick="location.href='14-profile.html'" data-page-node-id="SVm6vOvcYXuJEeMDeiTIC8">
+            <div class="avatar" style="background:var(--gradient-brand);" data-page-node-id="cWR2RFdvyWK24uM4OZFsL9">张</div>
+            <span style="font-size:14px;font-weight:500;color:var(--text-primary);" data-page-node-id="gtmmJuns2ZIBTUzdHg2x0h">张同学</span>
+            <ion-icon name="chevron-down-outline" style="font-size:16px;color:var(--text-tertiary);" data-page-node-id="BOMZYGgca3GBubFl4Yap7R"></ion-icon>
           </div>
         </div>
       </header>
 
-      <main class="app-content">
-        <h1 class="page-title">做题记录</h1>
-
-        <!-- Filter Bar -->
-        <div class="filter-bar">
-          <select class="filter-select">
-            <option>全部时间</option>
-            <option>今天</option>
-            <option>本周</option>
-            <option>本月</option>
-          </select>
-          <div class="filter-divider"></div>
-          <div class="type-tabs">
-            <div class="type-tab active">全部</div>
-            <div class="type-tab">练习</div>
-            <div class="type-tab">考试</div>
-          </div>
-          <div class="filter-divider"></div>
-          <select class="filter-select">
-            <option>全部题库</option>
-            <option>Java基础与进阶</option>
-            <option>Python入门</option>
-            <option>数据结构</option>
-            <option>计算机网络</option>
-            <option>数据库原理</option>
-          </select>
-          <div class="filter-divider"></div>
-          <div class="search-input-wrap">
-            <ion-icon name="search-outline"></ion-icon>
-            <input type="text" class="search-input" placeholder="搜索题目内容...">
+      <main class="app-content" data-page-node-id="jldKPHNKN7pULGbsPUElGN">
+        <!-- ===== PageHeader：title="做题记录"；subtitle 仅 practice Tab 且 itemCount>0 时显示 ===== -->
+        <div class="page-header" data-page-node-id="crM7I3MxhSZ4z3uZ5IGddi">
+          <div data-page-node-id="4yIFHJLPs1ugnE73ynz69h">
+            <h1 class="page-header-title" data-page-node-id="zmS95ljbrv4XBJibHHjan2">做题记录</h1>
+            <p class="page-header-subtitle" data-page-node-id="25QjG9w65BxYBGS89YGjgb">共 136 条练习记录</p>
           </div>
         </div>
 
-        <!-- Summary Cards -->
-        <div class="summary-grid">
-          <div class="summary-card">
-            <div class="summary-card-icon brand"><ion-icon name="documents-outline"></ion-icon></div>
-            <div class="summary-card-info">
-              <div class="summary-card-label">总记录数</div>
-              <div class="summary-card-value">1,536</div>
+        <!-- ===== n-tabs type="line"：练习记录 / 考试记录（默认 practice） ===== -->
+        <div class="nav-tabs" data-page-node-id="q8OBYFKxhS3s2bBFGn1loL">
+          <div class="nav-tab active" data-page-node-id="NuLTyff4Yfu8ZNjXNolYlU">练习记录</div>
+          <div class="nav-tab" data-page-node-id="sKZNUdQJ5eMJ6DJoaEVM9K">考试记录</div>
+        </div>
+
+        <!-- ==================== 练习记录 Tab ==================== -->
+        <!-- ===== FilterBar：按题库筛选(200px, clearable+filterable) / 按来源筛选(140px, 练习·考试) / 时间范围(260px, daterange) ===== -->
+        <div class="filter-bar" data-page-node-id="tvNaJCXGK70f9lrSSIH2Qw">
+          <select class="select" style="width:200px;" data-page-node-id="azMNFhHcoVhaOV3Y0l4I20">
+            <option value="" data-page-node-id="GRkTS6ERldiDVHJJEc0Tae">按题库筛选</option>
+            <option data-page-node-id="q8AtEuq9x2A4n0lzpypM6g">Java基础与进阶</option>
+            <option data-page-node-id="oAJGWo1fe3XuCvde1VO1ez">Python入门</option>
+            <option data-page-node-id="wJQJiLjT1KTrcRdlRutQoR">数据结构</option>
+            <option data-page-node-id="GJStWZ8MbKD65Ko5ZTqqxP">计算机网络</option>
+            <option data-page-node-id="UjBHzO4BApFaHbrYCaCq5D">数据库原理</option>
+          </select>
+          <select class="select" style="width:140px;" data-page-node-id="96lVq7vnfzGao3mLkOGvJZ">
+            <option value="" data-page-node-id="cGkLA4RDnfYm2Ep2FwKP1n">按来源筛选</option>
+            <option value="PRACTICE_SESSION" data-page-node-id="eBzj3EIE1rXTJbHaleDCIj">练习</option>
+            <option value="EXAM" data-page-node-id="1cxclenWI9PHiVzTmWECBS">考试</option>
+          </select>
+          <div class="select date-picker" data-page-node-id="0Obpop9gUHLuLSlAhv9IrS">
+            <ion-icon name="calendar-outline" data-page-node-id="AjRM2fRSCpjSp7kaTtnNyI"></ion-icon>
+            <span data-page-node-id="sygW5a5lCY4rIXLj8F2brR">选择时间范围</span>
+          </div>
+        </div>
+
+        <!-- ===== 列表态：flex flex-col gap-3，每行 card（hover:border-primary-300 + shadow-sm） ===== -->
+        <div class="flex flex-col gap-3" data-page-node-id="n75O1uO714Y827WnhXVgFX">
+          <!-- isCorrect = true：bg-success-50 + CheckmarkDoneOutline(#22B570) + 「回答正确」 -->
+          <div class="card card-hover flex items-center gap-4 px-5 py-4" data-page-node-id="qyOAtHatOQMzjBd2Gd23jb">
+            <div style="width:40px;height:40px;border-radius:var(--radius-lg);background:var(--color-success-50);display:flex;align-items:center;justify-content:center;" class="flex-shrink-0" data-page-node-id="BVBgvkV7NLZlDc6Iph3KaL">
+              <ion-icon name="checkmark-done-outline" style="font-size:20px;color:var(--color-success-500);" data-page-node-id="5xhzcFnK6N1n6KYlHG8mTS"></ion-icon>
+            </div>
+            <div class="flex-1 min-w-0" style="cursor:pointer;" data-page-node-id="WkA1KDD6jHMQMBH7RqwMim">
+              <div class="truncate" style="font-size:var(--text-base);font-weight:var(--font-medium);color:var(--text-primary);line-height:var(--leading-relaxed);" data-page-node-id="rI6XFwlDH7YSCgenii2U1F">
+                以下哪个不是 Java 的基本数据类型？
+              </div>
+              <div class="flex items-center gap-3 flex-wrap mt-1" style="font-size:var(--text-sm);color:var(--text-tertiary);" data-page-node-id="KVnyo4v30dYl2tf66mo0mH">
+                <span class="inline-flex items-center gap-1" data-page-node-id="LUAojDA9vLHQkGach1zMGl"><ion-icon name="library-outline" style="font-size:14px;" data-page-node-id="eRmJ64hs3RV2FxI5nSsqWw"></ion-icon>Java基础与进阶</span>
+                <span class="inline-flex items-center gap-1" data-page-node-id="AXV7AOWFpxjgBCpeC6BnPG"><ion-icon name="time-outline" style="font-size:14px;" data-page-node-id="wmi9M7Jnp8ZGLe09CKUBNJ"></ion-icon>2025-09-03 14:32</span>
+              </div>
+            </div>
+            <div class="flex flex-col items-end gap-1 flex-shrink-0" data-page-node-id="hfhOHVHQlELAcHKwKtilpB">
+              <span class="result-chip" style="background:var(--color-success-50);color:var(--color-success-600);" data-page-node-id="HZzKvxMztbh28YASGnMm7h">回答正确</span>
+              <span style="font-size:var(--text-xs);color:var(--color-neutral-400);white-space:nowrap;" data-page-node-id="EKonB1x6h4PXSFKpu8P2vy">来源：练习</span>
             </div>
           </div>
-          <div class="summary-card">
-            <div class="summary-card-icon info"><ion-icon name="game-controller-outline"></ion-icon></div>
-            <div class="summary-card-info">
-              <div class="summary-card-label">练习记录</div>
-              <div class="summary-card-value">1,408</div>
+
+          <!-- isCorrect = false：bg-error-50 + CloseCircleOutline(#F0503C) + 「回答错误」 -->
+          <div class="card card-hover flex items-center gap-4 px-5 py-4" data-page-node-id="W3layyNEVRHoEYBevE6nwu">
+            <div style="width:40px;height:40px;border-radius:var(--radius-lg);background:var(--color-error-50);display:flex;align-items:center;justify-content:center;" class="flex-shrink-0" data-page-node-id="y2QWaCkCCjBnT30vc9MI8A">
+              <ion-icon name="close-circle-outline" style="font-size:20px;color:var(--color-error-500);" data-page-node-id="xgar4CmZ1Bc4yAF7lpcHTG"></ion-icon>
+            </div>
+            <div class="flex-1 min-w-0" style="cursor:pointer;" data-page-node-id="3W4vxkM2fbo7y64paqM93u">
+              <div class="truncate" style="font-size:var(--text-base);font-weight:var(--font-medium);color:var(--text-primary);line-height:var(--leading-relaxed);" data-page-node-id="0nGgyx01L6AzewC7oGZ8fj">
+                关于 Java 集合框架，以下说法正确的有？
+              </div>
+              <div class="flex items-center gap-3 flex-wrap mt-1" style="font-size:var(--text-sm);color:var(--text-tertiary);" data-page-node-id="4JKTHlTCmM6Ezq1o0u39bz">
+                <span class="inline-flex items-center gap-1" data-page-node-id="c3ylEnDwGzrFkAeLsR4PdH"><ion-icon name="library-outline" style="font-size:14px;" data-page-node-id="EnxMihRsavR9STnsmLUTc0"></ion-icon>Java基础与进阶</span>
+                <span class="inline-flex items-center gap-1" data-page-node-id="CApybuac7j8CjitfcI3Ox3"><ion-icon name="time-outline" style="font-size:14px;" data-page-node-id="wfJSnmbMTF8gy4JFPtZKmH"></ion-icon>2025-09-03 14:28</span>
+              </div>
+            </div>
+            <div class="flex flex-col items-end gap-1 flex-shrink-0" data-page-node-id="7GEbVjqjbgpupILnTtxvXG">
+              <span class="result-chip" style="background:var(--color-error-50);color:var(--color-error-600);" data-page-node-id="oLUXPC4FII5rPUTiodBIMg">回答错误</span>
+              <span style="font-size:var(--text-xs);color:var(--color-neutral-400);white-space:nowrap;" data-page-node-id="Xx5OO1BPVrApMRmKnGi8rU">来源：练习</span>
             </div>
           </div>
-          <div class="summary-card">
-            <div class="summary-card-icon success"><ion-icon name="file-tray-full-outline"></ion-icon></div>
-            <div class="summary-card-info">
-              <div class="summary-card-label">考试记录</div>
-              <div class="summary-card-value">128</div>
+
+          <!-- isCorrect = null：bg-neutral-100 + RemoveOutline(#B0B0BC) + 「待判定」 -->
+          <div class="card card-hover flex items-center gap-4 px-5 py-4" data-page-node-id="IFU48P7xN3Gmzu7KTFH0Oo">
+            <div style="width:40px;height:40px;border-radius:var(--radius-lg);background:var(--color-neutral-100);display:flex;align-items:center;justify-content:center;" class="flex-shrink-0" data-page-node-id="NF1xA8tW4QqSeHc2eisct2">
+              <ion-icon name="remove-outline" style="font-size:20px;color:var(--color-neutral-400);" data-page-node-id="Hl4GNya0eU1LnBTUySM4BI"></ion-icon>
+            </div>
+            <div class="flex-1 min-w-0" style="cursor:pointer;" data-page-node-id="bEfofEMrUHXpg9A2BZeOfq">
+              <div class="truncate" style="font-size:var(--text-base);font-weight:var(--font-medium);color:var(--text-primary);line-height:var(--leading-relaxed);" data-page-node-id="Ef1EGJDkRlwjKI0QU2iwex">
+                简述 TCP 三次握手的过程
+              </div>
+              <div class="flex items-center gap-3 flex-wrap mt-1" style="font-size:var(--text-sm);color:var(--text-tertiary);" data-page-node-id="yw3fC3M6bp9ieXbNScFlGf">
+                <span class="inline-flex items-center gap-1" data-page-node-id="hJ8hVgGbKMKTmaBkz88J86"><ion-icon name="library-outline" style="font-size:14px;" data-page-node-id="rwApNHG1seFW440OftiIc4"></ion-icon>计算机网络</span>
+                <span class="inline-flex items-center gap-1" data-page-node-id="abJ6Fe5NQ3SMmDQOXfU4De"><ion-icon name="time-outline" style="font-size:14px;" data-page-node-id="x6MuRSkzBIaiVFgoFcL2gE"></ion-icon>2025-09-02 21:45</span>
+              </div>
+            </div>
+            <div class="flex flex-col items-end gap-1 flex-shrink-0" data-page-node-id="vsh3PTQnVhXWODhDBFNSZe">
+              <span class="result-chip" style="background:var(--color-neutral-100);color:var(--color-neutral-500);" data-page-node-id="BZhPpianFJvvDBF5IFSIy0">待判定</span>
+              <span style="font-size:var(--text-xs);color:var(--color-neutral-400);white-space:nowrap;" data-page-node-id="FoCklALHNSCLbzVzbQl2ni">来源：考试</span>
+            </div>
+          </div>
+
+          <!-- 来源：考试 + 判断题正确 -->
+          <div class="card card-hover flex items-center gap-4 px-5 py-4" data-page-node-id="ME2lFEbvGUVVfWoMvYF32b">
+            <div style="width:40px;height:40px;border-radius:var(--radius-lg);background:var(--color-success-50);display:flex;align-items:center;justify-content:center;" class="flex-shrink-0" data-page-node-id="CfkiL4F8ddG7bmdOv42PDe">
+              <ion-icon name="checkmark-done-outline" style="font-size:20px;color:var(--color-success-500);" data-page-node-id="TRabhCzLfJMdZzPvg5Zvru"></ion-icon>
+            </div>
+            <div class="flex-1 min-w-0" style="cursor:pointer;" data-page-node-id="CDPukm8m3PtqNCfNDEQjoL">
+              <div class="truncate" style="font-size:var(--text-base);font-weight:var(--font-medium);color:var(--text-primary);line-height:var(--leading-relaxed);" data-page-node-id="YtCUI4rBs6FMMKTgAWowSo">
+                TCP 协议是面向连接的可靠传输协议。
+              </div>
+              <div class="flex items-center gap-3 flex-wrap mt-1" style="font-size:var(--text-sm);color:var(--text-tertiary);" data-page-node-id="H77tsZg4omFT3fgoVrPgSY">
+                <span class="inline-flex items-center gap-1" data-page-node-id="HiEQe9xJpEH7KhBYlEhepG"><ion-icon name="library-outline" style="font-size:14px;" data-page-node-id="ydjENqVXUlL3FkvZm5tGn9"></ion-icon>计算机网络</span>
+                <span class="inline-flex items-center gap-1" data-page-node-id="YgvhOxx8ghQx6oiHZp6N7Q"><ion-icon name="time-outline" style="font-size:14px;" data-page-node-id="ioBj23SVg4WJTG6DO0xmNS"></ion-icon>2025-09-02 16:20</span>
+              </div>
+            </div>
+            <div class="flex flex-col items-end gap-1 flex-shrink-0" data-page-node-id="3fPauH53LTMOhU1y3u71bd">
+              <span class="result-chip" style="background:var(--color-success-50);color:var(--color-success-600);" data-page-node-id="lZoa8AZl4vALEj78jSucdt">回答正确</span>
+              <span style="font-size:var(--text-xs);color:var(--color-neutral-400);white-space:nowrap;" data-page-node-id="ESKZjNXonUEywG8tvihMu3">来源：考试</span>
+            </div>
+          </div>
+
+          <!-- plainContent 为空时显示「（内容已缺失）」 -->
+          <div class="card card-hover flex items-center gap-4 px-5 py-4" data-page-node-id="IgFnceIVRSHGJQ9BvHMe0t">
+            <div style="width:40px;height:40px;border-radius:var(--radius-lg);background:var(--color-error-50);display:flex;align-items:center;justify-content:center;" class="flex-shrink-0" data-page-node-id="XNOoPdtptdh0Nwm1UxwYvN">
+              <ion-icon name="close-circle-outline" style="font-size:20px;color:var(--color-error-500);" data-page-node-id="FwO9KLGizlLWD71a9MTPRD"></ion-icon>
+            </div>
+            <div class="flex-1 min-w-0" style="cursor:pointer;" data-page-node-id="7LHjpRDSUkKagCr2f5jPaI">
+              <div class="truncate" style="font-size:var(--text-base);font-weight:var(--font-medium);color:var(--text-primary);line-height:var(--leading-relaxed);" data-page-node-id="rH6M45e7UlDAfsnubRfFZx">
+                （内容已缺失）
+              </div>
+              <div class="flex items-center gap-3 flex-wrap mt-1" style="font-size:var(--text-sm);color:var(--text-tertiary);" data-page-node-id="IsfnVNDHFT86UAlCT02TAc">
+                <span class="inline-flex items-center gap-1" data-page-node-id="WBnky71GgSOvifNFMo8U0d"><ion-icon name="library-outline" style="font-size:14px;" data-page-node-id="e3GidZo8vdrnGRe9NiCkQc"></ion-icon>数据库原理</span>
+                <span class="inline-flex items-center gap-1" data-page-node-id="1drhFuixDHS9XkGrIwMlnl"><ion-icon name="time-outline" style="font-size:14px;" data-page-node-id="yaseBnPbBpEyJZXPZECmOA"></ion-icon>2025-09-01 18:55</span>
+              </div>
+            </div>
+            <div class="flex flex-col items-end gap-1 flex-shrink-0" data-page-node-id="zumNGPgDOuC2eZdadlkTcW">
+              <span class="result-chip" style="background:var(--color-error-50);color:var(--color-error-600);" data-page-node-id="HtuAIY3tU5QwfNxQq0Rb2Y">回答错误</span>
+              <span style="font-size:var(--text-xs);color:var(--color-neutral-400);white-space:nowrap;" data-page-node-id="mFhgHMMzR2s8XCen2fgEov">来源：练习</span>
+            </div>
+          </div>
+
+          <!-- bankName 为空时不渲染题库名 -->
+          <div class="card card-hover flex items-center gap-4 px-5 py-4" data-page-node-id="JHoFzgPKjnibixiipqIqGM">
+            <div style="width:40px;height:40px;border-radius:var(--radius-lg);background:var(--color-success-50);display:flex;align-items:center;justify-content:center;" class="flex-shrink-0" data-page-node-id="QhFZD2JVc2dnKXFjvReG82">
+              <ion-icon name="checkmark-done-outline" style="font-size:20px;color:var(--color-success-500);" data-page-node-id="AWjL2oNp9Kg0UeiH2KmVdp"></ion-icon>
+            </div>
+            <div class="flex-1 min-w-0" style="cursor:pointer;" data-page-node-id="lPLuANAolz3gnFRedp50cZ">
+              <div class="truncate" style="font-size:var(--text-base);font-weight:var(--font-medium);color:var(--text-primary);line-height:var(--leading-relaxed);" data-page-node-id="IGI7ysshCTx0cpzIYOMggo">
+                在 Python 中，以下哪个不是内置数据类型？
+              </div>
+              <div class="flex items-center gap-3 flex-wrap mt-1" style="font-size:var(--text-sm);color:var(--text-tertiary);" data-page-node-id="VYcNWrIin0oSVLHPX5tD9Q">
+                <span class="inline-flex items-center gap-1" data-page-node-id="6NyDgnSgNO7mhD1J3JeDOv"><ion-icon name="time-outline" style="font-size:14px;" data-page-node-id="MmOTACsAbgovMUSuoIyR8i"></ion-icon>2025-09-01 15:40</span>
+              </div>
+            </div>
+            <div class="flex flex-col items-end gap-1 flex-shrink-0" data-page-node-id="QUBPMx0OQdj87p8t2GKYiC">
+              <span class="result-chip" style="background:var(--color-success-50);color:var(--color-success-600);" data-page-node-id="tMlA8qiBWFNKxlRodarvlD">回答正确</span>
+              <span style="font-size:var(--text-xs);color:var(--color-neutral-400);white-space:nowrap;" data-page-node-id="35gFEOdAGFm4XrDqEycIsR">来源：练习</span>
             </div>
           </div>
         </div>
 
-        <!-- Records Table -->
-        <div class="card">
-          <div class="table-wrapper records-table" style="border:none;border-radius:0;">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>时间</th>
-                  <th>类型</th>
-                  <th>题目摘要</th>
-                  <th>题型</th>
-                  <th>你的答案</th>
-                  <th>正确答案</th>
-                  <th>结果</th>
-                  <th class="col-right">得分</th>
-                  <th class="col-narrow">操作</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td class="time-cell">09-03 14:32</td>
-                  <td><span class="tag tag-info">练习</span></td>
-                  <td class="summary-cell">以下哪个不是 Java 的基本数据类型？</td>
-                  <td><span class="tag tag-default">单选</span></td>
-                  <td class="answer-cell">B</td>
-                  <td class="answer-cell">B</td>
-                  <td><span class="tag tag-success">正确</span></td>
-                  <td class="col-right score-cell text-success">+2</td>
-                  <td><span class="action-link">查看详情</span></td>
-                </tr>
-                <tr>
-                  <td class="time-cell">09-03 14:28</td>
-                  <td><span class="tag tag-info">练习</span></td>
-                  <td class="summary-cell">关于 Java 集合框架，以下说法正确的有？</td>
-                  <td><span class="tag tag-default">多选</span></td>
-                  <td class="answer-cell">B,C</td>
-                  <td class="answer-cell">B,D</td>
-                  <td><span class="tag tag-error">错误</span></td>
-                  <td class="col-right score-cell text-error">0</td>
-                  <td><span class="action-link">查看详情</span></td>
-                </tr>
-                <tr>
-                  <td class="time-cell">09-03 10:15</td>
-                  <td><span class="tag tag-primary">考试</span></td>
-                  <td class="summary-cell">Java 期末模拟卷 — 第3题</td>
-                  <td><span class="tag tag-default">判断</span></td>
-                  <td class="answer-cell">正确</td>
-                  <td class="answer-cell">正确</td>
-                  <td><span class="tag tag-success">正确</span></td>
-                  <td class="col-right score-cell text-success">+2</td>
-                  <td><span class="action-link">查看详情</span></td>
-                </tr>
-                <tr>
-                  <td class="time-cell">09-02 21:45</td>
-                  <td><span class="tag tag-info">练习</span></td>
-                  <td class="summary-cell">TCP 协议是面向连接的可靠传输协议。</td>
-                  <td><span class="tag tag-default">判断</span></td>
-                  <td class="answer-cell">错误</td>
-                  <td class="answer-cell">正确</td>
-                  <td><span class="tag tag-error">错误</span></td>
-                  <td class="col-right score-cell text-error">0</td>
-                  <td><span class="action-link">查看详情</span></td>
-                </tr>
-                <tr>
-                  <td class="time-cell">09-02 16:20</td>
-                  <td><span class="tag tag-primary">考试</span></td>
-                  <td class="summary-cell">Python 期中测试 — 简述 TCP 三次握手过程</td>
-                  <td><span class="tag tag-default">简答</span></td>
-                  <td class="answer-cell" style="color:var(--text-tertiary);">已提交</td>
-                  <td class="answer-cell" style="color:var(--text-tertiary);">—</td>
-                  <td><span class="tag tag-warning">待批改</span></td>
-                  <td class="col-right score-cell text-warning">—</td>
-                  <td><span class="action-link">查看详情</span></td>
-                </tr>
-                <tr>
-                  <td class="time-cell">09-02 14:10</td>
-                  <td><span class="tag tag-info">练习</span></td>
-                  <td class="summary-cell">在 Python 中，以下哪个不是内置数据类型？</td>
-                  <td><span class="tag tag-default">单选</span></td>
-                  <td class="answer-cell">D</td>
-                  <td class="answer-cell">D</td>
-                  <td><span class="tag tag-success">正确</span></td>
-                  <td class="col-right score-cell text-success">+2</td>
-                  <td><span class="action-link">查看详情</span></td>
-                </tr>
-                <tr>
-                  <td class="time-cell">09-01 22:30</td>
-                  <td><span class="tag tag-info">练习</span></td>
-                  <td class="summary-cell">数据库范式中，3NF 消除了哪种依赖？</td>
-                  <td><span class="tag tag-default">单选</span></td>
-                  <td class="answer-cell">A</td>
-                  <td class="answer-cell">C</td>
-                  <td><span class="tag tag-error">错误</span></td>
-                  <td class="col-right score-cell text-error">0</td>
-                  <td><span class="action-link">查看详情</span></td>
-                </tr>
-                <tr>
-                  <td class="time-cell">09-01 18:55</td>
-                  <td><span class="tag tag-primary">考试</span></td>
-                  <td class="summary-cell">Java 集合模拟卷 — ArrayList 与 LinkedList 区别</td>
-                  <td><span class="tag tag-default">简答</span></td>
-                  <td class="answer-cell" style="color:var(--text-tertiary);">已批改</td>
-                  <td class="answer-cell" style="color:var(--text-tertiary);">—</td>
-                  <td><span class="tag tag-success">正确</span></td>
-                  <td class="col-right score-cell text-success">+8</td>
-                  <td><span class="action-link">查看详情</span></td>
-                </tr>
-                <tr>
-                  <td class="time-cell">09-01 15:42</td>
-                  <td><span class="tag tag-info">练习</span></td>
-                  <td class="summary-cell">以下哪些是操作系统的基本功能？</td>
-                  <td><span class="tag tag-default">多选</span></td>
-                  <td class="answer-cell">A,B,D</td>
-                  <td class="answer-cell">A,B,C,D</td>
-                  <td><span class="tag tag-error">错误</span></td>
-                  <td class="col-right score-cell text-error">0</td>
-                  <td><span class="action-link">查看详情</span></td>
-                </tr>
-                <tr>
-                  <td class="time-cell">08-31 20:18</td>
-                  <td><span class="tag tag-info">练习</span></td>
-                  <td class="summary-cell">Java 是一门面向对象的编程语言。</td>
-                  <td><span class="tag tag-default">判断</span></td>
-                  <td class="answer-cell">正确</td>
-                  <td class="answer-cell">正确</td>
-                  <td><span class="tag tag-success">正确</span></td>
-                  <td class="col-right score-cell text-success">+2</td>
-                  <td><span class="action-link">查看详情</span></td>
-                </tr>
-              </tbody>
-            </table>
+        <!-- ===== 分页：v-if="pagination.itemCount > pagination.pageSize(=20)"，justify-end mt-5；n-pagination 无总数文案 ===== -->
+        <div class="flex justify-end mt-5" data-page-node-id="nAM09yBl2kQ0jFhdLJGLue">
+          <div class="pagination" style="margin:0;" data-page-node-id="az6hxnLx8dMMUCAIomvKve">
+            <button class="page-btn" disabled data-page-node-id="gkY5H70DnQYRKNnCXpeQTH"><ion-icon name="chevron-back-outline" style="font-size:16px;" data-page-node-id="dPSkmlVt6u5b4vLsPjRkc3"></ion-icon></button>
+            <button class="page-btn active" data-page-node-id="oXV0pu9R6DpyLXY8B47nfl">1</button>
+            <button class="page-btn" data-page-node-id="tPktiYoUN3us2eHkh9Dk3B">2</button>
+            <button class="page-btn" data-page-node-id="11InGR4cUrGRrljrqotHBE">3</button>
+            <span style="font-size:var(--text-sm);color:var(--text-tertiary);" data-page-node-id="dEI95hRbHkvCjOQuG1xTCW">...</span>
+            <button class="page-btn" data-page-node-id="Nns9O2qRCaOe6jb52AfFhO">7</button>
+            <button class="page-btn" data-page-node-id="QM8rVpxgQ2lqMXYOIXFEex"><ion-icon name="chevron-forward-outline" style="font-size:16px;" data-page-node-id="meGrDBOceyS3VmNIBrnIA8"></ion-icon></button>
           </div>
-          <!-- Pagination -->
-          <div class="pagination">
-            <span style="font-size:var(--text-sm);color:var(--text-tertiary);margin-right:auto;">共 1,536 条，每页 10 条</span>
-            <button class="page-btn" disabled><ion-icon name="chevron-back-outline" style="font-size:16px;"></ion-icon></button>
-            <button class="page-btn active">1</button>
-            <button class="page-btn">2</button>
-            <button class="page-btn">3</button>
-            <button class="page-btn">4</button>
-            <span style="font-size:var(--text-sm);color:var(--text-tertiary);">...</span>
-            <button class="page-btn">154</button>
-            <button class="page-btn"><ion-icon name="chevron-forward-outline" style="font-size:16px;"></ion-icon></button>
+        </div>
+
+        <!-- ==================== 以下为派生状态示意（生产中与上方列表态互斥） ==================== -->
+
+        <!-- ===== 加载态：v-if="loading && recordList.length === 0" → SkeletonList(:count="3", :cols="1") ===== -->
+        <div class="sk-list" style="margin-top:var(--space-8);" data-page-node-id="bIBLdmomvyqgpHGG4a5DFh">
+          <div class="sk-item" data-page-node-id="beHAC8L3QQkwmvANgiHDbF">
+            <div class="skeleton sk-line-head" data-page-node-id="yXZIDTOrwpMT1BG9rXMllx"></div>
+            <div class="skeleton sk-line" data-page-node-id="ZnJ72ntdMdrcdJM84o5jg2"></div>
+            <div class="skeleton sk-line" data-page-node-id="dqAhror2JetG9fi44KuEjO"></div>
+            <div class="skeleton sk-line" data-page-node-id="pS7C9EJqKSeIsBt1tD1qus"></div>
+            <div class="skeleton sk-line" style="width:40%" data-page-node-id="XAmSUmwjBkzjb8vbePpXHV"></div>
+          </div>
+          <div class="sk-item" data-page-node-id="UpG25OX4RYh6LBj0GZgver">
+            <div class="skeleton sk-line-head" data-page-node-id="QzWyXg9BhQau9goCs8uCpi"></div>
+            <div class="skeleton sk-line" data-page-node-id="pd9XNofNqytBUgwVyq7OPB"></div>
+            <div class="skeleton sk-line" data-page-node-id="dzBTQl088cfWZepqnsiGWW"></div>
+            <div class="skeleton sk-line" data-page-node-id="QhxE6w9d7YoYcNSG9lz9AH"></div>
+            <div class="skeleton sk-line" style="width:40%" data-page-node-id="y9yqgpI9Uh5MJHaN5Bsbmd"></div>
+          </div>
+          <div class="sk-item" data-page-node-id="NnB6SQonmKxM366u6ZKIvD">
+            <div class="skeleton sk-line-head" data-page-node-id="JC2lUH2o300q7LNYajKljb"></div>
+            <div class="skeleton sk-line" data-page-node-id="WGa6MPAjqBHcULVq6DYrMr"></div>
+            <div class="skeleton sk-line" data-page-node-id="zkXDbDHh8i4N3DbRmoiivg"></div>
+            <div class="skeleton sk-line" data-page-node-id="olcg8MXMfXyxcH7cvFTxWz"></div>
+            <div class="skeleton sk-line" style="width:40%" data-page-node-id="ys0GotBXSQGC6iQIJNNsAf"></div>
+          </div>
+        </div>
+
+        <!-- ===== 练习记录空态：EmptyState(title="暂无做题记录", description="完成练习或考试后，你的作答记录会展示在这里", icon=DocumentTextOutline)，无操作按钮 ===== -->
+        <div class="card" style="margin-top:var(--space-8);" data-page-node-id="pzwBcgBOF6XQBJPM8FprEC">
+          <div class="empty-state" data-page-node-id="GqlBaXUScyG6zXz9vJ2mqj">
+            <ion-icon name="document-text-outline" class="es-icon" data-page-node-id="YMCicZNzz8mfPSLr0AkYCg"></ion-icon>
+            <h3 class="es-title" data-page-node-id="f2KQwELRdovDNAAVp3923f">暂无做题记录</h3>
+            <p class="es-desc" data-page-node-id="L0J1JVYhvWNa8LQ02O9RoM">完成练习或考试后，你的作答记录会展示在这里</p>
+          </div>
+        </div>
+
+        <!-- ==================== 考试记录 Tab（activeTab === 'exam'） ==================== -->
+        <!-- 该 Tab 无 FilterBar；行结构同练习记录，右侧为状态角标 + 得分 -->
+        <div class="flex flex-col gap-3" style="margin-top:var(--space-8);" data-page-node-id="vbGCEYyXLCzyRsEDEfM4UJ">
+          <!-- GRADED：bg-success-50 + CheckmarkCircleOutline → 「已批改」，有分数（text-primary-600） -->
+          <div class="card card-hover flex items-center gap-4 px-5 py-4" data-page-node-id="iaQMKJ6XM4kcMuhsf04nKW">
+            <div style="width:40px;height:40px;border-radius:var(--radius-lg);background:var(--color-success-50);display:flex;align-items:center;justify-content:center;" class="flex-shrink-0" data-page-node-id="tWOHYJql6Z01wUo7OqCuJH">
+              <ion-icon name="checkmark-circle-outline" style="font-size:20px;" data-page-node-id="bRjHGAkP3btYHR9mP7iNHS"></ion-icon>
+            </div>
+            <div class="flex-1 min-w-0" style="cursor:pointer;" data-page-node-id="zGLhKXaTfS7KX8MJQ47Oek">
+              <div class="truncate" style="font-size:var(--text-base);font-weight:var(--font-medium);color:var(--text-primary);line-height:var(--leading-relaxed);" data-page-node-id="MqmWGjiX1RmkTimb9iUijL">
+                Java 基础测试卷（一）
+              </div>
+              <div class="flex items-center gap-3 flex-wrap mt-1" style="font-size:var(--text-sm);color:var(--text-tertiary);" data-page-node-id="n5FTKiow0XLdcR1wdc6KYD">
+                <span class="inline-flex items-center gap-1" data-page-node-id="FqaPONdUKJ5IVCPWNvCkcq">第 2 次作答</span>
+                <span class="inline-flex items-center gap-1" data-page-node-id="LJFno18eAKuZAx6wzy9nTT"><ion-icon name="time-outline" style="font-size:14px;" data-page-node-id="NL4oJa71OHRZHLgmftsDYp"></ion-icon>2025-09-03 14:30</span>
+              </div>
+            </div>
+            <div class="flex flex-col items-end gap-1 flex-shrink-0" data-page-node-id="r7mGksNerBUPmiBHlTrhWP">
+              <span class="result-chip" style="background:var(--color-success-50);color:var(--color-success-600);" data-page-node-id="ZCPe0BGrVy2fXVtpL5XqHd">已批改</span>
+              <span style="font-size:var(--text-sm);font-weight:var(--font-semibold);color:var(--color-primary-600);white-space:nowrap;" data-page-node-id="xMKvcw0lH7SsxUTjfZrjcg">92 分</span>
+            </div>
+          </div>
+
+          <!-- GRADING：bg-warning-50 + CreateOutline → 「批改中」，totalScore 为 null → 暂无成绩（text-neutral-400） -->
+          <div class="card card-hover flex items-center gap-4 px-5 py-4" data-page-node-id="LjwIDDPWG8yExjruMXC5Cp">
+            <div style="width:40px;height:40px;border-radius:var(--radius-lg);background:var(--color-warning-50);display:flex;align-items:center;justify-content:center;" class="flex-shrink-0" data-page-node-id="yWldjdLSmuAxo9UO09wiD4">
+              <ion-icon name="create-outline" style="font-size:20px;" data-page-node-id="mOw0PUsBsOf9Z0fW6cAtKx"></ion-icon>
+            </div>
+            <div class="flex-1 min-w-0" style="cursor:pointer;" data-page-node-id="WkuINoGM6LKXZxpU6pxqQP">
+              <div class="truncate" style="font-size:var(--text-base);font-weight:var(--font-medium);color:var(--text-primary);line-height:var(--leading-relaxed);" data-page-node-id="NKjTFbi0QLst6CBNYBsIIx">
+                Python 入门测验
+              </div>
+              <div class="flex items-center gap-3 flex-wrap mt-1" style="font-size:var(--text-sm);color:var(--text-tertiary);" data-page-node-id="Ahijtj1hvpZqX1K16Mwtnf">
+                <span class="inline-flex items-center gap-1" data-page-node-id="KzjVv6qIHwDEf5WPMTfgC1">第 1 次作答</span>
+                <span class="inline-flex items-center gap-1" data-page-node-id="qodAGE9ZBrDGVh9cgFLA3U"><ion-icon name="time-outline" style="font-size:14px;" data-page-node-id="3nZiCpFCGBUEKrEEFs2jHG"></ion-icon>2025-09-01 10:20</span>
+              </div>
+            </div>
+            <div class="flex flex-col items-end gap-1 flex-shrink-0" data-page-node-id="yw6Jq3MKxeMEHy95KdFy1V">
+              <span class="result-chip" style="background:var(--color-warning-50);color:var(--color-warning-600);" data-page-node-id="A6Ug1FXELnjasBh997vj98">批改中</span>
+              <span style="font-size:var(--text-sm);font-weight:var(--font-semibold);color:var(--color-neutral-400);white-space:nowrap;" data-page-node-id="kt3MrB5Tt73Co24tb1HOYD">暂无成绩</span>
+            </div>
+          </div>
+
+          <!-- IN_PROGRESS：bg-info-50 + HourglassOutline → 「进行中」，submittedAt 为空 → 未提交 -->
+          <div class="card card-hover flex items-center gap-4 px-5 py-4" data-page-node-id="XHgNyP6gvr1zqNFT6cKiEx">
+            <div style="width:40px;height:40px;border-radius:var(--radius-lg);background:var(--color-info-50);display:flex;align-items:center;justify-content:center;" class="flex-shrink-0" data-page-node-id="PoG7Hej8CsurGxM4rW4cMy">
+              <ion-icon name="hourglass-outline" style="font-size:20px;" data-page-node-id="OLE1rcwnBDrQLspkqPstnu"></ion-icon>
+            </div>
+            <div class="flex-1 min-w-0" style="cursor:pointer;" data-page-node-id="gvILe2qj8EdyN0KoFpKXWT">
+              <div class="truncate" style="font-size:var(--text-base);font-weight:var(--font-medium);color:var(--text-primary);line-height:var(--leading-relaxed);" data-page-node-id="PyAZ1REJPcXtqZfLMh7XWP">
+                数据结构期中考试
+              </div>
+              <div class="flex items-center gap-3 flex-wrap mt-1" style="font-size:var(--text-sm);color:var(--text-tertiary);" data-page-node-id="VnLAuR09fhB83oUg0yrGGX">
+                <span class="inline-flex items-center gap-1" data-page-node-id="VPxw5LVgQFCp0NWDi4mxSR">第 1 次作答</span>
+                <span class="inline-flex items-center gap-1" data-page-node-id="ady0CoJJhnlwvuHXFeyESs"><ion-icon name="time-outline" style="font-size:14px;" data-page-node-id="WM9rDAIKdqPH3GjhGtXuyW"></ion-icon>未提交</span>
+              </div>
+            </div>
+            <div class="flex flex-col items-end gap-1 flex-shrink-0" data-page-node-id="eYlYY282nw3dKIP3SnAhzP">
+              <span class="result-chip" style="background:var(--color-info-50);color:var(--color-info-600);" data-page-node-id="7whEQAFld5RuqeMxrlfmCz">进行中</span>
+              <span style="font-size:var(--text-sm);font-weight:var(--font-semibold);color:var(--color-neutral-400);white-space:nowrap;" data-page-node-id="B5yMLRb1DvLQQXRxNeiJ06">暂无成绩</span>
+            </div>
+          </div>
+
+          <!-- SUBMITTED：bg-neutral-100 + CreateOutline → 「已提交」 -->
+          <div class="card card-hover flex items-center gap-4 px-5 py-4" data-page-node-id="L9Src9ZsPPcEt4BPx5yOLm">
+            <div style="width:40px;height:40px;border-radius:var(--radius-lg);background:var(--color-neutral-100);display:flex;align-items:center;justify-content:center;" class="flex-shrink-0" data-page-node-id="O7IT1pDLezYwW3uBhmGhuC">
+              <ion-icon name="create-outline" style="font-size:20px;" data-page-node-id="51L2OjzN0ErvQGxONuzvwp"></ion-icon>
+            </div>
+            <div class="flex-1 min-w-0" style="cursor:pointer;" data-page-node-id="0H9bVrAQulYnc1SPNkn4fp">
+              <div class="truncate" style="font-size:var(--text-base);font-weight:var(--font-medium);color:var(--text-primary);line-height:var(--leading-relaxed);" data-page-node-id="FGleZV4wXgTpTTvhvdF5Z7">
+                计算机网络模拟考
+              </div>
+              <div class="flex items-center gap-3 flex-wrap mt-1" style="font-size:var(--text-sm);color:var(--text-tertiary);" data-page-node-id="58VWWO3rnlPMCA1H15L2Ul">
+                <span class="inline-flex items-center gap-1" data-page-node-id="6SMBEYr3mGOGnOUU6ZuoS4">第 1 次作答</span>
+                <span class="inline-flex items-center gap-1" data-page-node-id="fsQbAazWcJCgm6djgAPtmS"><ion-icon name="time-outline" style="font-size:14px;" data-page-node-id="j235lGjBSeJERK9nE1iFKc"></ion-icon>2025-08-25 09:10</span>
+              </div>
+            </div>
+            <div class="flex flex-col items-end gap-1 flex-shrink-0" data-page-node-id="rImt2YqrPmERFMnbJG0cRm">
+              <span class="result-chip" style="background:var(--color-neutral-100);color:var(--color-neutral-600);" data-page-node-id="N7jNlADeRJ3FX8sw2pmbuB">已提交</span>
+              <span style="font-size:var(--text-sm);font-weight:var(--font-semibold);color:var(--color-neutral-400);white-space:nowrap;" data-page-node-id="O879RCGSujFoITdPDm1nRQ">暂无成绩</span>
+            </div>
+          </div>
+
+          <!-- AUTO_SUBMITTED：bg-warning-50 + CreateOutline → 「自动交卷」 -->
+          <div class="card card-hover flex items-center gap-4 px-5 py-4" data-page-node-id="XG2eAgXxZXfKDjO9bUYC9c">
+            <div style="width:40px;height:40px;border-radius:var(--radius-lg);background:var(--color-warning-50);display:flex;align-items:center;justify-content:center;" class="flex-shrink-0" data-page-node-id="dx3YwhvU44Fix9j23zDaAv">
+              <ion-icon name="create-outline" style="font-size:20px;" data-page-node-id="5W4LLeQtFDvnCOVP8dEAeq"></ion-icon>
+            </div>
+            <div class="flex-1 min-w-0" style="cursor:pointer;" data-page-node-id="Hk79D9DrFK9NHyQGk5iHxu">
+              <div class="truncate" style="font-size:var(--text-base);font-weight:var(--font-medium);color:var(--text-primary);line-height:var(--leading-relaxed);" data-page-node-id="PigCnQcftLEH78wIxKcgEr">
+                数据库原理期末模拟
+              </div>
+              <div class="flex items-center gap-3 flex-wrap mt-1" style="font-size:var(--text-sm);color:var(--text-tertiary);" data-page-node-id="a95VDPC80JArrTCXPEyeYF">
+                <span class="inline-flex items-center gap-1" data-page-node-id="DK0ZJ4aMnTlDbjaX0wqQG0">第 1 次作答</span>
+                <span class="inline-flex items-center gap-1" data-page-node-id="rG47JL9MkhgYmgx7rRG3On"><ion-icon name="time-outline" style="font-size:14px;" data-page-node-id="XTDqi6uCSyg0fFkbzOh5FW"></ion-icon>2025-08-10 15:00</span>
+              </div>
+            </div>
+            <div class="flex flex-col items-end gap-1 flex-shrink-0" data-page-node-id="mfL99WGvBXGY41cdDX1ofE">
+              <span class="result-chip" style="background:var(--color-warning-50);color:var(--color-warning-600);" data-page-node-id="HKqSBSJrGHynpp3rHPNJfx">自动交卷</span>
+              <span style="font-size:var(--text-sm);font-weight:var(--font-semibold);color:var(--color-primary-600);white-space:nowrap;" data-page-node-id="3TDZFjcZFa1XpWFd1v5u4a">78 分</span>
+            </div>
+          </div>
+
+          <!-- EXPIRED：bg-neutral-100 + BanOutline → 「已过期」 -->
+          <div class="card card-hover flex items-center gap-4 px-5 py-4" data-page-node-id="MEgkTZPoR2dhLU24BAvCab">
+            <div style="width:40px;height:40px;border-radius:var(--radius-lg);background:var(--color-neutral-100);display:flex;align-items:center;justify-content:center;" class="flex-shrink-0" data-page-node-id="eCaj81NCrwd8CrXHoAtgY0">
+              <ion-icon name="ban-outline" style="font-size:20px;" data-page-node-id="NkjnuZbAbM9vzOosIwGcmW"></ion-icon>
+            </div>
+            <div class="flex-1 min-w-0" style="cursor:pointer;" data-page-node-id="y2MuCSJUcPpY3yz2MvCbLJ">
+              <div class="truncate" style="font-size:var(--text-base);font-weight:var(--font-medium);color:var(--text-primary);line-height:var(--leading-relaxed);" data-page-node-id="Wcm0DEIaq8uxSOdafx8Wqg">
+                （试卷已删除）
+              </div>
+              <div class="flex items-center gap-3 flex-wrap mt-1" style="font-size:var(--text-sm);color:var(--text-tertiary);" data-page-node-id="OoDY9IOtaBDI4poEBGpEva">
+                <span class="inline-flex items-center gap-1" data-page-node-id="VfAMk81xDKTyvbWz85eQqL">第 3 次作答</span>
+                <span class="inline-flex items-center gap-1" data-page-node-id="sxbb8Bbnlo1R9p6N9wGXjE"><ion-icon name="time-outline" style="font-size:14px;" data-page-node-id="Hwlww4OThHQUURCVnvwk4w"></ion-icon>2025-08-15 20:12</span>
+              </div>
+            </div>
+            <div class="flex flex-col items-end gap-1 flex-shrink-0" data-page-node-id="EfHOXxGt0hryNyqOkmQvrs">
+              <span class="result-chip" style="background:var(--color-neutral-100);color:var(--color-neutral-500);" data-page-node-id="xWMKaJfVLbAqFBYaGMg2g2">已过期</span>
+              <span style="font-size:var(--text-sm);font-weight:var(--font-semibold);color:var(--color-neutral-400);white-space:nowrap;" data-page-node-id="PzjRipYqTxTMDIKA3JPjE1">暂无成绩</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== 考试记录空态：EmptyState(title="暂无考试记录", description="参加考试后，历史试卷与成绩会展示在这里") + #action 按钮「去参加考试」→ /papers ===== -->
+        <div class="card" style="margin-top:var(--space-8);" data-page-node-id="7q5jjvjNgznsNTf7q1jlo1">
+          <div class="empty-state" data-page-node-id="jAjP6fZ3Gf0Ic89ngW9YHp">
+            <ion-icon name="document-text-outline" class="es-icon" data-page-node-id="T1zT1pNm2iytXGCkgD0DHT"></ion-icon>
+            <h3 class="es-title" data-page-node-id="AIH7B8iszU6yllPIbQfCaE">暂无考试记录</h3>
+            <p class="es-desc" data-page-node-id="eZwD9fysreQ4YqIXOetJ7d">参加考试后，历史试卷与成绩会展示在这里</p>
+            <div class="es-action" data-page-node-id="NM7vdHqU7K4gu39Bxaq0bJ">
+              <button class="btn btn-primary" onclick="location.href='05-paper-list.html'" data-page-node-id="X9W6yDCuC87NP4BoBE4g3W">去参加考试</button>
+            </div>
           </div>
         </div>
       </main>
     </div>
   </div>
-<script>
+  <script>
     document.querySelector(".sidebar-toggle")?.addEventListener("click", function() {
       var s=document.querySelector(".sidebar"),m=document.querySelector(".main-area");
       s.classList.toggle("sidebar-collapsed");m.classList.toggle("main-area-collapsed");

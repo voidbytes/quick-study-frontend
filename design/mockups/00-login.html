@@ -3,15 +3,17 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>登录 — Quick Study</title>
+  <title>登录/注册 — Quick Study</title>
   <link rel="stylesheet" href="styles/mockup.css">
   <style>
-    /* Auth tab switcher */
+    /* Auth tab switcher（来自 AuthLayout.vue） */
     .auth-tabs {
       display: flex;
       background: var(--bg-subtle);
+      border: 1px solid var(--border-default);
       border-radius: var(--radius-lg);
-      padding: 4px;
+      padding: var(--space-1);
+      gap: var(--space-1);
       margin-bottom: var(--space-6);
     }
     .auth-tab {
@@ -31,28 +33,15 @@
       font-weight: var(--font-semibold);
       box-shadow: var(--shadow-sm);
     }
-    /* Input with affix icons */
-    .input-affix { position: relative; }
-    .input-affix .input-affix-icon {
-      position: absolute;
-      top: 50%;
-      transform: translateY(-50%);
-      font-size: 18px;
-      color: var(--text-tertiary);
-    }
-    .input-affix .input-affix-icon.leading { left: 12px; pointer-events: none; }
-    .input-affix .input-affix-icon.trailing { right: 12px; cursor: pointer; }
-    .input-affix .input { padding-left: 40px; }
-    .input-affix .input.has-trailing { padding-right: 40px; }
-    /* Captcha row */
+    /* 验证码占位框（来自 Login/Register.vue，captchaEnabled 时显示） */
     .captcha-row { display: flex; gap: var(--space-3); align-items: stretch; }
-    .captcha-row .input-affix { flex: 1; }
+    .captcha-row .input-group { flex: 1; }
     .captcha-box {
       width: 112px;
       display: flex;
       align-items: center;
       justify-content: center;
-      background: var(--gradient-brand-soft);
+      background: var(--color-primary-50);
       border: 1px dashed var(--color-primary-300);
       border-radius: var(--radius-md);
       font-family: var(--font-mono);
@@ -64,110 +53,115 @@
       user-select: none;
       flex-shrink: 0;
     }
-    /* Auth options */
-    .auth-options {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: var(--space-5);
-      font-size: var(--text-sm);
-    }
-    .checkbox-row {
-      display: flex;
-      align-items: center;
-      gap: var(--space-2);
-      color: var(--text-secondary);
-      cursor: pointer;
-    }
-    .checkbox-row input { width: 16px; height: 16px; accent-color: var(--color-primary-500); cursor: pointer; }
-    .auth-footer {
+    .auth-note {
       text-align: center;
-      margin-top: var(--space-6);
-      font-size: var(--text-sm);
-      color: var(--text-secondary);
+      font-size: var(--text-xs);
+      color: var(--text-tertiary);
+      margin-top: var(--space-4);
     }
-    /* Decorative background blobs on the brand gradient */
-    .auth-page { position: relative; overflow: hidden; }
-    .auth-page::before, .auth-page::after {
-      content: "";
-      position: absolute;
-      border-radius: 50%;
-      background: rgba(255, 255, 255, 0.12);
-      pointer-events: none;
-    }
-    .auth-page::before { width: 380px; height: 380px; top: -120px; right: -80px; }
-    .auth-page::after { width: 300px; height: 300px; bottom: -100px; left: -60px; }
+    /* Tab 内容切换 */
+    .auth-panel { display: none; }
+    .auth-panel.active { display: block; }
   </style>
 </head>
 <body>
   <div class="auth-page">
-    <div class="auth-card" style="position:relative;z-index:1;">
+    <div class="auth-card">
+      <!-- Logo（来自 AuthLayout.vue） -->
       <div class="auth-logo">
         <div class="auth-logo-icon">QS</div>
         <div class="auth-title">题库与组卷练习系统</div>
-        <div class="auth-subtitle">登录你的账号开始学习</div>
+        <div class="auth-subtitle">快学 · 每一道题都算数</div>
       </div>
 
-      <!-- Tab switcher: 登录 / 注册 -->
+      <!-- Tab 切换：/login 与 /register（AuthLayout 顶部，点击路由跳转） -->
       <div class="auth-tabs">
-        <div class="auth-tab active">登录</div>
-        <div class="auth-tab">注册</div>
+        <div class="auth-tab active" data-panel="login" onclick="switchPanel('login')">登录</div>
+        <div class="auth-tab" data-panel="register" onclick="switchPanel('register')">注册</div>
       </div>
 
-      <form onsubmit="return false;">
-        <!-- Username -->
+      <p class="auth-note">本页同时呈现 <b>/login</b> 与 <b>/register</b> 两种形态：二者为独立页面，由 AuthLayout 顶部 Tab 切换路由。</p>
+
+      <!-- ============ /login 形态 ============ -->
+      <form class="auth-panel active" id="panel-login" onsubmit="return false;">
         <div class="input-group">
           <label class="input-label">用户名</label>
-          <div class="input-affix">
-            <ion-icon name="person-outline" class="input-affix-icon leading"></ion-icon>
-            <input class="input" type="text" placeholder="请输入用户名" value="zhangstudent">
-          </div>
+          <input class="input" type="text" placeholder="请输入用户名" maxlength="50">
         </div>
 
-        <!-- Password -->
         <div class="input-group">
           <label class="input-label">密码</label>
-          <div class="input-affix">
-            <ion-icon name="lock-closed-outline" class="input-affix-icon leading"></ion-icon>
-            <input class="input has-trailing" type="password" placeholder="请输入密码" value="password123">
-            <ion-icon name="eye-outline" class="input-affix-icon trailing" title="显示/隐藏密码"></ion-icon>
-          </div>
+          <input class="input" type="password" placeholder="请输入密码" maxlength="64">
         </div>
 
-        <!-- Captcha -->
+        <!-- 验证码：captchaEnabled 为 true 时渲染；本地默认禁用，占位显示「已关闭」 -->
         <div class="input-group">
           <label class="input-label">验证码</label>
           <div class="captcha-row">
-            <div class="input-affix">
-              <ion-icon name="shield-checkmark-outline" class="input-affix-icon leading"></ion-icon>
-              <input class="input" type="text" placeholder="请输入验证码" value="ABCD">
+            <div class="input-group">
+              <input class="input" type="text" placeholder="请输入验证码" maxlength="6">
             </div>
-            <div class="captcha-box" title="点击刷新验证码">ABCD</div>
+            <div class="captcha-box" title="点击刷新验证码">已关闭</div>
           </div>
         </div>
 
-        <!-- Remember me + forgot password -->
-        <div class="auth-options">
-          <label class="checkbox-row">
-            <input type="checkbox" checked> 记住我
-          </label>
-          <a href="#">忘记密码？</a>
+        <button class="btn btn-primary btn-block btn-lg mt-2" type="button">登录</button>
+      </form>
+
+      <!-- ============ /register 形态 ============ -->
+      <form class="auth-panel" id="panel-register" onsubmit="return false;">
+        <div class="input-group">
+          <label class="input-label">用户名</label>
+          <input class="input" type="text" placeholder="3-50 字符" maxlength="50">
         </div>
 
-        <!-- Login button -->
-        <button class="btn btn-primary btn-block btn-lg" type="button">
-          <ion-icon name="log-in-outline"></ion-icon>
-          登录
-        </button>
-
-        <div class="auth-footer">
-          还没有账号？<a href="#">立即注册</a>
+        <div class="input-group">
+          <label class="input-label">密码</label>
+          <input class="input" type="password" placeholder="8-64 字符" maxlength="64">
         </div>
+
+        <div class="input-group">
+          <label class="input-label">确认密码</label>
+          <input class="input" type="password" placeholder="再次输入密码" maxlength="64">
+        </div>
+
+        <div class="input-group">
+          <label class="input-label">昵称</label>
+          <input class="input" type="text" placeholder="1-50 字符" maxlength="50">
+        </div>
+
+        <div class="input-group">
+          <label class="input-label">邮箱（可选）</label>
+          <input class="input" type="email" placeholder="example@mail.com" maxlength="100">
+        </div>
+
+        <!-- 验证码：captchaEnabled 为 true 时渲染；本地默认禁用，占位显示「已关闭」 -->
+        <div class="input-group">
+          <label class="input-label">验证码</label>
+          <div class="captcha-row">
+            <div class="input-group">
+              <input class="input" type="text" placeholder="请输入验证码" maxlength="6">
+            </div>
+            <div class="captcha-box" title="点击刷新验证码">已关闭</div>
+          </div>
+        </div>
+
+        <button class="btn btn-primary btn-block btn-lg mt-2" type="button">注册</button>
       </form>
     </div>
   </div>
 
   <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
   <script nomodule src="https://cdn.jsdelivr.net/npm/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
+  <script>
+    function switchPanel(name) {
+      document.querySelectorAll('.auth-tab').forEach(function (t) {
+        t.classList.toggle('active', t.dataset.panel === name);
+      });
+      document.querySelectorAll('.auth-panel').forEach(function (p) {
+        p.classList.toggle('active', p.id === 'panel-' + name);
+      });
+    }
+  </script>
 </body>
 </html>

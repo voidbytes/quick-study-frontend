@@ -3,367 +3,542 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Quick Study — 通知中心</title>
+  <title>通知中心 — Quick Study</title>
   <link rel="stylesheet" href="styles/mockup.css">
+  <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
+  <script nomodule src="https://cdn.jsdelivr.net/npm/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
   <style>
-    /* --- 通知页专属样式 --- */
-    .page-header-row {
+    /* --- 页头：flex items-center justify-between mb-6 --- */
+    .page-head-row {
       display: flex;
       align-items: center;
       justify-content: space-between;
       margin-bottom: var(--space-6);
     }
-    .page-header-row h1 {
+    .page-head-row h1 {
+      margin: 0;
       font-size: var(--text-2xl);
       font-weight: var(--font-bold);
-      color: var(--text-primary);
+      color: var(--color-neutral-900);
     }
-    .filter-tabs {
-      display: flex;
-      gap: var(--space-2);
-      margin-bottom: var(--space-4);
-      border-bottom: 1px solid var(--border-default);
-      padding-bottom: 0;
-    }
-    .filter-tab {
-      display: inline-flex;
-      align-items: center;
-      gap: var(--space-2);
-      padding: var(--space-3) var(--space-4);
-      font-size: var(--text-base);
-      font-weight: var(--font-medium);
-      color: var(--text-secondary);
-      cursor: pointer;
-      border-bottom: 2px solid transparent;
-      transition: all var(--transition-base);
-      margin-bottom: -1px;
-    }
-    .filter-tab:hover { color: var(--text-primary); }
-    .filter-tab.active {
-      color: var(--text-brand);
-      border-bottom-color: var(--color-primary-500);
-      font-weight: var(--font-semibold);
-    }
-    .filter-tab .count {
-      font-size: var(--text-xs);
-      color: var(--text-tertiary);
-      background: var(--color-neutral-100);
-      border-radius: var(--radius-full);
-      padding: 1px var(--space-2);
-    }
-    .filter-tab.active .count {
-      background: var(--color-primary-50);
-      color: var(--text-brand);
-    }
-    .type-chips {
-      display: flex;
-      gap: var(--space-2);
-      flex-wrap: wrap;
-      margin-bottom: var(--space-6);
-    }
-    .type-chip {
+
+    /* --- 已读/未读筛选：inline-flex gap-1 p-1 rounded-full bg-neutral-100 mb-6 --- */
+    .seg-tabs {
       display: inline-flex;
       align-items: center;
       gap: var(--space-1);
-      padding: var(--space-2) var(--space-3);
-      border: 1px solid var(--border-default);
+      padding: var(--space-1);
       border-radius: var(--radius-full);
+      background: var(--color-neutral-100);
+      margin-bottom: var(--space-6);
+    }
+    .seg-tab {
+      padding: 6px var(--space-4);
+      border: none;
+      background: transparent;
+      border-radius: var(--radius-full);
+      font-family: var(--font-sans);
       font-size: var(--text-sm);
       font-weight: var(--font-medium);
-      color: var(--text-secondary);
+      color: var(--color-neutral-600);
       cursor: pointer;
       transition: all var(--transition-base);
+    }
+    .seg-tab:hover { color: var(--color-neutral-900); }
+    .seg-tab.active {
       background: var(--bg-card);
-    }
-    .type-chip:hover { border-color: var(--color-primary-300); color: var(--text-primary); }
-    .type-chip.active {
-      background: var(--color-primary-50);
-      border-color: var(--color-primary-400);
       color: var(--text-brand);
+      font-weight: var(--font-semibold);
+      box-shadow: var(--shadow-sm);
     }
-    .notif-list {
-      display: flex;
-      flex-direction: column;
-      gap: var(--space-3);
-    }
+
+    /* --- 列表：space-y-3 --- */
+    .notif-list { display: flex; flex-direction: column; gap: var(--space-3); }
+
+    /* 列表项：flex items-start gap-4 px-5 py-4 rounded-lg border */
     .notif-item {
       display: flex;
       align-items: flex-start;
       gap: var(--space-4);
       padding: var(--space-4) var(--space-5);
-      background: var(--bg-card);
-      border: 1px solid var(--border-default);
       border-radius: var(--radius-lg);
-      cursor: pointer;
+      border: 1px solid var(--border-default);
+      background: var(--bg-card);
       transition: all var(--transition-base);
-      position: relative;
     }
-    .notif-item:hover {
-      box-shadow: var(--shadow-sm);
-      border-color: var(--color-neutral-300);
-    }
+    /* 未读：bg-primary-50 border-primary-200（无左侧色条） */
     .notif-item.unread {
       background: var(--color-primary-50);
-      border-left: 3px solid var(--color-primary-500);
+      border-color: var(--color-primary-200);
     }
+    /* 仅 resolveNotificationRoute(notif) 非空才可点 */
+    .notif-item.clickable { cursor: pointer; }
+    .notif-item.clickable:hover {
+      border-color: var(--color-primary-300);
+      box-shadow: var(--shadow-sm);
+    }
+
     .notif-icon {
       width: 40px; height: 40px;
       border-radius: var(--radius-full);
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      display: flex; align-items: center; justify-content: center;
       flex-shrink: 0;
-      font-size: 20px;
     }
+    .notif-icon ion-icon { font-size: 20px; }
+
     .notif-body { flex: 1; min-width: 0; }
-    .notif-title {
-      font-size: var(--text-base);
-      font-weight: var(--font-medium);
-      color: var(--text-primary);
-      margin-bottom: var(--space-1);
-    }
+    .notif-head { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); margin-bottom: var(--space-1); }
+    .notif-title { font-size: var(--text-sm); font-weight: var(--font-medium); color: var(--color-neutral-900); }
     .notif-content {
       font-size: var(--text-sm);
-      color: var(--text-secondary);
-      line-height: var(--leading-normal);
-      margin-bottom: var(--space-2);
+      color: var(--color-neutral-600);
+      line-height: var(--leading-relaxed);
+      margin: 0 0 var(--space-2);
     }
-    .notif-time {
-      font-size: var(--text-xs);
-      color: var(--text-tertiary);
-      display: inline-flex;
-      align-items: center;
-      gap: var(--space-1);
-    }
+    .notif-meta { display: flex; align-items: center; gap: var(--space-3); }
+    .notif-time { display: inline-flex; align-items: center; gap: var(--space-1); font-size: var(--text-xs); color: var(--color-neutral-500); }
     .notif-time ion-icon { font-size: 14px; }
-    .notif-right {
-      flex-shrink: 0;
-      display: flex;
-      align-items: center;
-      padding-top: var(--space-1);
+    .notif-link {
+      display: inline-flex; align-items: center; gap: 2px;
+      font-size: var(--text-xs); font-weight: var(--font-medium);
+      color: var(--text-brand);
+      cursor: pointer;
     }
+    .notif-link ion-icon { font-size: 14px; }
+
+    .notif-actions { flex-shrink: 0; display: flex; flex-direction: column; align-items: flex-end; gap: var(--space-2); padding-top: 2px; }
     .unread-dot {
       width: 8px; height: 8px;
       border-radius: var(--radius-full);
       background: var(--color-primary-500);
       flex-shrink: 0;
     }
-    .type-label {
+
+    /* n-button size="tiny" quaternary */
+    .btn-tiny {
+      display: inline-flex; align-items: center; gap: 4px;
+      border: none; background: transparent;
+      font-family: var(--font-sans);
       font-size: var(--text-xs);
-      font-weight: var(--font-semibold);
-      padding: 2px var(--space-2);
+      padding: 2px 6px;
       border-radius: var(--radius-sm);
-      margin-right: var(--space-2);
+      color: var(--text-brand);
+      cursor: pointer;
+      white-space: nowrap;
     }
+    .btn-tiny:hover { background: var(--bg-selected); }
+    .btn-tiny.danger { color: var(--color-error-500); }
+    .btn-tiny.danger:hover { background: var(--color-error-50); }
+    .btn-tiny ion-icon { font-size: 14px; }
+
+    /* n-tag size="small" round :bordered="false" */
+    .tag-round { border-radius: var(--radius-full); font-weight: var(--font-medium); }
+
+    /* 分页：flex justify-center mt-6（v-if itemCount > pageSize） */
+    .pagination-bar { display: flex; align-items: center; justify-content: center; gap: var(--space-2); margin-top: var(--space-6); }
+
+    /* --- EmptyState：description="暂无通知"，title 取默认「暂无数据」 --- */
+    .es-icon { font-size: 56px; color: var(--color-neutral-300); margin-bottom: var(--space-4); }
+    .es-title { font-size: var(--text-base); font-weight: var(--font-semibold); color: var(--text-secondary); margin: 0 0 var(--space-1); }
+    .es-desc { font-size: var(--text-sm); color: var(--text-tertiary); margin: 0; }
+
+    /* --- n-spin :show="loading"（列表区遮罩，无骨架屏） --- */
+    .spin-wrap { position: relative; }
+    .spin-mask {
+      position: absolute; inset: 0;
+      background: rgba(255, 255, 255, 0.6);
+      display: flex; align-items: center; justify-content: center;
+      border-radius: var(--radius-lg);
+    }
+    .spinner {
+      width: 28px; height: 28px;
+      border: 3px solid var(--color-primary-100);
+      border-top-color: var(--color-primary-500);
+      border-radius: var(--radius-full);
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* 多形态预览分隔 */
+    .state-divider { display: flex; align-items: center; gap: var(--space-3); margin: var(--space-8) 0 var(--space-4); }
+    .state-divider h2 { font-size: var(--text-lg); font-weight: var(--font-bold); color: var(--text-primary); margin: 0; white-space: nowrap; }
+    .state-divider::after { content: ""; flex: 1; height: 1px; background: var(--border-default); }
+    .state-note { font-size: var(--text-xs); color: var(--text-tertiary); margin-bottom: var(--space-4); line-height: var(--leading-relaxed); }
+    .state-note code { font-family: var(--font-mono); font-size: 11px; background: var(--color-neutral-100); padding: 1px 4px; border-radius: var(--radius-sm); }
+
+    /* 类型枚举 / 路由规则速查表 */
+    .mini-table { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
+    .mini-table th, .mini-table td { border: 1px solid var(--border-default); padding: 6px var(--space-3); text-align: left; color: var(--text-secondary); }
+    .mini-table th { background: var(--bg-subtle); font-weight: var(--font-semibold); color: var(--text-primary); }
+    .mini-table td.mono { font-family: var(--font-mono); font-size: 11px; }
+
+    /* confirmDanger 弹窗预览 */
+    .modal { position: relative; width: 320px; }
   </style>
 </head>
 <body>
   <div class="app-shell">
+    <!-- ===== Sidebar（MainLayout.vue：已登录 + 管理员完整形态；/notifications 高亮「通知」） ===== -->
     <aside class="sidebar">
       <div class="sidebar-logo">
         <div class="sidebar-logo-icon">QS</div>
         <span class="sidebar-logo-text">Quick Study</span>
-      <button class="sidebar-toggle" data-tooltip="折叠侧边栏">
-        <ion-icon name="chevron-back-outline"></ion-icon>
-      </button>
+        <button class="sidebar-toggle" data-tooltip="折叠侧边栏"><ion-icon name="chevron-back-outline"></ion-icon></button>
       </div>
       <nav class="sidebar-nav">
-        <div class="sidebar-nav-item" onclick="window.location.href='01-home.html'"><ion-icon name="home-outline"></ion-icon><span>首页</span></div>
-        <div class="sidebar-nav-item" onclick="window.location.href='02-bank-list.html'"><ion-icon name="library-outline"></ion-icon><span>题库</span></div>
-        <div class="sidebar-nav-item" onclick="window.location.href='04-question-list.html'"><ion-icon name="document-text-outline"></ion-icon><span>题目</span></div>
-        <div class="sidebar-nav-item" onclick="window.location.href='05-paper-list.html'"><ion-icon name="file-tray-full-outline"></ion-icon><span>试卷</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='01-home.html'"><ion-icon name="home-outline"></ion-icon><span>首页</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='02-bank-list.html'"><ion-icon name="library-outline"></ion-icon><span>题库</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='04-question-list.html'"><ion-icon name="document-text-outline"></ion-icon><span>题目</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='05-paper-list.html'"><ion-icon name="file-tray-full-outline"></ion-icon><span>试卷</span></div>
         <div class="sidebar-nav-label">学习中心</div>
-        <div class="sidebar-nav-item" onclick="window.location.href='24-practice-list.html'"><ion-icon name="game-controller-outline"></ion-icon><span>练习</span></div>
-        <div class="sidebar-nav-item" onclick="window.location.href='10-wrong-questions.html'"><ion-icon name="close-circle-outline"></ion-icon><span>错题本</span></div>
-        <div class="sidebar-nav-item" onclick="window.location.href='18-favorites.html'"><ion-icon name="star-outline"></ion-icon><span>收藏题目</span></div>
-        <div class="sidebar-nav-item" onclick="window.location.href='11-records.html'"><ion-icon name="time-outline"></ion-icon><span>做题记录</span></div>
-        <div class="sidebar-nav-item" onclick="window.location.href='09-statistics.html'"><ion-icon name="bar-chart-outline"></ion-icon><span>统计</span></div>
-        <div class="sidebar-nav-item active" onclick="window.location.href='13-notifications.html'"><ion-icon name="notifications-outline"></ion-icon><span>通知</span></div>
-        <div class="sidebar-nav-item" onclick="window.location.href='12-search.html'"><ion-icon name="search-outline"></ion-icon><span>搜索</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='24-practice-list.html'"><ion-icon name="game-controller-outline"></ion-icon><span>练习</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='19-playground.html'"><ion-icon name="code-slash-outline"></ion-icon><span>代码运行台</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='10-wrong-questions.html'"><ion-icon name="close-circle-outline"></ion-icon><span>错题本</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='18-favorites.html'"><ion-icon name="star-outline"></ion-icon><span>收藏题目</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='11-records.html'"><ion-icon name="time-outline"></ion-icon><span>做题记录</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='20-exam-records.html'"><ion-icon name="document-text-outline"></ion-icon><span>考试记录</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='09-statistics.html'"><ion-icon name="bar-chart-outline"></ion-icon><span>统计</span></div>
+        <div class="sidebar-nav-item active" onclick="location.href='13-notifications.html'"><ion-icon name="notifications-outline"></ion-icon><span>通知</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='12-search.html'"><ion-icon name="search-outline"></ion-icon><span>搜索</span></div>
         <div class="sidebar-nav-label">管理</div>
-        <div class="sidebar-nav-item" onclick="window.location.href='15-admin-users.html'"><ion-icon name="people-outline"></ion-icon><span>用户管理</span></div>
-        <div class="sidebar-nav-item" onclick="window.location.href='28-admin-reviews.html'"><ion-icon name="checkmark-done-outline"></ion-icon><span>审核列表</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='15-admin-users.html'"><ion-icon name="people-outline"></ion-icon><span>用户管理</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='31-admin-reviews.html'"><ion-icon name="checkmark-done-outline"></ion-icon><span>审核列表</span></div>
       </nav>
       <div class="sidebar-footer">
         <div class="sidebar-nav-item"><ion-icon name="log-out-outline"></ion-icon><span>退出登录</span></div>
       </div>
     </aside>
+
     <div class="main-area">
       <header class="app-header">
         <div class="app-header-left">
           <button class="mobile-menu-btn" onclick="document.querySelector('.sidebar').classList.toggle('mobile-open')"><ion-icon name="menu-outline"></ion-icon></button>
-          <button class="mobile-menu-btn" onclick="document.querySelector('.sidebar').classList.toggle('mobile-open')"><ion-icon name="menu-outline"></ion-icon></button>
-          <div class="breadcrumb">
-            <span class="breadcrumb-current">通知</span>
-          </div>
+          <!-- MENU_TITLES: /notifications → 通知 -->
+          <div class="breadcrumb"><span class="breadcrumb-current">通知</span></div>
         </div>
         <div class="app-header-right">
           <div class="header-search">
             <ion-icon name="search-outline"></ion-icon>
-            <input class="input" type="text" placeholder="搜索题目 / 题库 / 试卷" readonly style="cursor:pointer;" onclick="window.location.href='12-search.html'">
+            <input class="input" type="text" placeholder="搜索题目 / 题库 / 试卷" readonly style="cursor:pointer;" onclick="location.href='12-search.html'">
           </div>
-          <div style="position:relative;cursor:pointer;" onclick="window.location.href='13-notifications.html'">
+          <div style="position:relative;cursor:pointer;" onclick="location.href='13-notifications.html'">
             <ion-icon name="notifications-outline" style="font-size:22px;color:var(--text-secondary);"></ion-icon>
             <span class="badge" style="position:absolute;top:-4px;right:-4px;">3</span>
           </div>
-          <div style="display:flex;align-items:center;gap:8px;cursor:pointer;" onclick="window.location.href='14-profile.html'">
+          <div style="display:flex;align-items:center;gap:8px;cursor:pointer;" onclick="location.href='14-profile.html'">
             <div class="avatar" style="background:var(--gradient-brand);">张</div>
             <span style="font-size:14px;font-weight:500;color:var(--text-primary);">张同学</span>
             <ion-icon name="chevron-down-outline" style="font-size:16px;color:var(--text-tertiary);"></ion-icon>
           </div>
         </div>
       </header>
+
       <main class="app-content">
-        <!-- 页面头部 -->
-        <div class="page-header-row">
+        <!-- ===== 页头：h1「通知中心」+ n-button size="small"「全部标为已读」（CheckmarkDoneOutline） ===== -->
+        <div class="page-head-row">
           <h1>通知中心</h1>
-          <button class="btn btn-ghost btn-sm">
+          <button class="btn btn-secondary btn-sm">
             <ion-icon name="checkmark-done-outline"></ion-icon>
             <span>全部标为已读</span>
           </button>
         </div>
 
-        <!-- 已读/未读筛选 -->
-        <div class="filter-tabs">
-          <div class="filter-tab active">
-            <span>全部</span>
-            <span class="count">5</span>
-          </div>
-          <div class="filter-tab">
-            <span>未读</span>
-            <span class="count">3</span>
-          </div>
-          <div class="filter-tab">
-            <span>已读</span>
-            <span class="count">12</span>
-          </div>
+        <!-- ===== 已读/未读筛选（全部 / 未读 / 已读）—— 胶囊分段控件，无角标数字 ===== -->
+        <div class="seg-tabs">
+          <button class="seg-tab active">全部</button>
+          <button class="seg-tab">未读</button>
+          <button class="seg-tab">已读</button>
         </div>
 
-        <!-- 类型筛选 -->
-        <div class="type-chips">
-          <div class="type-chip active">全部</div>
-          <div class="type-chip"><ion-icon name="pencil-outline" style="font-size:14px;"></ion-icon> 批改待办</div>
-          <div class="type-chip"><ion-icon name="person-add-outline" style="font-size:14px;"></ion-icon> 被指定为批改人</div>
-          <div class="type-chip"><ion-icon name="checkmark-circle-outline" style="font-size:14px;"></ion-icon> 批改完成</div>
-          <div class="type-chip"><ion-icon name="alert-circle-outline" style="font-size:14px;"></ion-icon> 批改超时</div>
-          <div class="type-chip"><ion-icon name="people-outline" style="font-size:14px;"></ion-icon> 协作邀请</div>
-          <div class="type-chip"><ion-icon name="shield-checkmark-outline" style="font-size:14px;"></ion-icon> 审核结果</div>
-          <div class="type-chip"><ion-icon name="swap-horizontal-outline" style="font-size:14px;"></ion-icon> 题库转让</div>
-        </div>
-
-        <!-- 通知列表 -->
+        <!-- ===== 通知列表（n-spin :show="loading" 内） ===== -->
         <div class="notif-list">
-          <!-- 通知 1 — UNREAD — 批改待办 -->
-          <div class="notif-item unread">
+          <!-- 1. GRADING_PENDING（未读）→ link 为空按 type 兜底：/grading/sessions/1024 -->
+          <div class="notif-item unread clickable">
             <div class="notif-icon" style="background:var(--color-warning-50);color:var(--color-warning-600);">
-              <ion-icon name="pencil-outline"></ion-icon>
+              <ion-icon name="create-outline"></ion-icon>
             </div>
             <div class="notif-body">
-              <div class="notif-title">
-                <span class="type-label tag tag-warning">批改待办</span>
-                张同学提交了「Java基础测试卷」需要批改
+              <div class="notif-head">
+                <span class="tag tag-warning tag-round">批改待办</span>
+                <span class="notif-title">张同学提交了「Java基础测试卷」需要批改</span>
               </div>
-              <div class="notif-content">张同学完成了「Java基础测试卷」的答题，共 50 道题，请尽快进行批阅。批阅完成后将自动通知考生查看成绩。</div>
-              <div class="notif-time"><ion-icon name="time-outline"></ion-icon> 5 分钟前</div>
+              <p class="notif-content">张同学完成了「Java基础测试卷」的作答，共 50 道题，请尽快进行批阅。</p>
+              <div class="notif-meta">
+                <span class="notif-time"><ion-icon name="time-outline"></ion-icon>2026-09-07 10:24</span>
+                <span class="notif-link">查看详情<ion-icon name="chevron-forward-outline"></ion-icon></span>
+              </div>
             </div>
-            <div class="notif-right">
+            <div class="notif-actions">
               <span class="unread-dot"></span>
+              <button class="btn-tiny"><ion-icon name="checkmark-circle-outline"></ion-icon>标记已读</button>
+              <button class="btn-tiny danger"><ion-icon name="trash-outline"></ion-icon>删除</button>
             </div>
           </div>
 
-          <!-- 通知 2 — UNREAD — 被指定为批改人 -->
-          <div class="notif-item unread">
-            <div class="notif-icon" style="background:var(--color-info-50);color:var(--color-info-600);">
+          <!-- 2. GRADING_ASSIGNED（未读）→ 固定 /grading -->
+          <div class="notif-item unread clickable">
+            <div class="notif-icon" style="background:var(--color-info-50);color:var(--color-info-500);">
               <ion-icon name="person-add-outline"></ion-icon>
             </div>
             <div class="notif-body">
-              <div class="notif-title">
-                <span class="type-label tag tag-info">被指定为批改人</span>
-                王老师指定你为「Python编程能力评估」的批改人
+              <div class="notif-head">
+                <span class="tag tag-info tag-round">被指定为批改人</span>
+                <span class="notif-title">王老师指定你为「Python编程能力评估」的批改人</span>
               </div>
-              <div class="notif-content">王老师已将你添加为试卷「Python编程能力评估」的批改人，你可以在批改待办中查看需要批阅的提交。</div>
-              <div class="notif-time"><ion-icon name="time-outline"></ion-icon> 1 小时前</div>
+              <p class="notif-content">王老师已将你添加为试卷「Python编程能力评估」的批改人，你可以在批改待办中查看需要批阅的提交。</p>
+              <div class="notif-meta">
+                <span class="notif-time"><ion-icon name="time-outline"></ion-icon>2026-09-07 09:05</span>
+                <span class="notif-link">查看详情<ion-icon name="chevron-forward-outline"></ion-icon></span>
+              </div>
             </div>
-            <div class="notif-right">
+            <div class="notif-actions">
               <span class="unread-dot"></span>
+              <button class="btn-tiny"><ion-icon name="checkmark-circle-outline"></ion-icon>标记已读</button>
+              <button class="btn-tiny danger"><ion-icon name="trash-outline"></ion-icon>删除</button>
             </div>
           </div>
 
-          <!-- 通知 3 — UNREAD — 批改完成 -->
-          <div class="notif-item unread">
+          <!-- 3. GRADING_DONE（未读）→ /exam/sessions/889/result -->
+          <div class="notif-item unread clickable">
             <div class="notif-icon" style="background:var(--color-success-50);color:var(--color-success-600);">
               <ion-icon name="checkmark-circle-outline"></ion-icon>
             </div>
             <div class="notif-body">
-              <div class="notif-title">
-                <span class="type-label tag tag-success">批改完成</span>
-                你的「数据结构期末考试」已批改完成，得分 87 分
+              <div class="notif-head">
+                <span class="tag tag-success tag-round">批改完成</span>
+                <span class="notif-title">你的「数据结构期末考试」已批改完成，得分 87 分</span>
               </div>
-              <div class="notif-content">批改老师已完成对你的「数据结构期末考试」的批阅，你的最终得分为 87 分。点击查看详细的逐题得分明细与解析。</div>
-              <div class="notif-time"><ion-icon name="time-outline"></ion-icon> 2 小时前</div>
+              <p class="notif-content">批改老师已完成对你的「数据结构期末考试」的批阅，你的最终得分为 87 分。点击查看详细的逐题得分明细与解析。</p>
+              <div class="notif-meta">
+                <span class="notif-time"><ion-icon name="time-outline"></ion-icon>2026-09-07 08:12</span>
+                <span class="notif-link">查看详情<ion-icon name="chevron-forward-outline"></ion-icon></span>
+              </div>
             </div>
-            <div class="notif-right">
+            <div class="notif-actions">
               <span class="unread-dot"></span>
+              <button class="btn-tiny"><ion-icon name="checkmark-circle-outline"></ion-icon>标记已读</button>
+              <button class="btn-tiny danger"><ion-icon name="trash-outline"></ion-icon>删除</button>
             </div>
           </div>
 
-          <!-- 通知 4 — READ — 协作邀请 -->
-          <div class="notif-item">
-            <div class="notif-icon" style="background:var(--color-info-50);color:var(--color-info-600);">
+          <!-- 4. GRADING_TIMEOUT（已读）→ 固定 /papers -->
+          <div class="notif-item clickable">
+            <div class="notif-icon" style="background:var(--color-error-50);color:var(--color-error-500);">
+              <ion-icon name="alert-circle-outline"></ion-icon>
+            </div>
+            <div class="notif-body">
+              <div class="notif-head">
+                <span class="tag tag-error tag-round">批改超时</span>
+                <span class="notif-title">「操作系统模拟卷」批改已超时，请尽快处理</span>
+              </div>
+              <p class="notif-content">你作为批改人的试卷「操作系统模拟卷」已超过批改时限 48 小时，请尽快处理以免影响考生成绩查询。</p>
+              <div class="notif-meta">
+                <span class="notif-time"><ion-icon name="time-outline"></ion-icon>2026-09-06 17:40</span>
+                <span class="notif-link">查看详情<ion-icon name="chevron-forward-outline"></ion-icon></span>
+              </div>
+            </div>
+            <div class="notif-actions">
+              <button class="btn-tiny danger"><ion-icon name="trash-outline"></ion-icon>删除</button>
+            </div>
+          </div>
+
+          <!-- 5. COLLAB_INVITE（已读，后端下发 link=/banks/12）→ 可点、有「查看详情」 -->
+          <div class="notif-item clickable">
+            <div class="notif-icon" style="background:var(--color-info-50);color:var(--color-info-500);">
               <ion-icon name="people-outline"></ion-icon>
             </div>
             <div class="notif-body">
-              <div class="notif-title">
-                <span class="type-label tag tag-info">协作邀请</span>
-                你被添加为「官方Java题库」的协作人
+              <div class="notif-head">
+                <span class="tag tag-info tag-round">协作邀请</span>
+                <span class="notif-title">你被添加为「官方Java题库」的协作人</span>
               </div>
-              <div class="notif-content">系统管理员已将你添加为「官方Java题库」的协作人，你现在可以在此题库中添加和编辑题目。</div>
-              <div class="notif-time"><ion-icon name="time-outline"></ion-icon> 昨天</div>
+              <p class="notif-content">系统管理员已将你添加为「官方Java题库」的协作人，你现在可以在此题库中添加和编辑题目。</p>
+              <div class="notif-meta">
+                <span class="notif-time"><ion-icon name="time-outline"></ion-icon>2026-09-05 14:28</span>
+                <span class="notif-link">查看详情<ion-icon name="chevron-forward-outline"></ion-icon></span>
+              </div>
+            </div>
+            <div class="notif-actions">
+              <button class="btn-tiny danger"><ion-icon name="trash-outline"></ion-icon>删除</button>
             </div>
           </div>
 
-          <!-- 通知 5 — READ — 审核结果 -->
+          <!-- 6. REVIEW_RESULT（已读，无 link）→ 不可点、无「查看详情」 -->
           <div class="notif-item">
             <div class="notif-icon" style="background:var(--color-success-50);color:var(--color-success-600);">
               <ion-icon name="shield-checkmark-outline"></ion-icon>
             </div>
             <div class="notif-body">
-              <div class="notif-title">
-                <span class="type-label tag tag-success">审核结果</span>
-                你提交的题目「HashMap底层原理」已审核通过
+              <div class="notif-head">
+                <span class="tag tag-success tag-round">审核结果</span>
+                <span class="notif-title">你提交的题目「HashMap底层原理」已审核通过</span>
               </div>
-              <div class="notif-content">审核管理员已通过你提交的题目「HashMap底层原理」，该题目现已发布到官方Java题库中。</div>
-              <div class="notif-time"><ion-icon name="time-outline"></ion-icon> 2 天前</div>
+              <p class="notif-content">审核管理员已通过你提交的题目「HashMap底层原理」，该题目现已发布到官方Java题库中。</p>
+              <div class="notif-meta">
+                <span class="notif-time"><ion-icon name="time-outline"></ion-icon>2026-09-04 11:03</span>
+              </div>
+            </div>
+            <div class="notif-actions">
+              <button class="btn-tiny danger"><ion-icon name="trash-outline"></ion-icon>删除</button>
             </div>
           </div>
 
-          <!-- 通知 6 — READ — 批改超时 -->
+          <!-- 7. BANK_TRANSFER（已读，无 link）→ 不可点 -->
           <div class="notif-item">
-            <div class="notif-icon" style="background:var(--color-error-50);color:var(--color-error-600);">
-              <ion-icon name="alert-circle-outline"></ion-icon>
+            <div class="notif-icon" style="background:var(--color-info-50);color:var(--color-info-500);">
+              <ion-icon name="swap-horizontal-outline"></ion-icon>
             </div>
             <div class="notif-body">
-              <div class="notif-title">
-                <span class="type-label tag tag-error">批改超时</span>
-                「操作系统模拟卷」批改已超时，请尽快处理
+              <div class="notif-head">
+                <span class="tag tag-info tag-round">题库转让</span>
+                <span class="notif-title">题库「前端面试百题」已转让给你</span>
               </div>
-              <div class="notif-content">你作为批改人的试卷「操作系统模拟卷」已超过批改时限 48 小时，请尽快处理以免影响考生成绩查询。</div>
-              <div class="notif-time"><ion-icon name="time-outline"></ion-icon> 3 天前</div>
+              <p class="notif-content">李老师将题库「前端面试百题」转让给你，你现在拥有该题库的管理权限。</p>
+              <div class="notif-meta">
+                <span class="notif-time"><ion-icon name="time-outline"></ion-icon>2026-09-03 16:52</span>
+              </div>
+            </div>
+            <div class="notif-actions">
+              <button class="btn-tiny danger"><ion-icon name="trash-outline"></ion-icon>删除</button>
             </div>
           </div>
+
+          <!-- 8. 未知类型（已读）→ 回落 DEFAULT_META「系统通知」，无路由 -->
+          <div class="notif-item">
+            <div class="notif-icon" style="background:var(--color-neutral-100);color:var(--color-neutral-500);">
+              <ion-icon name="notifications-outline"></ion-icon>
+            </div>
+            <div class="notif-body">
+              <div class="notif-head">
+                <span class="tag tag-default tag-round">系统通知</span>
+                <span class="notif-title">系统维护公告</span>
+              </div>
+              <p class="notif-content">系统将于 2026-09-10 00:00 - 02:00 进行例行维护，期间可能影响答题与批改功能。</p>
+              <div class="notif-meta">
+                <span class="notif-time"><ion-icon name="time-outline"></ion-icon>2026-09-02 09:30</span>
+              </div>
+            </div>
+            <div class="notif-actions">
+              <button class="btn-tiny danger"><ion-icon name="trash-outline"></ion-icon>删除</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== 类型枚举与跳转规则速查（对应 TYPE_META / resolveNotificationRoute） ===== -->
+        <div class="state-divider"><h2>通知类型枚举与跳转规则</h2></div>
+        <div class="state-note">
+          列表项标签文案取自 <code>TYPE_META</code>，未命中时回落 <code>DEFAULT_META</code>（系统通知 / NotificationsOutline / bg-neutral-100 / tag default）。
+          跳转由 <code>resolveNotificationRoute(notif)</code> 统一解析：<code>link</code> 优先，缺失时按 <code>type + relatedId</code> 兜底；返回空则整条通知不可点、不渲染「查看详情」。
+        </div>
+        <table class="mini-table">
+          <thead>
+            <tr><th style="width:180px;">type</th><th style="width:140px;">标签</th><th style="width:150px;">图标</th><th>跳转规则</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="mono">GRADING_PENDING</td><td>批改待办</td><td>CreateOutline（warning）</td><td class="mono">link → /grading/sessions/{relatedId}；无 relatedId → /grading</td></tr>
+            <tr><td class="mono">GRADING_ASSIGNED</td><td>被指定为批改人</td><td>PersonAddOutline（info）</td><td class="mono">link → /grading（固定）</td></tr>
+            <tr><td class="mono">GRADING_DONE</td><td>批改完成</td><td>CheckmarkCircleOutline（success）</td><td class="mono">link → /exam/sessions/{relatedId}/result；无 relatedId → /records</td></tr>
+            <tr><td class="mono">GRADING_TIMEOUT</td><td>批改超时</td><td>AlertCircleOutline（error）</td><td class="mono">link → /papers（固定）</td></tr>
+            <tr><td class="mono">COLLAB_INVITE</td><td>协作邀请</td><td>PeopleOutline（info）</td><td>仅 link；无 link 不跳转</td></tr>
+            <tr><td class="mono">REVIEW_RESULT</td><td>审核结果</td><td>ShieldCheckmarkOutline（success）</td><td>仅 link；无 link 不跳转</td></tr>
+            <tr><td class="mono">BANK_TRANSFER</td><td>题库转让</td><td>SwapHorizontalOutline（info）</td><td>仅 link；无 link 不跳转</td></tr>
+            <tr><td class="mono">其它 / 未知</td><td>系统通知</td><td>NotificationsOutline（neutral）</td><td>仅 link；无 link 不跳转</td></tr>
+          </tbody>
+        </table>
+
+        <!-- ===== 分页：仅 itemCount > pageSize(20) 时渲染，flex justify-center mt-6 ===== -->
+        <div class="state-divider"><h2>分页</h2></div>
+        <div class="state-note">
+          <code>v-if="pagination.itemCount > pagination.pageSize"</code>，容器 <code>flex justify-center mt-6</code>；<code>pageSize</code> 固定 20，
+          无每页条数切换、无快速跳页、无「共 N 条」文案。上面主形态仅 8 条，因此不渲染分页。
+        </div>
+        <div class="pagination-bar">
+          <button class="page-btn" disabled><ion-icon name="chevron-back-outline"></ion-icon></button>
+          <button class="page-btn active">1</button>
+          <button class="page-btn">2</button>
+          <button class="page-btn">3</button>
+          <button class="page-btn"><ion-icon name="chevron-forward-outline"></ion-icon></button>
+        </div>
+
+        <!-- ===== 加载态：n-spin :show="loading" 覆盖列表（无骨架屏） ===== -->
+        <div class="state-divider"><h2>加载态</h2></div>
+        <div class="state-note">
+          首次进入 / 切 Tab / 翻页均 <code>loading = true</code>，由 <code>n-spin</code> 以遮罩形式覆盖整个列表区；
+          代码未使用 <code>SkeletonList</code>，加载中不区分「已有数据」。
+        </div>
+        <div class="spin-wrap">
+          <div class="notif-list">
+            <div class="notif-item">
+              <div class="notif-icon" style="background:var(--color-neutral-100);"></div>
+              <div class="notif-body">
+                <div class="skeleton" style="height:14px;width:35%;margin-bottom:8px;"></div>
+                <div class="skeleton" style="height:12px;width:90%;margin-bottom:6px;"></div>
+                <div class="skeleton" style="height:12px;width:60%;"></div>
+              </div>
+            </div>
+            <div class="notif-item">
+              <div class="notif-icon" style="background:var(--color-neutral-100);"></div>
+              <div class="notif-body">
+                <div class="skeleton" style="height:14px;width:30%;margin-bottom:8px;"></div>
+                <div class="skeleton" style="height:12px;width:85%;margin-bottom:6px;"></div>
+                <div class="skeleton" style="height:12px;width:55%;"></div>
+              </div>
+            </div>
+          </div>
+          <div class="spin-mask"><div class="spinner"></div></div>
+        </div>
+
+        <!-- ===== 空态：EmptyState（无卡片包裹） ===== -->
+        <div class="state-divider"><h2>空态</h2></div>
+        <div class="state-note">
+          <code>v-if="!loading && notifications.length === 0"</code> → <code>EmptyState</code>；
+          仅传 <code>description="暂无通知"</code> 与 <code>:icon="NotificationsOutline"</code>，
+          <code>title</code> 走组件默认值「暂无数据」。无任何操作按钮。
+        </div>
+        <div class="empty-state">
+          <ion-icon name="notifications-outline" class="es-icon"></ion-icon>
+          <h3 class="es-title">暂无数据</h3>
+          <p class="es-desc">暂无通知</p>
+        </div>
+
+        <!-- ===== 删除确认：useConfirm().confirmDanger ===== -->
+        <div class="state-divider"><h2>删除确认弹窗</h2></div>
+        <div class="state-note">
+          点「删除」→ <code>confirmDanger({ title:'删除通知', content:'确定要删除这条通知吗？', positiveText:'删除' })</code>；
+          确认后调用 <code>deleteNotification(id)</code>，成功 <code>message.success('已删除')</code>，失败 <code>message.error('删除失败')</code>。
+        </div>
+        <div class="modal">
+          <div class="modal-body" style="padding-bottom:var(--space-4);">
+            <div style="font-size:var(--text-lg);font-weight:var(--font-bold);color:var(--text-primary);margin-bottom:var(--space-2);">删除通知</div>
+            <div style="font-size:var(--text-base);color:var(--text-secondary);">确定要删除这条通知吗？</div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-secondary btn-sm">取消</button>
+            <button class="btn btn-danger btn-sm">删除</button>
+          </div>
+        </div>
+
+        <!-- ===== 轻提示 ===== -->
+        <div class="state-divider"><h2>轻提示</h2></div>
+        <div class="state-note">
+          「全部标为已读」成功 → <code>message.success('已全部标记已读')</code>；失败 → <code>message.error('操作失败')</code>；
+          列表加载失败 → <code>message.error('加载通知失败')</code>。页面无错误块，错误仅以 toast 呈现。
+        </div>
+        <div class="toast toast-success" style="position:relative;top:auto;right:auto;">
+          <ion-icon name="checkmark-circle-outline" class="toast-icon"></ion-icon>
+          <div class="toast-content">已全部标记已读</div>
         </div>
 
       </main>
     </div>
   </div>
-  <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
-  <script nomodule src="https://cdn.jsdelivr.net/npm/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
-<script>
+  <script>
     document.querySelector(".sidebar-toggle")?.addEventListener("click", function() {
-      var s=document.querySelector(".sidebar"),m=document.querySelector(".main-area");
-      s.classList.toggle("sidebar-collapsed");m.classList.toggle("main-area-collapsed");
-      var i=this.querySelector("ion-icon");
-      i.setAttribute("name",s.classList.contains("sidebar-collapsed")?"chevron-forward-outline":"chevron-back-outline");
+      var s = document.querySelector(".sidebar"), m = document.querySelector(".main-area");
+      s.classList.toggle("sidebar-collapsed");
+      m.classList.toggle("main-area-collapsed");
+      var i = this.querySelector("ion-icon");
+      i.setAttribute("name", s.classList.contains("sidebar-collapsed") ? "chevron-forward-outline" : "chevron-back-outline");
     });
   </script>
 </body>

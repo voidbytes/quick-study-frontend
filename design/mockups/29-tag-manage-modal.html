@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>标签管理 — Quick Study</title>
+  <link rel="stylesheet" href="styles/mockup.css">
+  <style>
+    /* 分组标题（形态分隔） */
+    .state-divider { display: flex; align-items: center; gap: var(--space-3); margin: var(--space-8) 0 var(--space-4); }
+    .state-divider h2 { font-size: var(--text-lg); font-weight: var(--font-bold); color: var(--text-primary); margin: 0; white-space: nowrap; }
+    .state-divider::after { content: ""; flex: 1; height: 1px; background: var(--border-default); }
+    .state-note { font-size: var(--text-xs); color: var(--text-tertiary); margin-bottom: var(--space-4); }
+
+    /* 弹窗预览区（静态展示用，非真实遮罩） */
+    .modal-inline {
+      background: var(--color-neutral-100); border: 1px dashed var(--border-strong);
+      border-radius: var(--radius-lg); padding: var(--space-8);
+      display: flex; align-items: flex-start; justify-content: center; gap: var(--space-6); flex-wrap: wrap;
+    }
+    .modal-inline .modal { box-shadow: var(--shadow-lg); }
+
+    /* 标签列表（max-h-96 overflow-y-auto） */
+    .tag-list {
+      max-height: 384px; overflow-y: auto;
+      border: 1px solid var(--border-default); border-radius: var(--radius-md);
+    }
+    .tag-row {
+      display: flex; align-items: center; gap: var(--space-2);
+      padding: var(--space-2) var(--space-3); border-bottom: 1px solid var(--color-neutral-100);
+    }
+    .tag-row:last-child { border-bottom: none; }
+
+    .modal-close {
+      width: 28px; height: 28px; border: none; background: transparent;
+      color: var(--text-tertiary); cursor: pointer; border-radius: var(--radius-md);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .modal-close:hover { background: var(--bg-hover); color: var(--text-primary); }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <!-- ===== Sidebar（MainLayout.vue：已登录 + 管理员） ===== -->
+    <aside class="sidebar">
+      <div class="sidebar-logo">
+        <div class="sidebar-logo-icon">QS</div>
+        <span class="sidebar-logo-text">Quick Study</span>
+        <button class="sidebar-toggle" data-tooltip="折叠菜单"><ion-icon name="chevron-back-outline"></ion-icon></button>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="sidebar-nav-item" onclick="location.href='01-home.html'"><ion-icon name="home-outline"></ion-icon><span>首页</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='02-bank-list.html'"><ion-icon name="library-outline"></ion-icon><span>题库</span></div>
+        <div class="sidebar-nav-item active" onclick="location.href='04-question-list.html'"><ion-icon name="document-text-outline"></ion-icon><span>题目</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='05-paper-list.html'"><ion-icon name="file-tray-full-outline"></ion-icon><span>试卷</span></div>
+
+        <div class="sidebar-nav-label">学习中心</div>
+        <div class="sidebar-nav-item" onclick="location.href='24-practice-list.html'"><ion-icon name="game-controller-outline"></ion-icon><span>练习</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='19-playground.html'"><ion-icon name="code-slash-outline"></ion-icon><span>代码运行台</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='10-wrong-questions.html'"><ion-icon name="close-circle-outline"></ion-icon><span>错题本</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='18-favorites.html'"><ion-icon name="star-outline"></ion-icon><span>收藏题目</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='11-records.html'"><ion-icon name="time-outline"></ion-icon><span>做题记录</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='20-exam-records.html'"><ion-icon name="document-text-outline"></ion-icon><span>考试记录</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='09-statistics.html'"><ion-icon name="bar-chart-outline"></ion-icon><span>统计</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='13-notifications.html'"><ion-icon name="notifications-outline"></ion-icon><span>通知</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='12-search.html'"><ion-icon name="search-outline"></ion-icon><span>搜索</span></div>
+
+        <div class="sidebar-nav-label">管理</div>
+        <div class="sidebar-nav-item" onclick="location.href='15-admin-users.html'"><ion-icon name="people-outline"></ion-icon><span>用户管理</span></div>
+        <div class="sidebar-nav-item"><ion-icon name="checkmark-done-outline"></ion-icon><span>审核列表</span></div>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="sidebar-nav-item"><ion-icon name="log-out-outline"></ion-icon><span>退出登录</span></div>
+      </div>
+    </aside>
+
+    <!-- ===== Main Area ===== -->
+    <div class="main-area">
+      <header class="app-header">
+        <div class="app-header-left">
+          <button class="mobile-menu-btn" onclick="document.querySelector('.sidebar').classList.toggle('mobile-open')"><ion-icon name="menu-outline"></ion-icon></button>
+          <div class="breadcrumb"><span class="breadcrumb-current">题目</span></div>
+        </div>
+        <div class="app-header-right">
+          <div class="header-search">
+            <ion-icon name="search-outline"></ion-icon>
+            <input class="input" type="text" placeholder="搜索题目 / 题库 / 试卷" readonly style="cursor:pointer;" onclick="location.href='12-search.html'">
+          </div>
+          <div style="position:relative;cursor:pointer;" onclick="location.href='13-notifications.html'">
+            <ion-icon name="notifications-outline" style="font-size:22px;color:var(--text-secondary);"></ion-icon>
+            <span class="badge" style="position:absolute;top:-4px;right:-4px;">3</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;cursor:pointer;" onclick="location.href='14-profile.html'">
+            <div class="avatar" style="background:var(--gradient-brand);">王</div>
+            <span style="font-size:14px;font-weight:500;color:var(--text-primary);">王老师</span>
+            <ion-icon name="chevron-down-outline" style="font-size:16px;color:var(--text-tertiary);"></ion-icon>
+          </div>
+        </div>
+      </header>
+
+      <main class="app-content">
+        <div class="state-divider" style="margin-top:0;"><h2>标签管理弹窗（TagManageModal.vue，width 560px）</h2></div>
+        <div class="state-note">
+          入口：题目管理页 /questions 顶部「标签管理」按钮（仅 isAdmin 可见）；打开即 load() 拉取 GET /tags。
+          QuestionForm.vue 内也引入了该组件，但源码中 showTagManage 没有置为 true 的入口，实际不可达。
+        </div>
+
+        <!-- ============ 管理员形态 ============ -->
+        <div class="state-divider"><h2>管理员形态</h2></div>
+        <div class="modal-inline">
+          <div class="modal" style="max-width:560px;">
+            <div class="modal-header">
+              <h3 style="font-size:var(--text-lg);font-weight:var(--font-semibold);">标签管理</h3>
+              <button class="modal-close"><ion-icon name="close-outline"></ion-icon></button>
+            </div>
+            <div class="modal-body">
+              <!-- 搜索 -->
+              <input class="input mb-4" type="text" placeholder="搜索标签...">
+
+              <!-- 新建标签（仅管理员） -->
+              <div class="flex items-center gap-2 mb-4">
+                <input class="input" type="text" placeholder="新标签名" style="width:180px;">
+                <input class="input" type="text" placeholder="分组（可选）" style="width:160px;">
+                <button class="btn btn-primary btn-sm">添加</button>
+              </div>
+
+              <!-- 标签列表 -->
+              <div class="tag-list">
+                <div class="tag-row">
+                  <span class="text-sm flex-1 truncate">面向对象</span>
+                  <span class="text-xs text-tertiary" style="flex-shrink:0;">使用 36</span>
+                  <span class="pill tag-info" style="cursor:pointer;">Java 基础</span>
+                  <button class="btn btn-ghost btn-sm" style="padding:2px 6px;font-size:var(--text-xs);">改组</button>
+                  <button class="btn btn-ghost btn-sm" style="padding:2px 6px;font-size:var(--text-xs);color:var(--color-error-600);" disabled>删除</button>
+                </div>
+
+                <div class="tag-row">
+                  <span class="text-sm flex-1 truncate">继承</span>
+                  <span class="text-xs text-tertiary" style="flex-shrink:0;">使用 12</span>
+                  <span class="pill tag-info" style="cursor:pointer;">Java 基础</span>
+                  <button class="btn btn-ghost btn-sm" style="padding:2px 6px;font-size:var(--text-xs);">改组</button>
+                  <button class="btn btn-ghost btn-sm" style="padding:2px 6px;font-size:var(--text-xs);color:var(--color-error-600);" disabled>删除</button>
+                </div>
+
+                <!-- 编辑分组中（editingId === tag.id） -->
+                <div class="tag-row">
+                  <span class="text-sm flex-1 truncate">TCP</span>
+                  <span class="text-xs text-tertiary" style="flex-shrink:0;">使用 8</span>
+                  <input class="input" type="text" placeholder="分组名" value="计算机网络" style="width:140px;padding:2px 8px;font-size:var(--text-xs);">
+                  <button class="btn btn-primary btn-sm" style="padding:2px 6px;font-size:var(--text-xs);">保存</button>
+                  <button class="btn btn-ghost btn-sm" style="padding:2px 6px;font-size:var(--text-xs);">取消</button>
+                </div>
+
+                <div class="tag-row">
+                  <span class="text-sm flex-1 truncate">未使用标签</span>
+                  <span class="text-xs text-tertiary" style="flex-shrink:0;">使用 0</span>
+                  <span class="pill tag-default" style="cursor:pointer;">未分组</span>
+                  <button class="btn btn-ghost btn-sm" style="padding:2px 6px;font-size:var(--text-xs);">改组</button>
+                  <button class="btn btn-ghost btn-sm" style="padding:2px 6px;font-size:var(--text-xs);color:var(--color-error-600);">删除</button>
+                </div>
+              </div>
+
+              <p class="text-xs text-tertiary" style="margin-top:var(--space-3);line-height:var(--leading-relaxed);">
+                分组仅用于展示导航（安卓端折叠、选择器分区），不影响筛选；点击分组标签可编辑，清空保存即取消分组。已使用的标签不可删除。
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- ============ 非管理员形态 ============ -->
+        <div class="state-divider"><h2>非管理员形态（只读）</h2></div>
+        <div class="state-note">不渲染新建行与「改组 / 删除」按钮，分组标签不可点击，底部提示文案也不渲染。</div>
+        <div class="modal-inline">
+          <div class="modal" style="max-width:560px;">
+            <div class="modal-header">
+              <h3 style="font-size:var(--text-lg);font-weight:var(--font-semibold);">标签管理</h3>
+              <button class="modal-close"><ion-icon name="close-outline"></ion-icon></button>
+            </div>
+            <div class="modal-body">
+              <input class="input mb-4" type="text" placeholder="搜索标签...">
+              <div class="tag-list">
+                <div class="tag-row">
+                  <span class="text-sm flex-1 truncate">面向对象</span>
+                  <span class="text-xs text-tertiary" style="flex-shrink:0;">使用 36</span>
+                  <span class="pill tag-info">Java 基础</span>
+                </div>
+                <div class="tag-row">
+                  <span class="text-sm flex-1 truncate">未使用标签</span>
+                  <span class="text-xs text-tertiary" style="flex-shrink:0;">使用 0</span>
+                  <span class="pill tag-default">未分组</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ============ 空态 ============ -->
+        <div class="state-divider"><h2>空态</h2></div>
+        <div class="state-note">tags 为空显示「暂无标签」；搜索无结果时显示「无匹配标签」。</div>
+        <div class="modal-inline">
+          <div class="modal" style="max-width:560px;">
+            <div class="modal-header">
+              <h3 style="font-size:var(--text-lg);font-weight:var(--font-semibold);">标签管理</h3>
+              <button class="modal-close"><ion-icon name="close-outline"></ion-icon></button>
+            </div>
+            <div class="modal-body">
+              <input class="input mb-4" type="text" placeholder="搜索标签...">
+              <div class="flex items-center gap-2 mb-4">
+                <input class="input" type="text" placeholder="新标签名" style="width:180px;">
+                <input class="input" type="text" placeholder="分组（可选）" style="width:160px;">
+                <button class="btn btn-primary btn-sm">添加</button>
+              </div>
+              <div class="tag-list">
+                <div class="text-sm text-center text-tertiary" style="padding:var(--space-6);">暂无标签</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="modal" style="max-width:560px;">
+            <div class="modal-header">
+              <h3 style="font-size:var(--text-lg);font-weight:var(--font-semibold);">标签管理</h3>
+              <button class="modal-close"><ion-icon name="close-outline"></ion-icon></button>
+            </div>
+            <div class="modal-body">
+              <input class="input mb-4" type="text" placeholder="搜索标签..." value="zzz">
+              <div class="flex items-center gap-2 mb-4">
+                <input class="input" type="text" placeholder="新标签名" style="width:180px;">
+                <input class="input" type="text" placeholder="分组（可选）" style="width:160px;">
+                <button class="btn btn-primary btn-sm">添加</button>
+              </div>
+              <div class="tag-list">
+                <div class="text-sm text-center text-tertiary" style="padding:var(--space-6);">无匹配标签</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
+  <script nomodule src="https://cdn.jsdelivr.net/npm/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
+  <script>
+    document.querySelector(".sidebar-toggle")?.addEventListener("click", function () {
+      var s = document.querySelector(".sidebar"), m = document.querySelector(".main-area");
+      s.classList.toggle("sidebar-collapsed"); m.classList.toggle("main-area-collapsed");
+      var i = this.querySelector("ion-icon");
+      i.setAttribute("name", s.classList.contains("sidebar-collapsed") ? "chevron-forward-outline" : "chevron-back-outline");
+    });
+  </script>
+</body>
+</html>

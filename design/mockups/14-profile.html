@@ -1,407 +1,601 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Quick Study — 个人中心</title>
-  <link rel="stylesheet" href="styles/mockup.css">
+<html lang="zh-CN" data-page-node-id="dIWuBc2CPvgY9q7M0s8rQb">
+<head data-page-node-id="kbnejcm8MDMEIbAWgM29PX">
+  <meta charset="UTF-8" data-page-node-id="aFNEuQHp61CvKjmSwiK7Vh">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" data-page-node-id="5VI7MdeuU5aSxyltuF4EdY">
+  <title>个人中心 — Quick Study</title>
+  <link rel="stylesheet" href="styles/mockup.css" data-page-node-id="XFU2QiSibI5yj5bzDLArmb">
+  <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
+  <script nomodule src="https://cdn.jsdelivr.net/npm/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
   <style>
-    /* --- 个人中心专属样式 --- */
-    .profile-header-card {
+    /* ===== 用户信息横幅：bg-white border border-neutral-200 rounded-xl mb-6 ===== */
+    .pf-banner {
       background: var(--bg-card);
       border: 1px solid var(--border-default);
       border-radius: var(--radius-xl);
-      padding: var(--space-8);
       margin-bottom: var(--space-6);
       position: relative;
       overflow: hidden;
     }
-    .profile-header-card::before {
-      content: '';
-      position: absolute;
-      top: 0; left: 0; right: 0;
-      height: 120px;
+    /* h-24 bg-brand-soft */
+    .pf-banner-bg {
+      height: 96px;
       background: var(--gradient-brand-soft);
-      z-index: 0;
     }
-    .profile-header-content {
+    /* px-5 sm:px-8 pb-5 sm:pb-6 */
+    .pf-banner-body {
+      padding: 0 var(--space-5) var(--space-5);
+    }
+    @media (min-width: 640px) {
+      .pf-banner-body { padding: 0 var(--space-8) var(--space-6); }
+    }
+    /* relative flex items-end gap-4 sm:gap-5 -mt-10 z-10 */
+    .pf-avatar-row {
       position: relative;
-      z-index: 1;
+      z-index: 10;
       display: flex;
-      align-items: center;
-      gap: var(--space-6);
+      align-items: flex-end;
+      gap: var(--space-4);
+      margin-top: -40px;
     }
-    .profile-avatar {
-      width: 88px; height: 88px;
+    @media (min-width: 640px) { .pf-avatar-row { gap: var(--space-5); } }
+    /* w-20 h-20 rounded-full bg-brand-gradient ring-4 ring-white shadow-md */
+    .pf-avatar {
+      width: 80px; height: 80px;
       border-radius: var(--radius-full);
       background: var(--gradient-brand);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: white;
-      font-size: var(--text-3xl);
+      display: flex; align-items: center; justify-content: center;
+      color: #fff;
+      font-size: var(--text-2xl);
       font-weight: var(--font-bold);
       flex-shrink: 0;
-      border: 4px solid var(--bg-card);
-      box-shadow: var(--shadow-md);
+      box-shadow: 0 0 0 4px var(--bg-card), var(--shadow-md);
     }
-    .profile-info { flex: 1; }
-    .profile-name-row {
-      display: flex;
-      align-items: center;
-      gap: var(--space-3);
-      margin-bottom: var(--space-1);
+    .pf-meta { min-width: 0; flex: 1; padding-bottom: 2px; }
+    .pf-name-row { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; }
+    .pf-name { font-size: var(--text-xl); font-weight: var(--font-bold); color: var(--color-neutral-900); }
+    /* inline-flex px-2 py-0.5 rounded-full text-xs font-semibold bg-neutral-100 text-neutral-600 */
+    .pf-role-pill {
+      display: inline-flex; align-items: center;
+      padding: 2px var(--space-2);
+      border-radius: var(--radius-full);
+      font-size: var(--text-xs);
+      font-weight: var(--font-semibold);
+      background: var(--color-neutral-100);
+      color: var(--color-neutral-600);
     }
-    .profile-name {
-      font-size: var(--text-xl);
-      font-weight: var(--font-bold);
-      color: var(--text-primary);
-    }
-    .profile-username {
-      font-size: var(--text-sm);
-      color: var(--text-secondary);
-    }
-    .profile-stats {
-      display: flex;
-      gap: var(--space-8);
-      margin-top: var(--space-5);
+    .pf-username { font-size: var(--text-sm); color: var(--color-neutral-500); margin-top: var(--space-1); }
+
+    /* grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6 pt-5 border-t */
+    .pf-stats {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: var(--space-4);
+      margin-top: var(--space-6);
       padding-top: var(--space-5);
       border-top: 1px solid var(--border-default);
     }
-    .profile-stat {
-      display: flex;
-      flex-direction: column;
-      gap: var(--space-1);
+    @media (min-width: 640px) { .pf-stats { grid-template-columns: repeat(3, 1fr); } }
+    .pf-stat-label { font-size: var(--text-xs); color: var(--color-neutral-500); margin-bottom: var(--space-1); }
+    .pf-stat-value { font-size: var(--text-sm); font-weight: var(--font-semibold); color: var(--color-neutral-900); }
+    .pf-stat-value.ok { color: var(--color-success-600); }
+
+    /* ===== 两栏：grid-cols-1 lg:grid-cols-3 gap-4 items-start ===== */
+    .pf-grid { display: grid; grid-template-columns: 1fr; gap: var(--space-4); align-items: start; }
+    @media (min-width: 1024px) { .pf-grid { grid-template-columns: 2fr 1fr; } }
+    .pf-col { display: flex; flex-direction: column; gap: var(--space-4); }
+
+    /* ===== 区块卡片：bg-white border border-neutral-200 rounded-lg ===== */
+    .pf-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius-lg);
     }
-    .profile-stat-label {
-      font-size: var(--text-xs);
-      color: var(--text-tertiary);
-      font-weight: var(--font-medium);
-      text-transform: uppercase;
-      letter-spacing: 0.03em;
-    }
-    .profile-stat-value {
-      font-size: var(--text-lg);
-      font-weight: var(--font-bold);
-      color: var(--text-primary);
-    }
-    .two-col-layout {
-      display: grid;
-      grid-template-columns: 3fr 2fr;
-      gap: var(--space-6);
-      align-items: start;
-    }
-    .left-col, .right-col {
-      display: flex;
-      flex-direction: column;
-      gap: var(--space-6);
-    }
-    .card-section-label {
-      font-size: var(--text-xs);
-      font-weight: var(--font-semibold);
-      color: var(--color-error-600);
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      margin-bottom: var(--space-3);
-      padding-top: var(--space-4);
-      border-top: 1px solid var(--border-default);
-    }
-    .security-list {
-      display: flex;
-      flex-direction: column;
-    }
-    .security-item {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: var(--space-3) 0;
+    .pf-card-head {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: var(--space-4) var(--space-5);
       border-bottom: 1px solid var(--border-default);
     }
-    .security-item:last-child { border-bottom: none; }
-    .security-label {
-      display: flex;
-      align-items: center;
-      gap: var(--space-3);
+    .pf-card-title { font-size: var(--text-base); font-weight: var(--font-semibold); color: var(--color-neutral-900); }
+    .pf-card-body { padding: var(--space-5); }
+
+    /* ===== 表单（n-form label-placement="top"） ===== */
+    .form-item { margin-bottom: 18px; }
+    .input-disabled {
+      background: var(--color-neutral-50);
+      color: var(--color-neutral-400);
+      cursor: not-allowed;
+    }
+    .input-wrap { position: relative; }
+    .input-wrap .input { padding-right: 40px; }
+    .input-suffix {
+      position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+      color: var(--text-tertiary); font-size: 18px; cursor: pointer; pointer-events: none;
+    }
+    .form-error { font-size: var(--text-xs); color: var(--color-error-600); margin-top: var(--space-1); }
+    .form-actions { display: flex; justify-content: flex-end; }
+
+    /* ===== AI Key ===== */
+    .ai-key-desc { font-size: var(--text-sm); color: var(--color-neutral-600); margin-bottom: var(--space-4); }
+    .ai-key-row { display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-4); }
+    .ai-key-code {
+      flex: 1; min-width: 0;
+      padding: var(--space-2) var(--space-3);
+      border-radius: var(--radius-md);
+      background: var(--color-neutral-100);
+      border: 1px solid var(--border-default);
+      font-family: var(--font-mono);
       font-size: var(--text-sm);
-      color: var(--text-secondary);
+      color: var(--color-neutral-700);
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
     }
-    .security-label ion-icon {
-      font-size: 18px;
-      color: var(--text-tertiary);
-    }
-    .security-value {
-      font-size: var(--text-sm);
-      font-weight: var(--font-medium);
-      color: var(--text-primary);
-    }
-    .danger-actions {
-      display: flex;
-      gap: var(--space-3);
-      margin-top: var(--space-4);
-      padding-top: var(--space-4);
+    .ai-note { display: flex; align-items: flex-start; gap: var(--space-2); font-size: var(--text-xs); color: var(--color-neutral-500); }
+    .ai-note ion-icon { font-size: 15px; flex-shrink: 0; margin-top: 2px; }
+
+    /* ===== 账号安全：divide-y divide-neutral-200 ===== */
+    .sec-list { display: flex; flex-direction: column; font-size: var(--text-sm); }
+    .sec-item {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: var(--space-3) 0;
       border-top: 1px solid var(--border-default);
     }
-    .ai-key-row {
-      display: flex;
-      align-items: center;
-      gap: var(--space-3);
-      margin-bottom: var(--space-3);
+    .sec-item:first-child { border-top: none; padding-top: 0; }
+    .sec-item:last-child { padding-bottom: 0; }
+    .sec-label { color: var(--color-neutral-500); }
+    .sec-value { font-weight: var(--font-medium); color: var(--color-neutral-900); }
+    .sec-value.ok { color: var(--color-success-600); }
+
+    /* text-xs font-semibold tracking-wide text-error-600 uppercase pt-4 mt-1 border-t */
+    .danger-title {
+      font-size: var(--text-xs);
+      font-weight: var(--font-semibold);
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--color-error-600);
+      padding-top: var(--space-4);
+      margin-top: var(--space-1);
+      border-top: 1px solid var(--border-default);
     }
-    .ai-key-row .input {
-      font-family: var(--font-mono);
-      flex: 1;
+    .danger-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); margin-top: var(--space-3); }
+    .danger-hint { font-size: var(--text-xs); color: var(--color-neutral-500); }
+
+    /* n-button size="small" type="error" quaternary */
+    .btn-quat-error {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: var(--space-2) var(--space-3);
+      border: none; background: transparent;
+      border-radius: var(--radius-md);
+      font-family: var(--font-sans);
+      font-size: var(--text-sm);
+      font-weight: var(--font-medium);
+      color: var(--color-error-600);
+      cursor: pointer;
     }
+    .btn-quat-error:hover { background: var(--color-error-50); }
+    .btn-quat-error ion-icon { font-size: 16px; }
+
+    /* ===== n-spin :show="loading"（整页内容区遮罩，无骨架屏） ===== */
+    .spin-wrap { position: relative; }
+    .spin-mask {
+      position: absolute; inset: 0;
+      background: rgba(255, 255, 255, 0.6);
+      display: flex; align-items: center; justify-content: center;
+      border-radius: var(--radius-lg);
+    }
+    .spinner {
+      width: 28px; height: 28px;
+      border: 3px solid var(--color-primary-100);
+      border-top-color: var(--color-primary-500);
+      border-radius: var(--radius-full);
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* 多形态预览分隔 */
+    .state-divider { display: flex; align-items: center; gap: var(--space-3); margin: var(--space-8) 0 var(--space-4); }
+    .state-divider h2 { font-size: var(--text-lg); font-weight: var(--font-bold); color: var(--text-primary); margin: 0; white-space: nowrap; }
+    .state-divider::after { content: ""; flex: 1; height: 1px; background: var(--border-default); }
+    .state-note { font-size: var(--text-xs); color: var(--text-tertiary); margin-bottom: var(--space-4); line-height: var(--leading-relaxed); }
+    .state-note code { font-family: var(--font-mono); font-size: 11px; background: var(--color-neutral-100); padding: 1px 4px; border-radius: var(--radius-sm); }
+
+    /* confirmDanger 弹窗预览 */
+    .modal { position: relative; width: 320px; }
   </style>
 </head>
-<body>
-  <div class="app-shell">
-    <aside class="sidebar">
-      <div class="sidebar-logo">
-        <div class="sidebar-logo-icon">QS</div>
-        <span class="sidebar-logo-text">Quick Study</span>
-      <button class="sidebar-toggle" data-tooltip="折叠侧边栏">
-        <ion-icon name="chevron-back-outline"></ion-icon>
-      </button>
+<body data-page-node-id="FT5mPe1SD0Ahkn85yGr1EC">
+  <div class="app-shell" data-page-node-id="gqTSIiFLRH2Fr9iEoMBLRJ">
+    <!-- ===== Sidebar（MainLayout.vue：已登录 + 管理员完整形态；/profile 不在侧边栏菜单中 → 无高亮项） ===== -->
+    <aside class="sidebar" data-page-node-id="7IBi3hEEzIFrkkHmmYWOo0">
+      <div class="sidebar-logo" data-page-node-id="YGGXlJo4D76sOXbjv8ptCJ">
+        <div class="sidebar-logo-icon" data-page-node-id="ghoOzKF8s69pDPCyz8Or5q">QS</div>
+        <span class="sidebar-logo-text" data-page-node-id="FLDYII8W9a1pHfrcSHOnUN">Quick Study</span>
+        <button class="sidebar-toggle" data-tooltip="折叠侧边栏" data-page-node-id="EMn9csh6XeCPlIo7w8vLYO"><ion-icon name="chevron-back-outline" data-page-node-id="F09eMta20xMyuDkaSRyea2"></ion-icon></button>
       </div>
-      <nav class="sidebar-nav">
-        <div class="sidebar-nav-item" onclick="window.location.href='01-home.html'"><ion-icon name="home-outline"></ion-icon><span>首页</span></div>
-        <div class="sidebar-nav-item" onclick="window.location.href='02-bank-list.html'"><ion-icon name="library-outline"></ion-icon><span>题库</span></div>
-        <div class="sidebar-nav-item" onclick="window.location.href='04-question-list.html'"><ion-icon name="document-text-outline"></ion-icon><span>题目</span></div>
-        <div class="sidebar-nav-item" onclick="window.location.href='05-paper-list.html'"><ion-icon name="file-tray-full-outline"></ion-icon><span>试卷</span></div>
-        <div class="sidebar-nav-label">学习中心</div>
-        <div class="sidebar-nav-item" onclick="window.location.href='24-practice-list.html'"><ion-icon name="game-controller-outline"></ion-icon><span>练习</span></div>
-        <div class="sidebar-nav-item" onclick="window.location.href='10-wrong-questions.html'"><ion-icon name="close-circle-outline"></ion-icon><span>错题本</span></div>
-        <div class="sidebar-nav-item" onclick="window.location.href='18-favorites.html'"><ion-icon name="star-outline"></ion-icon><span>收藏题目</span></div>
-        <div class="sidebar-nav-item" onclick="window.location.href='11-records.html'"><ion-icon name="time-outline"></ion-icon><span>做题记录</span></div>
-        <div class="sidebar-nav-item" onclick="window.location.href='09-statistics.html'"><ion-icon name="bar-chart-outline"></ion-icon><span>统计</span></div>
-        <div class="sidebar-nav-item" onclick="window.location.href='13-notifications.html'"><ion-icon name="notifications-outline"></ion-icon><span>通知</span></div>
-        <div class="sidebar-nav-item" onclick="window.location.href='12-search.html'"><ion-icon name="search-outline"></ion-icon><span>搜索</span></div>
-        <div class="sidebar-nav-label">管理</div>
-        <div class="sidebar-nav-item" onclick="window.location.href='15-admin-users.html'"><ion-icon name="people-outline"></ion-icon><span>用户管理</span></div>
-        <div class="sidebar-nav-item" onclick="window.location.href='28-admin-reviews.html'"><ion-icon name="checkmark-done-outline"></ion-icon><span>审核列表</span></div>
+      <nav class="sidebar-nav" data-page-node-id="Kunt7FKEZCclotTrrG40w3">
+        <div class="sidebar-nav-item" onclick="location.href='01-home.html'" data-page-node-id="dITT00zM4CsvmQCwns93Lp"><ion-icon name="home-outline" data-page-node-id="tSQqE9MOC4lx7kJLosFp39"></ion-icon><span data-page-node-id="U39AVFyiwmRnhmF0enqXTV">首页</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='02-bank-list.html'" data-page-node-id="ujnxUHkVXT50QdeRMpBjlM"><ion-icon name="library-outline" data-page-node-id="dHMRA9UN6jKGJNjR88UiiG"></ion-icon><span data-page-node-id="QRmstyVus0eU49xDH3FflK">题库</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='04-question-list.html'" data-page-node-id="EySXPxpIzAHBf6es2q8HGk"><ion-icon name="document-text-outline" data-page-node-id="JzXfS6MZLCXGXYIAzjyPqg"></ion-icon><span data-page-node-id="74L70jtE5GBdB9P0zFfGMQ">题目</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='05-paper-list.html'" data-page-node-id="95CaxUXlu4JZEb8i3sdzJ8"><ion-icon name="file-tray-full-outline" data-page-node-id="mRDAPdwf2y9uqd1fzBbHFI"></ion-icon><span data-page-node-id="E5FDRHdEgAEL5icF9VaJuC">试卷</span></div>
+        <div class="sidebar-nav-label" data-page-node-id="srBasjWiPt6yldkdkPwq9G">学习中心</div>
+        <div class="sidebar-nav-item" onclick="location.href='24-practice-list.html'" data-page-node-id="sRbdcYAbjNlucur8nhVzCy"><ion-icon name="game-controller-outline" data-page-node-id="FojY4nJ4QXcE53DD53QQ73"></ion-icon><span data-page-node-id="wgPSkbhZenUIyeAqsLucef">练习</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='19-playground.html'" data-page-node-id="CQRvfbKJfBeiaxBn1EwHOs"><ion-icon name="code-slash-outline" data-page-node-id="yF9qJxvuz0LLF4uiuh1i2m"></ion-icon><span data-page-node-id="M1vHvnQ3x5jOEe1Myjyr8Y">代码运行台</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='10-wrong-questions.html'" data-page-node-id="XEeGDENDI6LsoF1nEya7Am"><ion-icon name="close-circle-outline" data-page-node-id="4s4qShhrrUKLgGTVKyIQRB"></ion-icon><span data-page-node-id="LhKkaug11qBOWRV3EfeEdP">错题本</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='18-favorites.html'" data-page-node-id="9ApzEP0HUFcdIsDCgIy457"><ion-icon name="star-outline" data-page-node-id="g8INJhH9Fv15KaVPMf1c8V"></ion-icon><span data-page-node-id="4ABpYc9uO27Tq4hxMPqFeK">收藏题目</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='11-records.html'" data-page-node-id="DDdSGANUld6gSfQpmVAJVp"><ion-icon name="time-outline" data-page-node-id="Vs5G9eCG3jGBpVPxtKMLzX"></ion-icon><span data-page-node-id="tMUudqf2kC8CgzG5BTSv1K">做题记录</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='20-exam-records.html'" data-page-node-id="XZVRNJ7sepxXFDoYOXsB6r"><ion-icon name="document-text-outline" data-page-node-id="VN4Mzn3wDkqoC0rjyf6EPZ"></ion-icon><span data-page-node-id="yXm6OKji7oAdVi998WQdWX">考试记录</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='09-statistics.html'" data-page-node-id="1N1TLTDPlX6gJFLQBVmNIU"><ion-icon name="bar-chart-outline" data-page-node-id="BXhNC2ecbt8NYh78PoJBOa"></ion-icon><span data-page-node-id="WsShhXRaLmDQ6GXHUPTthq">统计</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='13-notifications.html'" data-page-node-id="EHwM8Ad7uWfsGHbgqmFpu4"><ion-icon name="notifications-outline" data-page-node-id="DB5IzfBdYOKswucr4xTQeD"></ion-icon><span data-page-node-id="L4nEK0nrRQRDy4tpCwrKWB">通知</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='12-search.html'" data-page-node-id="X86Sw8Vb0oMKeHDyYyH62a"><ion-icon name="search-outline" data-page-node-id="61XMR7ZFVpYv6lETTc5YSr"></ion-icon><span data-page-node-id="NQgCnDtq2LBayBjYEjVjWe">搜索</span></div>
+        <div class="sidebar-nav-label" data-page-node-id="9iv5pcADML5R0P2zXjxCOU">管理</div>
+        <div class="sidebar-nav-item" onclick="location.href='15-admin-users.html'" data-page-node-id="ybOohJ1EXdef13tQnryZOE"><ion-icon name="people-outline" data-page-node-id="7CvR2PY3xdRcqPVdYotlnS"></ion-icon><span data-page-node-id="TkKVsncnKhmX6XjqAmORBJ">用户管理</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='31-admin-reviews.html'" data-page-node-id="bTT4AL8O8th8uK87PGSW7b"><ion-icon name="checkmark-done-outline" data-page-node-id="xXuFzGOJWKuW5otAUFI5ml"></ion-icon><span data-page-node-id="BkAvBLfmY77DFB2UHtTThi">审核列表</span></div>
       </nav>
-      <div class="sidebar-footer">
-        <div class="sidebar-nav-item"><ion-icon name="log-out-outline"></ion-icon><span>退出登录</span></div>
+      <div class="sidebar-footer" data-page-node-id="2IwxLJBZLUVtDUgNZynqET">
+        <div class="sidebar-nav-item" data-page-node-id="ilMoOuiyyz7tdCq5OIMM6C"><ion-icon name="log-out-outline" data-page-node-id="zt1R1lepqK6hxgmIZGLLnH"></ion-icon><span data-page-node-id="7WkmceuUk3sAc4SFXk6AMi">退出登录</span></div>
       </div>
     </aside>
-    <div class="main-area">
-      <header class="app-header">
-        <div class="app-header-left">
-          <button class="mobile-menu-btn" onclick="document.querySelector('.sidebar').classList.toggle('mobile-open')"><ion-icon name="menu-outline"></ion-icon></button>
-          <button class="mobile-menu-btn" onclick="document.querySelector('.sidebar').classList.toggle('mobile-open')"><ion-icon name="menu-outline"></ion-icon></button>
-          <div class="breadcrumb">
-            <span class="breadcrumb-current">个人中心</span>
-          </div>
+
+    <div class="main-area" data-page-node-id="RjT4Rh3EPUGhQnzsDebLD1">
+      <header class="app-header" data-page-node-id="4hC7Fh49zYVVXdwmyDw7v7">
+        <div class="app-header-left" data-page-node-id="MV2ScpN6NSBS5b3lVeoGvq">
+          <button class="mobile-menu-btn" onclick="document.querySelector('.sidebar').classList.toggle('mobile-open')" data-page-node-id="iiKbffDRSKZl7KBGlE7mxV"><ion-icon name="menu-outline" data-page-node-id="bMb0exMXmVwQphyxd7PuRH"></ion-icon></button>
+          <!-- MENU_TITLES: /profile → 个人中心 -->
+          <div class="breadcrumb" data-page-node-id="ggKYcMxpTKHsbrhBJXVQdy"><span class="breadcrumb-current" data-page-node-id="ll85mGbZobSIVj2pf3qIls">个人中心</span></div>
         </div>
-        <div class="app-header-right">
-          <div class="header-search">
-            <ion-icon name="search-outline"></ion-icon>
-            <input class="input" type="text" placeholder="搜索题目 / 题库 / 试卷" readonly style="cursor:pointer;" onclick="window.location.href='12-search.html'">
+        <div class="app-header-right" data-page-node-id="fEXoeCL23yAOjYM4sWLuHw">
+          <div class="header-search" data-page-node-id="Hb5yYdzz3TSUtSRUtUjfK1">
+            <ion-icon name="search-outline" data-page-node-id="x6jYG15dyGFJPiu0FkVGCh"></ion-icon>
+            <input class="input" type="text" placeholder="搜索题目 / 题库 / 试卷" readonly style="cursor:pointer;" onclick="location.href='12-search.html'" data-page-node-id="XXwOA5SXufmHOr83bvU0EU">
           </div>
-          <div style="position:relative;cursor:pointer;" onclick="window.location.href='13-notifications.html'">
-            <ion-icon name="notifications-outline" style="font-size:22px;color:var(--text-secondary);"></ion-icon>
-            <span class="badge" style="position:absolute;top:-4px;right:-4px;">3</span>
+          <div style="position:relative;cursor:pointer;" onclick="location.href='13-notifications.html'" data-page-node-id="gFWXKHLTY2mkni0D9MdoZr">
+            <ion-icon name="notifications-outline" style="font-size:22px;color:var(--text-secondary);" data-page-node-id="8Osa1fepOcMqbshSyecl5q"></ion-icon>
+            <span class="badge" style="position:absolute;top:-4px;right:-4px;" data-page-node-id="BacaUyQDh65FsbKzFxGDZ2">3</span>
           </div>
-          <div style="display:flex;align-items:center;gap:8px;cursor:pointer;" onclick="window.location.href='14-profile.html'">
-            <div class="avatar" style="background:var(--gradient-brand);">张</div>
-            <span style="font-size:14px;font-weight:500;color:var(--text-primary);">张同学</span>
-            <ion-icon name="chevron-down-outline" style="font-size:16px;color:var(--text-tertiary);"></ion-icon>
+          <div style="display:flex;align-items:center;gap:8px;cursor:pointer;" onclick="location.href='14-profile.html'" data-page-node-id="CRrssoHfI5fCSeqlHM4fnG">
+            <div class="avatar" style="background:var(--gradient-brand);" data-page-node-id="vLobY7VuxwF8QJn3FPQWX3">张</div>
+            <span style="font-size:14px;font-weight:500;color:var(--text-primary);" data-page-node-id="uNfLc3Dgv0SAXh5NhKsIko">张同学</span>
+            <ion-icon name="chevron-down-outline" style="font-size:16px;color:var(--text-tertiary);" data-page-node-id="DH7kUbNeYghM1H3JGqM5t1"></ion-icon>
           </div>
         </div>
       </header>
-      <main class="app-content">
-        <!-- 个人资料头部卡片 -->
-        <div class="profile-header-card">
-          <div class="profile-header-content">
-            <div class="profile-avatar">张</div>
-            <div class="profile-info">
-              <div class="profile-name-row">
-                <span class="profile-name">张同学</span>
-                <span class="profile-username">@zhangstudent</span>
-                <span class="tag tag-default">普通用户</span>
+
+      <main class="app-content" data-page-node-id="Xm1D0odd5fwjJ5aGcbEj8f">
+        <!-- ===== n-spin :show="loading"（包裹横幅 + 两栏全部内容）；页面无 PageHeader，直接进入横幅 ===== -->
+
+        <!-- ===== 用户信息横幅 ===== -->
+        <div class="pf-banner" data-page-node-id="UpEl5zyVKEUt3mWtJX2T1I">
+          <div class="pf-banner-bg" data-page-node-id="KI2KlDEpquyYM2BAwwdDQc"></div>
+          <div class="pf-banner-body" data-page-node-id="NrMBOlyGTu3PT44dRK1nrG">
+            <div class="pf-avatar-row" data-page-node-id="gJMhKOOUsaE11HhOVz9ncJ">
+              <!-- avatarText = (nickname || username || '?').charAt(0).toUpperCase() -->
+              <div class="pf-avatar" data-page-node-id="AtBCfwaqgaTRuOihAHQ7Zc">张</div>
+              <div class="pf-meta" data-page-node-id="kAfPyqxInxPPV2X6GdEdjg">
+                <div class="pf-name-row" data-page-node-id="ebOqDMP4N1o8M6yeOP8Ugd">
+                  <!-- displayName = nickname || username || '未设置昵称' -->
+                  <span class="pf-name" data-page-node-id="QnoAq1i7AMVEdrAk20datH">张同学</span>
+                  <!-- roleLabel：ROLE_LABELS[role]，USER → 普通用户 -->
+                  <span class="pf-role-pill" data-page-node-id="9XdQmFD67jQj1pGEVrrXyj">普通用户</span>
+                </div>
+                <div class="pf-username" data-page-node-id="CdyaukXfj6Cqvl4TfvTKCF">@zhangstudent</div>
               </div>
-              <div style="font-size:var(--text-sm);color:var(--text-secondary);">
-                计算机科学与技术 · 坚持每日刷题，目标全栈工程师
+            </div>
+
+            <div class="pf-stats" data-page-node-id="aZUGHBs9GBDd4g5NYagpMW">
+              <div data-page-node-id="GWaLcYwWgk4z5UH4au6f1p">
+                <div class="pf-stat-label" data-page-node-id="XhVOZw9hpd3QgIPb0XGhak">加入时间</div>
+                <!-- joinedAt = dayjs(createdAt).format('YYYY-MM-DD') -->
+                <div class="pf-stat-value" data-page-node-id="Zbw3QN2I37LqA4Yo3XcCvI">2024-03-15</div>
               </div>
-            </div>
-            <button class="btn btn-secondary">
-              <ion-icon name="create-outline"></ion-icon>
-              <span>编辑资料</span>
-            </button>
-          </div>
-          <div class="profile-stats">
-            <div class="profile-stat">
-              <span class="profile-stat-label">加入时间</span>
-              <span class="profile-stat-value">2024-03-15</span>
-            </div>
-            <div class="profile-stat">
-              <span class="profile-stat-label">题库数</span>
-              <span class="profile-stat-value">5</span>
-            </div>
-            <div class="profile-stat">
-              <span class="profile-stat-label">试卷数</span>
-              <span class="profile-stat-value">8</span>
-            </div>
-            <div class="profile-stat">
-              <span class="profile-stat-label">练习次数</span>
-              <span class="profile-stat-value">128</span>
+              <div data-page-node-id="He4qAJSu8jfrDO7EHM7OCI">
+                <div class="pf-stat-label" data-page-node-id="MENgMWWu7tHNKhJkXEFMGn">邮箱</div>
+                <!-- profile.email || '未设置' -->
+                <div class="pf-stat-value truncate" data-page-node-id="5o6Nq7u7vhk8RiutZgNncA">zhang@example.com</div>
+              </div>
+              <div data-page-node-id="doiat1fAOJzuCkxfB12AHE">
+                <div class="pf-stat-label" data-page-node-id="OiJuVmr8j4ciABt6fjyi3W">账号状态</div>
+                <div class="pf-stat-value ok" data-page-node-id="wGikTNYnAl3lyDY8KrSdTx">正常</div>
+              </div>
             </div>
           </div>
         </div>
 
-        <!-- 两栏布局 -->
-        <div class="two-col-layout">
-          <!-- 左栏 -->
-          <div class="left-col">
-            <!-- 基本信息 -->
-            <div class="card">
-              <div class="card-header">
-                <span class="card-title">基本信息</span>
-                <ion-icon name="person-outline" style="font-size:22px;color:var(--text-tertiary);"></ion-icon>
+        <!-- ===== 两栏：grid-cols-1 lg:grid-cols-3 gap-4 items-start ===== -->
+        <div class="pf-grid" data-page-node-id="J0dRpg3SsDK8sxpYsCm4IE">
+          <!-- 左栏 lg:col-span-2 space-y-4 -->
+          <div class="pf-col" data-page-node-id="WcYJn6ZBqH9PC1CCdKLhxO">
+            <!-- ===== 基本信息 ===== -->
+            <div class="pf-card" data-page-node-id="aU55tGc2eVhHEfMcPLFHNu">
+              <div class="pf-card-head" data-page-node-id="wxrwLwd9vdOALlBxjWXQ10">
+                <span class="pf-card-title" data-page-node-id="HKmyS0Xgwk3nwYGYI3kPhh">基本信息</span>
               </div>
-              <div class="card-body">
-                <div class="input-group">
-                  <label class="input-label">昵称</label>
-                  <input class="input" type="text" value="张同学" readonly style="background:var(--bg-subtle);color:var(--text-secondary);">
+              <div class="pf-card-body" data-page-node-id="u6y7PfvsL94nQ9JHrs4058">
+                <div class="form-item" data-page-node-id="67sxjhSsrinW0rBACRfrOq">
+                  <label class="input-label" data-page-node-id="toxKypFZjNrf19d9HxdsZW">用户名</label>
+                  <!-- n-input :value="profile.username" disabled -->
+                  <input class="input input-disabled" type="text" value="zhangstudent" disabled data-page-node-id="H0zcacgBkLEt6jg7GZVSjm">
                 </div>
-                <div class="input-group">
-                  <label class="input-label">用户名</label>
-                  <input class="input" type="text" value="zhangstudent" readonly style="background:var(--bg-subtle);color:var(--text-tertiary);">
-                  <div class="input-hint">用户名设置后不可修改</div>
+                <div class="form-item" data-page-node-id="JM7y5QzQEq0KBNFwpvuDjy">
+                  <label class="input-label" data-page-node-id="MAFnqRHfmB39ya34L8XHpl">昵称 <span class="req" data-page-node-id="PVgiEEuKiMZDEY5uWzbpKj">*</span></label>
+                  <!-- maxlength=50 -->
+                  <input class="input" type="text" value="张同学" placeholder="请输入昵称" maxlength="50" data-page-node-id="G2cEVPCKlKjD5ybUmWDdag">
                 </div>
-                <div class="input-group">
-                  <label class="input-label">邮箱 <span style="color:var(--text-tertiary);font-weight:var(--font-normal);">（选填）</span></label>
-                  <input class="input" type="email" value="zhang@example.com" readonly style="background:var(--bg-subtle);color:var(--text-secondary);">
+                <div class="form-item" data-page-node-id="IeMeGW2BeF9uPJgd3ML9jZ">
+                  <label class="input-label" data-page-node-id="lWJiWYzQEyhH5HS2rWQyf4">邮箱</label>
+                  <!-- maxlength=100 -->
+                  <input class="input" type="text" value="zhang@example.com" placeholder="选填，用于找回密码" maxlength="100" data-page-node-id="E7YPtef8PefZKOJ1nNPLDr">
                 </div>
-                <div class="flex justify-end">
-                  <button class="btn btn-secondary" style="display:none;">
-                    <ion-icon name="close-outline"></ion-icon>
-                    <span>取消</span>
-                  </button>
-                  <button class="btn btn-primary" style="display:none;">
-                    <ion-icon name="save-outline"></ion-icon>
-                    <span>保存修改</span>
-                  </button>
+                <div class="form-actions" data-page-node-id="NyLu3ENBSOitWbqC60tgHH">
+                  <button class="btn btn-primary" data-page-node-id="nnZRB8DxKE9R0fKT288EmE">保存修改</button>
                 </div>
               </div>
             </div>
 
-            <!-- 修改密码 -->
-            <div class="card">
-              <div class="card-header">
-                <span class="card-title">修改密码</span>
-                <ion-icon name="lock-closed-outline" style="font-size:22px;color:var(--text-tertiary);"></ion-icon>
+            <!-- ===== 修改密码 ===== -->
+            <div class="pf-card" data-page-node-id="mUYf9H1BJHPv1vrzykU9iL">
+              <div class="pf-card-head" data-page-node-id="1GUp2yyXnRX8JWNsT3hTZa">
+                <span class="pf-card-title" data-page-node-id="fDLDarAhfmlwkWluJr6I6E">修改密码</span>
               </div>
-              <div class="card-body">
-                <div class="input-group">
-                  <label class="input-label">当前密码 <span class="req">*</span></label>
-                  <input class="input" type="password" value="" placeholder="请输入当前密码">
+              <div class="pf-card-body" data-page-node-id="IG6hxiDEX87AVuppwuT7gK">
+                <div class="form-item" data-page-node-id="5ChukS8a55I5HJjqHhaqHX">
+                  <label class="input-label" data-page-node-id="ShCoSvC1KbQ6l5Fdfa4kK4">当前密码 <span class="req" data-page-node-id="PVQwobvg7I8O2tW1BI1F2y">*</span></label>
+                  <!-- type=password show-password-on="click" -->
+                  <div class="input-wrap" data-page-node-id="KF8ecHqaU4tHgjWGfCvIEq">
+                    <input class="input" type="password" placeholder="请输入当前密码" data-page-node-id="xEw73BBLh107GoUA4RjSZQ">
+                    <ion-icon name="eye-outline" class="input-suffix" data-page-node-id="pvg3FvIy2NBwHrRLIcFwNm"></ion-icon>
+                  </div>
                 </div>
-                <div class="input-group">
-                  <label class="input-label">新密码 <span class="req">*</span></label>
-                  <input class="input" type="password" value="" placeholder="请输入新密码">
-                  <div class="input-hint">密码长度 8-32 位，需包含字母和数字</div>
+                <div class="form-item" data-page-node-id="BWIJKrqyjCYuU961D4SfQh">
+                  <label class="input-label" data-page-node-id="qdFGEenetGbvKZ7yvx1g9t">新密码 <span class="req" data-page-node-id="HjnpDckE6NAj74dDIRdfXA">*</span></label>
+                  <div class="input-wrap" data-page-node-id="ai3C63BOuke3tZQaATdbQB">
+                    <!-- maxlength=64 -->
+                    <input class="input" type="password" placeholder="密码长度 8-64 位" maxlength="64" data-page-node-id="K6WNVXNaWPtLwbh6Y4Em7T">
+                    <ion-icon name="eye-outline" class="input-suffix" data-page-node-id="MAUXCASW5JDAVzaVKDhjTW"></ion-icon>
+                  </div>
                 </div>
-                <div class="input-group">
-                  <label class="input-label">确认新密码 <span class="req">*</span></label>
-                  <input class="input" type="password" value="" placeholder="请再次输入新密码">
+                <div class="form-item" data-page-node-id="HPPBFS1lgJ4UP57bBAgv4w">
+                  <label class="input-label" data-page-node-id="jkQr9tv47z8XY1PlDfqFkf">确认新密码 <span class="req" data-page-node-id="9libNI3E8W5TsQ90scbVcw">*</span></label>
+                  <div class="input-wrap" data-page-node-id="pcvw3mNbjumZ4a12yxvtjk">
+                    <input class="input" type="password" placeholder="请再次输入新密码" data-page-node-id="CXRoCozYOf9ju5EYLbvSCf">
+                    <ion-icon name="eye-outline" class="input-suffix" data-page-node-id="SIdVJeZEUARJyOVB7Hwtsg"></ion-icon>
+                  </div>
                 </div>
-                <div class="flex justify-end">
-                  <button class="btn btn-secondary">
-                    <ion-icon name="key-outline"></ion-icon>
-                    <span>修改密码</span>
-                  </button>
+                <div class="form-actions" data-page-node-id="QMtc9TpqcZAdk2Gy7NcHy5">
+                  <button class="btn btn-primary" data-page-node-id="48OZqWA3EubY7jR8FTZw6c">修改密码</button>
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- 右栏 -->
-          <div class="right-col">
-            <!-- AI Key 配置 -->
-            <div class="card">
-              <div class="card-header">
-                <span class="card-title">AI Key 配置</span>
-                <ion-icon name="sparkles-outline" style="font-size:22px;color:var(--text-tertiary);"></ion-icon>
+          <!-- 右栏 space-y-4 -->
+          <div class="pf-col" data-page-node-id="RhAlhOn5To7O8TQTbpkOFz">
+            <!-- ===== AI Key 配置（aiKeyInfo?.hasKey 为假 / null 时的分支） ===== -->
+            <div class="pf-card" data-page-node-id="CujNhOz8p7Fsc35vBYSYfV">
+              <div class="pf-card-head" data-page-node-id="4X0KoJwK1BU2ozDWzwHlJ9">
+                <span class="pf-card-title" data-page-node-id="eaEIlY5rpzWppWkUspo0Tk">AI Key 配置</span>
               </div>
-              <div class="card-body">
-                <p class="text-sm text-secondary mb-4">配置你的 AI API Key 以使用 AI 评分建议功能</p>
-                <div class="ai-key-row">
-                  <input class="input" type="text" value="sk-****xYz123" readonly style="font-family:var(--font-mono);">
-                  <span class="tag tag-success">已配置</span>
+              <div class="pf-card-body" data-page-node-id="rvxwEzaht4OMz036DJwx4l">
+                <p class="ai-key-desc" data-page-node-id="rgANKlPaP38iUBCBHNDWPB">配置你的 AI API Key 以使用 AI 评分建议功能</p>
+
+                <div class="form-item" data-page-node-id="RpLF2KcTd93nBYSZomSp2C">
+                  <div class="input-wrap" data-page-node-id="fHIOzRbZ2I8vWu0nROpCII">
+                    <input class="input" type="password" placeholder="输入 API Key" style="padding-right:40px;" data-page-node-id="2ZmW0WptNc0JqYQV5jijAJ">
+                    <ion-icon name="eye-outline" class="input-suffix" data-page-node-id="8LoFAa286eDKiCbv9eCtoh"></ion-icon>
+                  </div>
                 </div>
-                <div class="flex gap-3 mb-4">
-                  <button class="btn btn-secondary btn-sm flex-1">
-                    <ion-icon name="refresh-outline"></ion-icon>
-                    <span>更新 Key</span>
-                  </button>
-                  <button class="btn btn-ghost btn-sm" style="color:var(--color-error-600);">
-                    <ion-icon name="trash-outline"></ion-icon>
-                    <span>删除 Key</span>
-                  </button>
+                <div class="form-actions" style="margin-bottom:16px;" data-page-node-id="c7uVUD9pa4iopoGaE7LAAa">
+                  <!-- :disabled="!newAiKey.trim()" —— 空输入时禁用 -->
+                  <button class="btn btn-primary btn-sm" disabled data-page-node-id="SvjskVyMuoas2SBDiF9e6R">设置 Key</button>
                 </div>
-                <div class="alert alert-info">
-                  <ion-icon name="information-circle-outline" style="font-size:18px;flex-shrink:0;"></ion-icon>
-                  <span>API Key 加密存储，仅用于 AI 评分建议</span>
-                </div>
+
+                <p class="ai-note" data-page-node-id="fzrwjyC3bMEhXLSFEy7D19">
+                  <ion-icon name="information-circle-outline" data-page-node-id="DY8KxJtK8UaX2irTDQxHZw"></ion-icon>
+                  <span data-page-node-id="2VBAsdObCbiyASPYZ4QzLr">API Key 加密存储，仅用于 AI 评分建议</span>
+                </p>
               </div>
             </div>
 
-            <!-- 账号安全 -->
-            <div class="card">
-              <div class="card-header">
-                <span class="card-title">账号安全</span>
-                <ion-icon name="shield-checkmark-outline" style="font-size:22px;color:var(--text-tertiary);"></ion-icon>
+            <!-- ===== 账号安全 ===== -->
+            <div class="pf-card" data-page-node-id="eLdU51sZ16BgaXsV3abl8E">
+              <div class="pf-card-head" data-page-node-id="nH8s3KyjG6annZybCDnsU3">
+                <span class="pf-card-title" data-page-node-id="BxeCmfoKWetn6604OJiIKa">账号安全</span>
               </div>
-              <div class="card-body">
-                <div class="security-list">
-                  <div class="security-item">
-                    <div class="security-label">
-                      <ion-icon name="ellipse-outline"></ion-icon>
-                      <span>账号状态</span>
-                    </div>
-                    <div class="security-value">
-                      <span class="tag tag-success">正常</span>
-                    </div>
+              <div class="pf-card-body" data-page-node-id="7WCqcejlJxuxrmdpt2n6oU">
+                <div class="sec-list" data-page-node-id="e7uKqaiM4cpRn8Fv2wtYFp">
+                  <div class="sec-item" data-page-node-id="NniZbnXesBla8t6s2nZThV">
+                    <span class="sec-label" data-page-node-id="886glmJxBP9ZTwX4pLmCC2">账号用户名</span>
+                    <span class="sec-value" data-page-node-id="QRBqM7197p3Pi1uKK5Gzmh">zhangstudent</span>
                   </div>
-                  <div class="security-item">
-                    <div class="security-label">
-                      <ion-icon name="time-outline"></ion-icon>
-                      <span>最近登录</span>
-                    </div>
-                    <div class="security-value">2026-09-03 10:30</div>
+                  <div class="sec-item" data-page-node-id="9UDmZNuEVLXUALBwirOFl8">
+                    <span class="sec-label" data-page-node-id="6OXpbiAwoI1Bczph3dSBln">角色</span>
+                    <span class="sec-value" data-page-node-id="cevioDnDutFS87K9j5uuBu">普通用户</span>
                   </div>
-                  <div class="security-item">
-                    <div class="security-label">
-                      <ion-icon name="laptop-outline"></ion-icon>
-                      <span>登录设备</span>
-                    </div>
-                    <div class="security-value">Chrome / macOS</div>
+                  <div class="sec-item" data-page-node-id="10jasY1FF4SGxovTKL0ZQT">
+                    <span class="sec-label" data-page-node-id="ImQC4N1zlRHaRypC4yAHec">账号状态</span>
+                    <span class="sec-value ok" data-page-node-id="KYc2RYCAzdc6F3qtVoCVDG">正常</span>
                   </div>
                 </div>
-                <div class="card-section-label">账号注销</div>
-                <div class="danger-actions">
-                  <button class="btn btn-ghost" style="color:var(--color-error-600);">
-                    <ion-icon name="close-circle-outline"></ion-icon>
-                    <span>注销账号</span>
+
+                <div class="danger-title" data-page-node-id="2cMtl5gIGg1kMcJ22mx99F">账号注销</div>
+                <div class="danger-row" data-page-node-id="VusgrsFm4tUUtvxxSjKpwb">
+                  <button class="btn-quat-error" data-page-node-id="kvShzIEOV2aJWt1x2IQDdh">
+                    <ion-icon name="close-circle-outline" data-page-node-id="blgjxwy9wyaxB8nG2qMUku"></ion-icon>
+                    <span data-page-node-id="BhwGGDaGCrNssAXvs2xNJB">注销账号</span>
                   </button>
+                  <span class="danger-hint" data-page-node-id="rZeHgZXGMNYbN0kbPXDyIq">注销后不可恢复，私有数据将被清除</span>
                 </div>
               </div>
             </div>
           </div>
         </div>
 
+        <!-- ================= 多形态预览 ================= -->
+
+        <div class="state-divider" data-page-node-id="zpM82Jx19JZHZyiQDxNZFp"><h2 data-page-node-id="DY8TRWQB9W6jNV3xk11u5H">加载态</h2></div>
+        <div class="state-note" data-page-node-id="BQhRH1K7VIC5F2dMzpo6Ui">
+          <code data-page-node-id="DSvJoYWf9p7Z3s3oOpIrm9">fetchProfile()</code> 期间 <code data-page-node-id="GyPMsuo4XYGxYcYRY0B1Yr">loading=true</code> → <code data-page-node-id="f9tY2ZPFfv6jAf253lj1rt">n-spin</code> 遮罩覆盖横幅与两栏全部内容（无骨架屏）。
+          失败 → <code data-page-node-id="LqDHPbGErrLdMzEb2mAt01">message.error('加载个人信息失败')</code>；<code data-page-node-id="qVT9rVOhLTaQ0Ag64QXXKQ">fetchAiKey()</code> 失败静默忽略。
+        </div>
+        <div class="spin-wrap" data-page-node-id="CDWQ7QVZQwx943VHU5VdSk">
+          <div class="pf-banner" data-page-node-id="fTAKwYYxWwC9eesuBoxS7d">
+            <div class="pf-banner-bg" data-page-node-id="2HYaBcCcUEzRCaTC9fhFEb"></div>
+            <div class="pf-banner-body" data-page-node-id="8QzYtxnxgE4LaJ7WpksP9C">
+              <div class="pf-avatar-row" data-page-node-id="dPCCcyjKs2Bl7lCvJxSq62">
+                <div class="pf-avatar" data-page-node-id="HZaqJ6UaP5VDQQvAhb5Z3i">?</div>
+                <div class="pf-meta" data-page-node-id="PDfn6JQUfjawgRaY27n0mY">
+                  <div class="pf-name-row" data-page-node-id="n5GlNyeWqrWFvjKGBsj9tL"><span class="pf-name" data-page-node-id="hjJrI2mjrfsOUVXtFAS4wF">未设置昵称</span></div>
+                  <div class="pf-username" data-page-node-id="FasGbDKhuu3RRZ76Xbcn08">@—</div>
+                </div>
+              </div>
+              <div class="pf-stats" data-page-node-id="o2kWORYgGwR0zu0hpblih7">
+                <div data-page-node-id="O6WQumAIJVOBarQKE7XH9w"><div class="pf-stat-label" data-page-node-id="koTwjRk0I8FEDHUJsSBNtn">加入时间</div><div class="pf-stat-value" data-page-node-id="orKhqODIz8UQmtsAvOYuMh">—</div></div>
+                <div data-page-node-id="BxbY2nf1Xyf0W4IM4zP5Hv"><div class="pf-stat-label" data-page-node-id="15vnCxOHiBTFbcjIpG9dac">邮箱</div><div class="pf-stat-value" data-page-node-id="HfcKOfFQSBrRj6hEcRQ6x3">未设置</div></div>
+                <div data-page-node-id="zJNmbGbNpzoGNwpjqRrHJ1"><div class="pf-stat-label" data-page-node-id="mNV4i0cJ2kFXW5EeaVIzjZ">账号状态</div><div class="pf-stat-value ok" data-page-node-id="UeBLru6Hk2lN8eNEQgNwuZ">正常</div></div>
+              </div>
+            </div>
+          </div>
+          <div class="spin-mask" data-page-node-id="VYwcRuGnLwBx2ePfwcPBvc"><div class="spinner" data-page-node-id="xFA22M0BYaAQfxdechtuwm"></div></div>
+        </div>
+
+        <div class="state-divider" data-page-node-id="VcvlJjBJ0BPKW0E58SabXN"><h2 data-page-node-id="t5qW9h02qXbaJ3aIvim9UK">AI Key 已配置</h2></div>
+        <div class="state-note" data-page-node-id="ar9bwlqHAOw87rHzqZlVZG">
+          <code data-page-node-id="FABDD7IC1NB8ikpIjb6FYe">aiKeyInfo?.hasKey === true</code> 时渲染：掩码 Key + <code data-page-node-id="jWeG38f0E4m6HvA1XnUHpu">n-tag size="small" type="success" :bordered="false"</code>「已配置」+「删除 Key」按钮。
+          代码中<strong data-page-node-id="BCoyjPATJOi1URDWuCRRxG">没有</strong>「更新 Key」入口，也没有 Key 输入框。
+        </div>
+        <div class="pf-card" style="max-width:420px;" data-page-node-id="59TImEcDP6LSZWkO3rVCkl">
+          <div class="pf-card-head" data-page-node-id="dNljOnRVEaf5ikCQ6fJKwz"><span class="pf-card-title" data-page-node-id="tvcHMytGPywoFDRWlT8qr5">AI Key 配置</span></div>
+          <div class="pf-card-body" data-page-node-id="gueceqERP6rHMb5kB8Si6J">
+            <p class="ai-key-desc" data-page-node-id="3DmaCKP7JnRUCVfqpLs7uE">配置你的 AI API Key 以使用 AI 评分建议功能</p>
+            <div class="ai-key-row" data-page-node-id="CHtdD2u5iYTWzZPs9liO35">
+              <code class="ai-key-code" data-page-node-id="POuqeYiNjVdtzfKutT1xs8">sk-****3fA9</code>
+              <span class="tag tag-success" data-page-node-id="tyxrBe71KIRDqIqf2EmhDm">已配置</span>
+            </div>
+            <div style="display:flex;gap:12px;margin-bottom:16px;" data-page-node-id="RUfR31vL6Nantf8Lc11X8o">
+              <button class="btn-quat-error" data-page-node-id="CoZIABYq1qoZxyhrKqPCip"><ion-icon name="trash-outline" data-page-node-id="o3Kdkj39cIGeu0qttd3oOs"></ion-icon><span data-page-node-id="0NeNOLNxNHkFXv2UT54FKo">删除 Key</span></button>
+            </div>
+            <p class="ai-note" data-page-node-id="Wlc7zDBUIwJUFmHpv673pm">
+              <ion-icon name="information-circle-outline" data-page-node-id="M2VvuEyNcrXCZ8r3h0aPkp"></ion-icon>
+              <span data-page-node-id="GauVFJge5JYdiH4BgWyEov">API Key 加密存储，仅用于 AI 评分建议</span>
+            </p>
+          </div>
+        </div>
+
+        <div class="state-divider" data-page-node-id="qCPP0AJxtqFB5wFt84y09z"><h2 data-page-node-id="HXAQD9RPGH95fzpcWgOukL">表单校验提示</h2></div>
+        <div class="state-note" data-page-node-id="HlUKYqGWB70lQdsmf8gPVR">
+          昵称与三个密码字段的 <code data-page-node-id="3koChSg8N8Zly3eFGvhwc2">trigger: 'blur'</code> 规则。注意：<code data-page-node-id="C8ObIaDf69vG7lkEvwDj8e">handleSaveProfile()</code> <strong data-page-node-id="bOcgs0oqDHjWVy4GyqZDuz">未调用</strong> <code data-page-node-id="6mbMsyw6s1QhVp9UMcQIXp">validate()</code>，
+          昵称的错误只会在失焦时呈现，点「保存修改」不会拦截；<code data-page-node-id="cFIvHlcDvskmuNTFz00mwF">handleChangePassword()</code> <strong data-page-node-id="Vge29b1vGK23XOqX8HZuD0">会</strong>先 <code data-page-node-id="27AttMXyrsLBp3PAAOKpBb">validate()</code> 再提交。
+        </div>
+        <div class="pf-grid" data-page-node-id="vi4PtFFMJTWGxHL9G9q3kH">
+          <div class="pf-card" data-page-node-id="ZykhJtfG4SCUIqL0rEWp5Q">
+            <div class="pf-card-head" data-page-node-id="0EGTjhVq7OisWG3eOMVIRa"><span class="pf-card-title" data-page-node-id="HTvXjlGlZNCjTzCWSfvM3h">基本信息</span></div>
+            <div class="pf-card-body" data-page-node-id="jZHB6yvlnYFtJ4VhR5QBIO">
+              <div class="form-item" data-page-node-id="8fKXI2ipIa8nEVsAlUDOoO">
+                <label class="input-label" data-page-node-id="PQgmQPqXHaLEOVSVH75e5y">昵称 <span class="req" data-page-node-id="Bk7jiP9lExL6Qv9AOcUPKa">*</span></label>
+                <input class="input input-error" type="text" value="" placeholder="请输入昵称" data-page-node-id="81D9u1sJjWao1RaQ69Kd4A">
+                <div class="form-error" data-page-node-id="YtBF93Niqot0JplNJt2wJd">请输入昵称</div>
+              </div>
+              <div class="form-item" data-page-node-id="R4ekfSNfRnQmUYxMPSVsRu">
+                <label class="input-label" data-page-node-id="YcGEzfR0hcwEyUT7ymAALn">昵称 <span class="req" data-page-node-id="RJQDf7Gsy7ZfB1w5veYbjZ">*</span></label>
+                <input class="input input-error" type="text" value="超过五十个字符的超长昵称示例………………………………" placeholder="请输入昵称" data-page-node-id="b9Ef7gffNpcgfZqiu8JE3e">
+                <div class="form-error" data-page-node-id="hfn8wDR7vta1TdPOeZkAOW">昵称不超过50字符</div>
+              </div>
+            </div>
+          </div>
+          <div class="pf-card" data-page-node-id="EICdBIk8E6EAoNBMyfy5HK">
+            <div class="pf-card-head" data-page-node-id="jIC5HF8V2ByPrtrtRE8KBQ"><span class="pf-card-title" data-page-node-id="kdyUibkaZuXe3qBZk6jGWp">修改密码</span></div>
+            <div class="pf-card-body" data-page-node-id="wW8HxEsXhS4bOMFLmqKmgi">
+              <div class="form-item" data-page-node-id="nWdIikJ6TsPpcCtH2svpUg">
+                <label class="input-label" data-page-node-id="IUtcDu3xArXrWY4KS5Pwfq">当前密码 <span class="req" data-page-node-id="3WmqNg0fuipLqqIQM8bmZO">*</span></label>
+                <div class="input-wrap" data-page-node-id="Jc8eSR7DwDpXdkiCwZyU56">
+                  <input class="input input-error" type="password" placeholder="请输入当前密码" data-page-node-id="yqKGNmf5SFsNBiGG1JUb2P">
+                  <ion-icon name="eye-outline" class="input-suffix" data-page-node-id="fhVYWBKnRFAp4hBI2KKVv0"></ion-icon>
+                </div>
+                <div class="form-error" data-page-node-id="k3EIAEGjCO6Jl16W2JezTb">请输入旧密码</div>
+              </div>
+              <div class="form-item" data-page-node-id="CI6mEkDLRRQzJ6zu3a1wES">
+                <label class="input-label" data-page-node-id="omC8NI7HdbhZe0jQGpHY20">新密码 <span class="req" data-page-node-id="cql9oO4FUGDotAmA632UoC">*</span></label>
+                <div class="input-wrap" data-page-node-id="k1B1TiUUXuYGaOSMizERcA">
+                  <input class="input input-error" type="password" value="123" placeholder="密码长度 8-64 位" data-page-node-id="d2sjpK7X8PTTYPzTCJd81P">
+                  <ion-icon name="eye-outline" class="input-suffix" data-page-node-id="vtMQejQOMG9dl2ZRLrl51Q"></ion-icon>
+                </div>
+                <div class="form-error" data-page-node-id="D1qtOYOI8jE7YqHjoT3RSf">密码长度在 8-64 字符之间</div>
+              </div>
+              <div class="form-item" data-page-node-id="UBdi7h4xqA5XbdXrOBOltJ">
+                <label class="input-label" data-page-node-id="LyqXHsXRPUhBH4or9dQ5AD">确认新密码 <span class="req" data-page-node-id="hnTz0p0NGiCpy39nPexJ60">*</span></label>
+                <div class="input-wrap" data-page-node-id="LFrUzmhroaCrdUVqN1RHnI">
+                  <input class="input input-error" type="password" value="1234" placeholder="请再次输入新密码" data-page-node-id="JYHZYBh3toMRjdefn5I2PZ">
+                  <ion-icon name="eye-outline" class="input-suffix" data-page-node-id="OLOIHBQL9FQDqoiv7rqGXi"></ion-icon>
+                </div>
+                <div class="form-error" data-page-node-id="6LqdVBJ34vSFF7gDioRoOH">两次密码不一致</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="state-divider" data-page-node-id="JDUnJJSuQphSTGzvZ52LC9"><h2 data-page-node-id="h5TrVFJBVUPPGnUaR8tMKg">二次确认弹窗（confirmDanger）</h2></div>
+        <div class="state-note" data-page-node-id="SsrlfuUiN3itwf0pwsoWqN">
+          两者均为 <code data-page-node-id="tCuI3wol2rJXBX8gj5tsaG">useConfirm().confirmDanger({...})</code> → <code data-page-node-id="qaWYOFR5vK0ELBWaQdXj7F">dialog.error</code>，按钮 <code data-page-node-id="FJGqqigYie5fl8urB89jUg">type="error"</code>，负按钮默认「取消」。
+        </div>
+        <div style="display:flex;gap:24px;flex-wrap:wrap;" data-page-node-id="psHHOmWtrRClM1C85jGtJs">
+          <div class="modal-overlay" style="position:relative;inset:auto;" data-page-node-id="1hoOuRLjGh7LfycDZGCQ3A">
+            <div class="modal confirm-dialog" style="position:relative;" data-page-node-id="FmRtmZdD9GzI9H3vCDRIJ1">
+              <div class="modal-body" style="text-align:center;" data-page-node-id="FRDOKqUnrPssTOkLEbmsVb">
+                <div class="confirm-icon danger" data-page-node-id="Dq5C8xYN9UZnT7hsBUuSZQ"><ion-icon name="trash-outline" data-page-node-id="by5cWBZdzup6nm08mdu89A"></ion-icon></div>
+                <h2 class="confirm-title" data-page-node-id="Fo9vxiepF57nSAicOkvHxI">删除 AI Key</h2>
+                <p class="confirm-desc" data-page-node-id="MZ0GCBIDCw5vS4htRMZdRF">确定要删除当前配置的 AI Key 吗？</p>
+              </div>
+              <div class="modal-footer" style="justify-content:center;" data-page-node-id="sw1DO0JFe4TGoHyIto2oN1">
+                <button class="btn btn-ghost" data-page-node-id="Lp8Fqcp1TGjM1s1i0mpcJf">取消</button>
+                <button class="btn btn-danger" data-page-node-id="DI9kkfAqhmobN16HM7fsEf">删除</button>
+              </div>
+            </div>
+          </div>
+          <div class="modal-overlay" style="position:relative;inset:auto;" data-page-node-id="JHzI1KUN6RXyOYKOpgtiFv">
+            <div class="modal confirm-dialog" style="position:relative;" data-page-node-id="lxQUyDzXN34SG9EbWz7FFF">
+              <div class="modal-body" style="text-align:center;" data-page-node-id="MevRIDeL460Qxm2uZJUGeD">
+                <div class="confirm-icon danger" data-page-node-id="rNI77LuBUK8mEaZWTMxe4y"><ion-icon name="close-circle-outline" data-page-node-id="pfWaemIKGGB0A03yUQCaR6"></ion-icon></div>
+                <h2 class="confirm-title" data-page-node-id="uBj5lB3DEPtcKSDHbTEBjK">确认注销</h2>
+                <p class="confirm-desc" data-page-node-id="r5BaEeIJRNJRpmLPYkVYYQ">确定要注销账号吗？此操作不可撤销！</p>
+              </div>
+              <div class="modal-footer" style="justify-content:center;" data-page-node-id="HaFEjKxpITmfLejwJ3AqEM">
+                <button class="btn btn-ghost" data-page-node-id="bdKmkdee5scZH9bAzPWm68">取消</button>
+                <button class="btn btn-danger" data-page-node-id="Wqk5JB0OxSY18b1QQREwTd">确定注销</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="state-divider" data-page-node-id="Hpf5oY2bMuAZh4aZo2110S"><h2 data-page-node-id="jIK2w2J3wWAEFseJRgTbAM">轻提示（message）</h2></div>
+        <div class="state-note" data-page-node-id="q2MBlWakoRrHv4NWSnQbBN">
+          全部为顶部 toast，页面内无错误块。<code data-page-node-id="6zPu6FeHTZjq94q3kDcxXi">handleSetAiKey</code> 在空输入时先 <code data-page-node-id="HTdQAUJoaR3vUCBwEBj6b9">message.warning('请输入 API Key')</code> 直接返回。
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px;" data-page-node-id="FFkR3uo4D4IWB1ZdclxITR">
+          <div class="toast toast-success" style="position:relative;top:auto;right:auto;" data-page-node-id="ua0ThDL3eVjOBKi4iH2IHR">
+            <ion-icon name="checkmark-circle-outline" class="toast-icon" data-page-node-id="I1kDLU8zyueuIueNNXqHP7"></ion-icon>
+            <div class="toast-content" data-page-node-id="epFGt74Zw1eyyVWxHVFVB2">保存成功</div>
+          </div>
+          <div class="toast toast-error" style="position:relative;top:auto;right:auto;" data-page-node-id="RS7dMPDJbbrtfgOBzwMltk">
+            <ion-icon name="close-circle-outline" class="toast-icon" data-page-node-id="DMCmUAL4fJcSD58uS7zPtS"></ion-icon>
+            <div class="toast-content" data-page-node-id="hbF8uWIuKhC6qEaA3vCCyd">旧密码错误（code 10106）</div>
+          </div>
+          <div class="toast toast-error" style="position:relative;top:auto;right:auto;" data-page-node-id="Ezbfvvx5V6KGpoXjQF71DS">
+            <ion-icon name="close-circle-outline" class="toast-icon" data-page-node-id="XwHPBYamkF9HWm4rhsDs54"></ion-icon>
+            <div class="toast-content" data-page-node-id="Ta82B4JAA7nVnMZKwhXjLG">你持有公开题库或试卷，请先转让所有权（code 20501）</div>
+          </div>
+          <div class="toast toast-warning" style="position:relative;top:auto;right:auto;" data-page-node-id="jXtScRem1KQ6uEPRrqkeFp">
+            <ion-icon name="warning-outline" class="toast-icon" data-page-node-id="okgUsvuKDmx68htf5lZD9U"></ion-icon>
+            <div class="toast-content" data-page-node-id="ykwe6Fq8UOJRhPPPwbTXFk">请输入 API Key</div>
+          </div>
+        </div>
       </main>
     </div>
   </div>
-  <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
-  <script nomodule src="https://cdn.jsdelivr.net/npm/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
-<script>
+
+  <script>
     document.querySelector(".sidebar-toggle")?.addEventListener("click", function() {
-      var s=document.querySelector(".sidebar"),m=document.querySelector(".main-area");
-      s.classList.toggle("sidebar-collapsed");m.classList.toggle("main-area-collapsed");
-      var i=this.querySelector("ion-icon");
-      i.setAttribute("name",s.classList.contains("sidebar-collapsed")?"chevron-forward-outline":"chevron-back-outline");
+      var s = document.querySelector(".sidebar"), m = document.querySelector(".main-area");
+      s.classList.toggle("sidebar-collapsed"); m.classList.toggle("main-area-collapsed");
+      var i = this.querySelector("ion-icon");
+      i.setAttribute("name", s.classList.contains("sidebar-collapsed") ? "chevron-forward-outline" : "chevron-back-outline");
     });
   </script>
 </body>

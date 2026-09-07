@@ -6,128 +6,140 @@
   <title>题库 — Quick Study</title>
   <link rel="stylesheet" href="styles/mockup.css">
   <style>
-    /* Input with leading icon (search) */
+    /* 搜索框前缀图标（n-input #prefix） */
     .input-affix { position: relative; }
     .input-affix .input-affix-icon {
-      position: absolute;
-      top: 50%;
-      transform: translateY(-50%);
-      font-size: 18px;
-      color: var(--text-tertiary);
-      pointer-events: none;
+      position: absolute; top: 50%; transform: translateY(-50%);
+      left: 12px; font-size: 18px; color: var(--text-tertiary); pointer-events: none;
     }
-    .input-affix .input-affix-icon.leading { left: 12px; }
     .input-affix .input { padding-left: 40px; }
-    /* 2-line clamp */
+
+    /* 卡片内两行截断描述 */
     .line-clamp-2 {
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-      line-height: var(--leading-normal);
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+      overflow: hidden; line-height: var(--leading-normal);
     }
-    /* Bank card body */
-    .bank-card-body { padding: var(--space-5); }
+    .bank-card-body { padding: var(--space-5); display: flex; flex-direction: column; height: 100%; }
     .bank-name { font-size: var(--text-lg); font-weight: var(--font-semibold); color: var(--text-primary); }
-    .bank-desc { margin-top: var(--space-2); }
     .bank-meta { display: flex; align-items: center; gap: var(--space-4); font-size: var(--text-sm); color: var(--text-tertiary); }
     .bank-meta-item { display: inline-flex; align-items: center; gap: 4px; }
-    .bank-meta-item ion-icon { font-size: 16px; }
-    .bank-footer {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding-top: var(--space-4);
-      margin-top: var(--space-4);
-      border-top: 1px solid var(--border-default);
+    .bank-meta-item ion-icon { font-size: 15px; }
+    .bank-footer { padding-top: var(--space-3); border-top: 1px solid var(--border-default); margin-top: auto; }
+    .bank-actions { display: flex; align-items: center; gap: var(--space-4); margin-top: var(--space-2); }
+
+    .pagination-bar { display: flex; align-items: center; justify-content: flex-end; gap: var(--space-2); margin-top: var(--space-6); }
+
+    /* 分组标题（多形态预览分隔） */
+    .state-divider {
+      display: flex; align-items: center; gap: var(--space-3);
+      margin: var(--space-8) 0 var(--space-4);
     }
-    .pagination-bar {
-      display: flex;
-      align-items: center;
-      justify-content: flex-end;
-      gap: var(--space-2);
-      margin-top: var(--space-6);
+    .state-divider h2 {
+      font-size: var(--text-lg); font-weight: var(--font-bold);
+      color: var(--text-primary); margin: 0; white-space: nowrap;
     }
-    .page-info { font-size: var(--text-sm); color: var(--text-tertiary); margin-left: var(--space-3); }
+    .state-divider::after { content: ""; flex: 1; height: 1px; background: var(--border-default); }
+    .state-note { font-size: var(--text-xs); color: var(--text-tertiary); margin-bottom: var(--space-4); }
+
+    /* 开关（n-switch） */
+    .switch {
+      position: relative; width: 40px; height: 22px; border-radius: var(--radius-full);
+      background: var(--color-neutral-300); transition: all var(--transition-base); cursor: pointer; flex-shrink: 0;
+    }
+    .switch.on { background: var(--color-primary-500); }
+    .switch::after {
+      content: ""; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px;
+      border-radius: 50%; background: #fff; transition: all var(--transition-base); box-shadow: var(--shadow-xs);
+    }
+    .switch.on::after { left: 20px; }
+
+    /* 内联弹窗预览区（步骤展示用） */
+    .modal-inline {
+      background: var(--color-neutral-100); border: 1px dashed var(--border-strong);
+      border-radius: var(--radius-lg); padding: var(--space-8);
+      display: flex; align-items: flex-start; justify-content: center;
+    }
   </style>
 </head>
 <body>
   <div class="app-shell">
-    <!-- Sidebar -->
+    <!-- ===== Sidebar（MainLayout.vue：已登录 + 管理员完整形态） ===== -->
     <aside class="sidebar">
       <div class="sidebar-logo">
         <div class="sidebar-logo-icon">QS</div>
         <span class="sidebar-logo-text">Quick Study</span>
-      <button class="sidebar-toggle" data-tooltip="折叠侧边栏">
-        <ion-icon name="chevron-back-outline"></ion-icon>
-      </button>
+        <button class="sidebar-toggle" data-tooltip="折叠菜单"><ion-icon name="chevron-back-outline"></ion-icon></button>
       </div>
       <nav class="sidebar-nav">
-        <div class="sidebar-nav-item" onclick="window.location.href='01-home.html'"><ion-icon name="home-outline"></ion-icon><span>首页</span></div>
-        <div class="sidebar-nav-item active" onclick="window.location.href='02-bank-list.html'"><ion-icon name="library-outline"></ion-icon><span>题库</span></div>
-        <div class="sidebar-nav-item" onclick="window.location.href='04-question-list.html'"><ion-icon name="document-text-outline"></ion-icon><span>题目</span></div>
-        <div class="sidebar-nav-item" onclick="window.location.href='05-paper-list.html'"><ion-icon name="file-tray-full-outline"></ion-icon><span>试卷</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='01-home.html'"><ion-icon name="home-outline"></ion-icon><span>首页</span></div>
+        <div class="sidebar-nav-item active" onclick="location.href='02-bank-list.html'"><ion-icon name="library-outline"></ion-icon><span>题库</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='04-question-list.html'"><ion-icon name="document-text-outline"></ion-icon><span>题目</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='05-paper-list.html'"><ion-icon name="file-tray-full-outline"></ion-icon><span>试卷</span></div>
+
         <div class="sidebar-nav-label">学习中心</div>
-        <div class="sidebar-nav-item" onclick="window.location.href='24-practice-list.html'"><ion-icon name="game-controller-outline"></ion-icon><span>练习</span></div>
-        <div class="sidebar-nav-item" onclick="window.location.href='10-wrong-questions.html'"><ion-icon name="close-circle-outline"></ion-icon><span>错题本</span></div>
-        <div class="sidebar-nav-item" onclick="window.location.href='18-favorites.html'"><ion-icon name="star-outline"></ion-icon><span>收藏题目</span></div>
-        <div class="sidebar-nav-item" onclick="window.location.href='11-records.html'"><ion-icon name="time-outline"></ion-icon><span>做题记录</span></div>
-        <div class="sidebar-nav-item" onclick="window.location.href='09-statistics.html'"><ion-icon name="bar-chart-outline"></ion-icon><span>统计</span></div>
-        <div class="sidebar-nav-item" onclick="window.location.href='13-notifications.html'"><ion-icon name="notifications-outline"></ion-icon><span>通知</span></div>
-        <div class="sidebar-nav-item" onclick="window.location.href='12-search.html'"><ion-icon name="search-outline"></ion-icon><span>搜索</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='24-practice-list.html'"><ion-icon name="game-controller-outline"></ion-icon><span>练习</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='19-playground.html'"><ion-icon name="code-slash-outline"></ion-icon><span>代码运行台</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='10-wrong-questions.html'"><ion-icon name="close-circle-outline"></ion-icon><span>错题本</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='18-favorites.html'"><ion-icon name="star-outline"></ion-icon><span>收藏题目</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='11-records.html'"><ion-icon name="time-outline"></ion-icon><span>做题记录</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='20-exam-records.html'"><ion-icon name="document-text-outline"></ion-icon><span>考试记录</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='09-statistics.html'"><ion-icon name="bar-chart-outline"></ion-icon><span>统计</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='13-notifications.html'"><ion-icon name="notifications-outline"></ion-icon><span>通知</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='12-search.html'"><ion-icon name="search-outline"></ion-icon><span>搜索</span></div>
+
         <div class="sidebar-nav-label">管理</div>
-        <div class="sidebar-nav-item" onclick="window.location.href='15-admin-users.html'"><ion-icon name="people-outline"></ion-icon><span>用户管理</span></div>
-        <div class="sidebar-nav-item" onclick="window.location.href='28-admin-reviews.html'"><ion-icon name="checkmark-done-outline"></ion-icon><span>审核列表</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='15-admin-users.html'"><ion-icon name="people-outline"></ion-icon><span>用户管理</span></div>
+        <div class="sidebar-nav-item"><ion-icon name="checkmark-done-outline"></ion-icon><span>审核列表</span></div>
       </nav>
       <div class="sidebar-footer">
         <div class="sidebar-nav-item"><ion-icon name="log-out-outline"></ion-icon><span>退出登录</span></div>
       </div>
     </aside>
 
-    <!-- Main Area -->
+    <!-- ===== Main Area ===== -->
     <div class="main-area">
       <header class="app-header">
         <div class="app-header-left">
           <button class="mobile-menu-btn" onclick="document.querySelector('.sidebar').classList.toggle('mobile-open')"><ion-icon name="menu-outline"></ion-icon></button>
-          <button class="mobile-menu-btn" onclick="document.querySelector('.sidebar').classList.toggle('mobile-open')"><ion-icon name="menu-outline"></ion-icon></button>
-          <div class="breadcrumb">
-            <span class="breadcrumb-current">题库</span>
-          </div>
+          <div class="breadcrumb"><span class="breadcrumb-current">题库</span></div>
         </div>
         <div class="app-header-right">
           <div class="header-search">
             <ion-icon name="search-outline"></ion-icon>
-            <input class="input" type="text" placeholder="搜索题目 / 题库 / 试卷" readonly style="cursor:pointer;" onclick="window.location.href='12-search.html'">
+            <input class="input" type="text" placeholder="搜索题目 / 题库 / 试卷" readonly style="cursor:pointer;" onclick="location.href='12-search.html'">
           </div>
-          <div style="position:relative;cursor:pointer;" onclick="window.location.href='13-notifications.html'">
+          <div style="position:relative;cursor:pointer;" onclick="location.href='13-notifications.html'">
             <ion-icon name="notifications-outline" style="font-size:22px;color:var(--text-secondary);"></ion-icon>
             <span class="badge" style="position:absolute;top:-4px;right:-4px;">3</span>
           </div>
-          <div style="display:flex;align-items:center;gap:8px;cursor:pointer;" onclick="window.location.href='14-profile.html'">
-            <div class="avatar" style="background:var(--gradient-brand);">张</div>
-            <span style="font-size:14px;font-weight:500;color:var(--text-primary);">张同学</span>
+          <div style="display:flex;align-items:center;gap:8px;cursor:pointer;" onclick="location.href='14-profile.html'">
+            <div class="avatar" style="background:var(--gradient-brand);">王</div>
+            <span style="font-size:14px;font-weight:500;color:var(--text-primary);">王老师</span>
             <ion-icon name="chevron-down-outline" style="font-size:16px;color:var(--text-tertiary);"></ion-icon>
           </div>
         </div>
       </header>
-      <main class="app-content">
 
-        <!-- Page header -->
-        <div class="flex items-center justify-between mb-6">
-          <h1 class="text-2xl font-bold">题库</h1>
-          <button class="btn btn-primary">
-            <ion-icon name="add-outline"></ion-icon>
-            创建题库
-          </button>
+      <main class="app-content">
+        <!-- 页头（PageHeader.vue） -->
+        <div class="page-header">
+          <div class="page-header-left">
+            <h1 class="page-header-title">题库</h1>
+            <p class="page-header-subtitle">浏览、搜索并管理题库</p>
+          </div>
+          <div class="page-header-actions">
+            <button class="btn btn-secondary btn-sm" onclick="location.href='27-bank-import-dialog.html'">导入题库</button>
+            <button class="btn btn-primary btn-sm" onclick="document.getElementById('createBankModal').style.display='flex'">创建题库</button>
+          </div>
         </div>
 
-        <!-- Filter bar -->
-        <div class="flex items-center gap-3 mb-6">
-          <div class="input-affix" style="flex:1;max-width:360px;">
-            <ion-icon name="search-outline" class="input-affix-icon leading"></ion-icon>
+        <!-- 搜索与筛选（FilterBar.vue） -->
+        <div class="filter-bar">
+          <div class="input-affix" style="width:260px;">
+            <ion-icon name="search-outline" class="input-affix-icon"></ion-icon>
             <input class="input" type="text" placeholder="搜索题库名称...">
           </div>
-          <select class="select" style="width:auto;min-width:140px;">
+          <select class="select" style="width:150px;">
             <option>全部可见性</option>
             <option>公开</option>
             <option>私有</option>
@@ -135,166 +147,311 @@
           </select>
         </div>
 
-        <!-- Bank cards grid -->
+        <!-- 题库卡片网格（grid-cols-1 / md:2 / xl:3） -->
         <div class="grid grid-cols-3 gap-4">
 
-          <!-- Bank 1 -->
+          <!-- 卡片 1：官方（isOfficial → 官方） -->
           <div class="card card-hover">
             <div class="bank-card-body">
-              <div class="flex items-start justify-between">
-                <div class="bank-name">Java基础</div>
-                <span class="tag tag-warning">官方</span>
+              <div class="flex items-start justify-between gap-2 mb-2">
+                <h3 class="bank-name truncate">Java基础与进阶</h3>
+                <span class="pill tag-warning">官方</span>
               </div>
-              <p class="bank-desc text-sm text-secondary line-clamp-2">涵盖 Java 语法基础、面向对象、集合框架等核心知识点的入门题库，适合初学者系统学习。</p>
-              <div class="bank-meta mt-4">
+              <p class="text-sm text-tertiary mb-4 line-clamp-2">
+                本题库系统覆盖 Java 语言核心知识，从基础语法、面向对象编程，到集合框架、多线程并发、JVM 原理等进阶内容。
+              </p>
+              <div class="bank-meta mb-4">
                 <span class="bank-meta-item"><ion-icon name="document-text-outline"></ion-icon>156 题</span>
-                <span class="bank-meta-item"><ion-icon name="repeat-outline"></ion-icon>1.2k 练习</span>
+                <span class="bank-meta-item"><ion-icon name="repeat-outline"></ion-icon>1234 练习</span>
+              </div>
+              <div class="flex gap-1 flex-wrap mb-4">
+                <span class="tag-chip">Java</span><span class="tag-chip">后端</span>
               </div>
               <div class="bank-footer">
                 <div class="flex items-center gap-2">
-                  <div class="avatar avatar-sm" style="background:#5B5FE9;">王</div>
-                  <span class="text-sm text-secondary">王老师</span>
+                  <div class="avatar avatar-sm" style="background:var(--gradient-brand);">王</div>
+                  <span class="text-sm text-tertiary truncate">王老师</span>
+                  <span class="text-sm text-tertiary" style="margin-left:auto;white-space:nowrap;">2026-08-28</span>
                 </div>
-                <a href="#" class="text-sm text-brand font-medium">查看详情</a>
+                <div class="bank-actions">
+                  <a class="text-xs text-brand font-medium cursor-pointer">设为私有</a>
+                  <a class="text-xs text-brand font-medium cursor-pointer">导出</a>
+                  <a class="text-xs text-error font-medium cursor-pointer">删除</a>
+                </div>
               </div>
             </div>
           </div>
 
-          <!-- Bank 2 -->
+          <!-- 卡片 2：公开 -->
           <div class="card card-hover">
             <div class="bank-card-body">
-              <div class="flex items-start justify-between">
-                <div class="bank-name">Python入门</div>
-                <span class="tag tag-success">公开</span>
+              <div class="flex items-start justify-between gap-2 mb-2">
+                <h3 class="bank-name truncate">Python入门</h3>
+                <span class="pill tag-success">公开</span>
               </div>
-              <p class="bank-desc text-sm text-secondary line-clamp-2">从零开始学习 Python 编程语言，包含基础语法、数据类型、函数与面向对象等核心内容。</p>
-              <div class="bank-meta mt-4">
+              <p class="text-sm text-tertiary mb-4 line-clamp-2">
+                从零开始学习 Python 编程语言，包含基础语法、数据类型、函数与面向对象等核心内容。
+              </p>
+              <div class="bank-meta mb-4">
                 <span class="bank-meta-item"><ion-icon name="document-text-outline"></ion-icon>203 题</span>
                 <span class="bank-meta-item"><ion-icon name="repeat-outline"></ion-icon>856 练习</span>
               </div>
               <div class="bank-footer">
                 <div class="flex items-center gap-2">
-                  <div class="avatar avatar-sm" style="background:#22B570;">李</div>
-                  <span class="text-sm text-secondary">李同学</span>
+                  <div class="avatar avatar-sm" style="background:var(--gradient-brand);">李</div>
+                  <span class="text-sm text-tertiary truncate">李老师</span>
+                  <span class="text-sm text-tertiary" style="margin-left:auto;white-space:nowrap;">2026-08-20</span>
                 </div>
-                <a href="#" class="text-sm text-brand font-medium">查看详情</a>
+                <div class="bank-actions">
+                  <a class="text-xs text-brand font-medium cursor-pointer">设为私有</a>
+                  <a class="text-xs text-brand font-medium cursor-pointer">导出</a>
+                  <a class="text-xs text-error font-medium cursor-pointer">删除</a>
+                </div>
               </div>
             </div>
           </div>
 
-          <!-- Bank 3 -->
+          <!-- 卡片 3：私有（管理员视角，操作同公开） -->
           <div class="card card-hover">
             <div class="bank-card-body">
-              <div class="flex items-start justify-between">
-                <div class="bank-name">数据结构</div>
-                <span class="tag tag-warning">官方</span>
+              <div class="flex items-start justify-between gap-2 mb-2">
+                <h3 class="bank-name truncate">我的算法题集</h3>
+                <span class="pill tag-default">私有</span>
               </div>
-              <p class="bank-desc text-sm text-secondary line-clamp-2">线性表、栈与队列、树与图、排序算法等经典数据结构习题集合，打牢算法与数据基础。</p>
-              <div class="bank-meta mt-4">
-                <span class="bank-meta-item"><ion-icon name="document-text-outline"></ion-icon>178 题</span>
-                <span class="bank-meta-item"><ion-icon name="repeat-outline"></ion-icon>2.3k 练习</span>
+              <p class="text-sm text-tertiary mb-4 line-clamp-2">
+                个人整理的算法与数据结构习题，包含动态规划、贪心、图论等高频面试题。
+              </p>
+              <div class="bank-meta mb-4">
+                <span class="bank-meta-item"><ion-icon name="document-text-outline"></ion-icon>64 题</span>
+                <span class="bank-meta-item"><ion-icon name="repeat-outline"></ion-icon>0 练习</span>
               </div>
               <div class="bank-footer">
                 <div class="flex items-center gap-2">
-                  <div class="avatar avatar-sm" style="background:#5B5FE9;">王</div>
-                  <span class="text-sm text-secondary">王老师</span>
+                  <div class="avatar avatar-sm" style="background:var(--gradient-brand);">王</div>
+                  <span class="text-sm text-tertiary truncate">王老师</span>
+                  <span class="text-sm text-tertiary" style="margin-left:auto;white-space:nowrap;">2026-09-01</span>
                 </div>
-                <a href="#" class="text-sm text-brand font-medium">查看详情</a>
+                <div class="bank-actions">
+                  <a class="text-xs text-brand font-medium cursor-pointer">设为公开</a>
+                  <a class="text-xs text-brand font-medium cursor-pointer">导出</a>
+                  <a class="text-xs text-error font-medium cursor-pointer">删除</a>
+                </div>
               </div>
             </div>
           </div>
 
-          <!-- Bank 4 -->
+          <!-- 卡片 4：公开 + 标签 -->
           <div class="card card-hover">
             <div class="bank-card-body">
-              <div class="flex items-start justify-between">
-                <div class="bank-name">计算机网络</div>
-                <span class="tag tag-success">公开</span>
+              <div class="flex items-start justify-between gap-2 mb-2">
+                <h3 class="bank-name truncate">计算机网络</h3>
+                <span class="pill tag-success">公开</span>
               </div>
-              <p class="bank-desc text-sm text-secondary line-clamp-2">OSI 七层模型、TCP/IP 协议族、HTTP 协议与网络安全等相关题目，理论结合实践。</p>
-              <div class="bank-meta mt-4">
+              <p class="text-sm text-tertiary mb-4 line-clamp-2">
+                OSI 七层模型、TCP/IP 协议族、HTTP 协议与网络安全等相关题目，理论结合实践。
+              </p>
+              <div class="bank-meta mb-4">
                 <span class="bank-meta-item"><ion-icon name="document-text-outline"></ion-icon>142 题</span>
                 <span class="bank-meta-item"><ion-icon name="repeat-outline"></ion-icon>980 练习</span>
               </div>
+              <div class="flex gap-1 flex-wrap mb-4">
+                <span class="tag-chip">网络</span><span class="tag-chip">HTTP</span><span class="tag-chip">TCP</span>
+              </div>
               <div class="bank-footer">
                 <div class="flex items-center gap-2">
-                  <div class="avatar avatar-sm" style="background:#3B8BFF;">张</div>
-                  <span class="text-sm text-secondary">张同学</span>
+                  <div class="avatar avatar-sm" style="background:var(--gradient-brand);">张</div>
+                  <span class="text-sm text-tertiary truncate">张老师</span>
+                  <span class="text-sm text-tertiary" style="margin-left:auto;white-space:nowrap;">2026-07-15</span>
                 </div>
-                <a href="#" class="text-sm text-brand font-medium">查看详情</a>
+                <div class="bank-actions">
+                  <a class="text-xs text-brand font-medium cursor-pointer">设为私有</a>
+                  <a class="text-xs text-brand font-medium cursor-pointer">导出</a>
+                  <a class="text-xs text-error font-medium cursor-pointer">删除</a>
+                </div>
               </div>
             </div>
           </div>
 
-          <!-- Bank 5 -->
+          <!-- 卡片 5：官方 -->
           <div class="card card-hover">
             <div class="bank-card-body">
-              <div class="flex items-start justify-between">
-                <div class="bank-name">操作系统</div>
-                <span class="tag tag-warning">官方</span>
+              <div class="flex items-start justify-between gap-2 mb-2">
+                <h3 class="bank-name truncate">数据结构</h3>
+                <span class="pill tag-warning">官方</span>
               </div>
-              <p class="bank-desc text-sm text-secondary line-clamp-2">进程与线程、内存管理、文件系统与 IO 等操作系统核心概念练习题，深入理解底层原理。</p>
-              <div class="bank-meta mt-4">
+              <p class="text-sm text-tertiary mb-4 line-clamp-2">
+                线性表、栈与队列、树与图、排序算法等经典数据结构习题集合，打牢算法与数据基础。
+              </p>
+              <div class="bank-meta mb-4">
+                <span class="bank-meta-item"><ion-icon name="document-text-outline"></ion-icon>178 题</span>
+                <span class="bank-meta-item"><ion-icon name="repeat-outline"></ion-icon>2305 练习</span>
+              </div>
+              <div class="bank-footer">
+                <div class="flex items-center gap-2">
+                  <div class="avatar avatar-sm" style="background:var(--gradient-brand);">王</div>
+                  <span class="text-sm text-tertiary truncate">王老师</span>
+                  <span class="text-sm text-tertiary" style="margin-left:auto;white-space:nowrap;">2026-06-30</span>
+                </div>
+                <div class="bank-actions">
+                  <a class="text-xs text-brand font-medium cursor-pointer">设为私有</a>
+                  <a class="text-xs text-brand font-medium cursor-pointer">导出</a>
+                  <a class="text-xs text-error font-medium cursor-pointer">删除</a>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 卡片 6：公开（无描述 → 暂无描述） -->
+          <div class="card card-hover">
+            <div class="bank-card-body">
+              <div class="flex items-start justify-between gap-2 mb-2">
+                <h3 class="bank-name truncate">操作系统</h3>
+                <span class="pill tag-success">公开</span>
+              </div>
+              <p class="text-sm text-tertiary mb-4 line-clamp-2">暂无描述</p>
+              <div class="bank-meta mb-4">
                 <span class="bank-meta-item"><ion-icon name="document-text-outline"></ion-icon>95 题</span>
-                <span class="bank-meta-item"><ion-icon name="repeat-outline"></ion-icon>1.5k 练习</span>
+                <span class="bank-meta-item"><ion-icon name="repeat-outline"></ion-icon>1502 练习</span>
               </div>
               <div class="bank-footer">
                 <div class="flex items-center gap-2">
-                  <div class="avatar avatar-sm" style="background:#FFA42B;">刘</div>
-                  <span class="text-sm text-secondary">刘老师</span>
+                  <div class="avatar avatar-sm" style="background:var(--gradient-brand);">刘</div>
+                  <span class="text-sm text-tertiary truncate">刘老师</span>
+                  <span class="text-sm text-tertiary" style="margin-left:auto;white-space:nowrap;">2026-05-12</span>
                 </div>
-                <a href="#" class="text-sm text-brand font-medium">查看详情</a>
-              </div>
-            </div>
-          </div>
-
-          <!-- Bank 6 -->
-          <div class="card card-hover">
-            <div class="bank-card-body">
-              <div class="flex items-start justify-between">
-                <div class="bank-name">数据库原理</div>
-                <span class="tag tag-default">私有</span>
-              </div>
-              <p class="bank-desc text-sm text-secondary line-clamp-2">SQL 基础、关系代数、事务与索引优化等数据库原理知识点，涵盖关系型数据库核心概念。</p>
-              <div class="bank-meta mt-4">
-                <span class="bank-meta-item"><ion-icon name="document-text-outline"></ion-icon>87 题</span>
-                <span class="bank-meta-item"><ion-icon name="repeat-outline"></ion-icon>432 练习</span>
-              </div>
-              <div class="bank-footer">
-                <div class="flex items-center gap-2">
-                  <div class="avatar avatar-sm" style="background:#5B5FE9;">张</div>
-                  <span class="text-sm text-secondary">张同学</span>
+                <div class="bank-actions">
+                  <a class="text-xs text-brand font-medium cursor-pointer">设为私有</a>
+                  <a class="text-xs text-brand font-medium cursor-pointer">导出</a>
+                  <a class="text-xs text-error font-medium cursor-pointer">删除</a>
                 </div>
-                <a href="#" class="text-sm text-brand font-medium">查看详情</a>
               </div>
             </div>
           </div>
 
         </div>
 
-        <!-- Pagination -->
+        <!-- 分页（n-pagination；仅 itemCount > pageSize 时渲染） -->
         <div class="pagination-bar">
           <button class="page-btn" disabled><ion-icon name="chevron-back-outline"></ion-icon></button>
           <button class="page-btn active">1</button>
           <button class="page-btn">2</button>
-          <button class="page-btn">3</button>
-          <button class="page-btn">...</button>
           <button class="page-btn"><ion-icon name="chevron-forward-outline"></ion-icon></button>
-          <span class="page-info">共 18 个题库</span>
+        </div>
+
+        <!-- ============ 加载态（SkeletonList :count=6 :cols=3） ============ -->
+        <div class="state-divider"><h2>加载态</h2></div>
+        <div class="state-note">SkeletonList（count=6, cols=3）：骨架卡片列表，替代卡片网格。</div>
+        <div class="grid grid-cols-3 gap-4">
+          <div class="card p-5">
+            <div class="skeleton skeleton-title"></div>
+            <div class="skeleton skeleton-text"></div>
+            <div class="skeleton skeleton-text"></div>
+            <div class="skeleton skeleton-text-sm"></div>
+          </div>
+          <div class="card p-5">
+            <div class="skeleton skeleton-title"></div>
+            <div class="skeleton skeleton-text"></div>
+            <div class="skeleton skeleton-text"></div>
+            <div class="skeleton skeleton-text-sm"></div>
+          </div>
+          <div class="card p-5">
+            <div class="skeleton skeleton-title"></div>
+            <div class="skeleton skeleton-text"></div>
+            <div class="skeleton skeleton-text"></div>
+            <div class="skeleton skeleton-text-sm"></div>
+          </div>
+        </div>
+
+        <!-- ============ 空态（EmptyState） ============ -->
+        <div class="state-divider"><h2>空态</h2></div>
+        <div class="state-note">EmptyState：title「暂无题库」/ description「没有找到匹配的题库，换个关键词试试」/ icon = LibraryOutline。</div>
+        <div class="card">
+          <div class="empty-state">
+            <ion-icon name="library-outline" class="empty-state-icon"></ion-icon>
+            <h3 class="empty-state-title">暂无题库</h3>
+            <p class="empty-state-desc">没有找到匹配的题库，换个关键词试试</p>
+          </div>
+        </div>
+
+        <!-- ============ 游客态差异 ============ -->
+        <div class="state-divider"><h2>游客态（未登录）差异</h2></div>
+        <div class="state-note">路由 meta.requiresAuth=false，游客可见；未登录时「导入题库」「创建题库」按钮不渲染，卡片底部操作行也不渲染（isAdmin / isCreator 均为 false）。</div>
+        <div class="page-header">
+          <div class="page-header-left">
+            <h1 class="page-header-title">题库</h1>
+            <p class="page-header-subtitle">浏览、搜索并管理题库</p>
+          </div>
+          <div class="page-header-actions"></div>
+        </div>
+        <div class="grid grid-cols-3 gap-4">
+          <div class="card card-hover">
+            <div class="bank-card-body">
+              <div class="flex items-start justify-between gap-2 mb-2">
+                <h3 class="bank-name truncate">Java基础与进阶</h3>
+                <span class="pill tag-warning">官方</span>
+              </div>
+              <p class="text-sm text-tertiary mb-4 line-clamp-2">本题库系统覆盖 Java 语言核心知识，从基础语法、面向对象编程，到集合框架、多线程并发、JVM 原理等进阶内容。</p>
+              <div class="bank-meta mb-4">
+                <span class="bank-meta-item"><ion-icon name="document-text-outline"></ion-icon>156 题</span>
+                <span class="bank-meta-item"><ion-icon name="repeat-outline"></ion-icon>1234 练习</span>
+              </div>
+              <div class="bank-footer">
+                <div class="flex items-center gap-2">
+                  <div class="avatar avatar-sm" style="background:var(--gradient-brand);">王</div>
+                  <span class="text-sm text-tertiary truncate">王老师</span>
+                  <span class="text-sm text-tertiary" style="margin-left:auto;white-space:nowrap;">2026-08-28</span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
       </main>
     </div>
   </div>
 
+  <!-- ===== 创建题库弹窗（BankCreateDialog.vue，width 480px） ===== -->
+  <div class="modal-overlay" id="createBankModal" style="display:none;">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 style="font-size:var(--text-lg);font-weight:var(--font-semibold);">创建题库</h3>
+        <button class="sidebar-toggle" onclick="document.getElementById('createBankModal').style.display='none'"><ion-icon name="close-outline"></ion-icon></button>
+      </div>
+      <div class="modal-body">
+        <div class="input-group">
+          <label class="input-label">名称 <span class="req">*</span></label>
+          <input class="input" type="text" placeholder="题库名称" maxlength="100">
+        </div>
+        <div class="input-group">
+          <label class="input-label">描述</label>
+          <textarea class="textarea" placeholder="题库描述（可选）" rows="4" maxlength="500"></textarea>
+        </div>
+        <div class="input-group">
+          <label class="input-label">封面图</label>
+          <!-- FileUpload.vue：n-upload + 选择文件按钮 -->
+          <button class="btn btn-secondary btn-sm"><ion-icon name="cloud-upload-outline"></ion-icon> 选择文件</button>
+        </div>
+        <div class="flex items-center gap-3">
+          <span class="input-label" style="margin:0;">公开题库</span>
+          <div class="switch" onclick="this.classList.toggle('on')"></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="document.getElementById('createBankModal').style.display='none'">取消</button>
+        <button class="btn btn-primary">创建</button>
+      </div>
+    </div>
+  </div>
+
   <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
   <script nomodule src="https://cdn.jsdelivr.net/npm/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
-<script>
-    document.querySelector(".sidebar-toggle")?.addEventListener("click", function() {
-      var s=document.querySelector(".sidebar"),m=document.querySelector(".main-area");
-      s.classList.toggle("sidebar-collapsed");m.classList.toggle("main-area-collapsed");
-      var i=this.querySelector("ion-icon");
-      i.setAttribute("name",s.classList.contains("sidebar-collapsed")?"chevron-forward-outline":"chevron-back-outline");
+  <script>
+    document.querySelector(".sidebar-toggle")?.addEventListener("click", function () {
+      var s = document.querySelector(".sidebar"), m = document.querySelector(".main-area");
+      s.classList.toggle("sidebar-collapsed");
+      m.classList.toggle("main-area-collapsed");
+      var i = this.querySelector("ion-icon");
+      i.setAttribute("name", s.classList.contains("sidebar-collapsed") ? "chevron-forward-outline" : "chevron-back-outline");
     });
   </script>
 </body>

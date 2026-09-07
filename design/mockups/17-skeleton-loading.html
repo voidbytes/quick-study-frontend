@@ -9,147 +9,132 @@
   <script nomodule src="https://cdn.jsdelivr.net/npm/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
   <style>
     body { background: var(--bg-page); padding: 48px 24px; }
+    .demo-wrap { max-width: 1000px; margin: 0 auto; }
     .demo-section { margin-bottom: 48px; }
-    .demo-label { font-size: 14px; font-weight: 600; color: var(--text-tertiary); margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.05em; }
-    /* Remove default bottom margin when skeleton bars sit inside table cells / cards */
-    .data-table td .skeleton,
-    .card-body .skeleton { margin-bottom: 0; }
-    .skeleton-row { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+    .demo-label {
+      font-size: 13px; font-weight: 600; color: var(--text-tertiary);
+      margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.05em;
+    }
+    .demo-code {
+      font-family: var(--font-mono); font-size: 12px; color: var(--text-secondary);
+      background: var(--bg-subtle); border: 1px solid var(--border-default);
+      border-radius: var(--radius-md); padding: 4px 10px; margin-left: 8px;
+    }
+
+    /* ---- SkeletonList.vue 实际渲染形态 ---- */
+    .skeleton-list { display: grid; gap: var(--space-4); }
+    .grid-cols-1 { grid-template-columns: repeat(1, 1fr); }
+    .grid-cols-2 { grid-template-columns: repeat(2, 1fr); }
+    .grid-cols-3 { grid-template-columns: repeat(3, 1fr); }
+    @media (max-width: 768px) {
+      .grid-cols-2, .grid-cols-3 { grid-template-columns: 1fr; }
+    }
+    .sk-item {
+      background: var(--bg-card);
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius-lg);
+      padding: var(--space-5);
+    }
+    .sk-line-head { margin-bottom: var(--space-4); }
+    .sk-line { height: 14px; border-radius: var(--radius-md); margin-bottom: var(--space-3); }
+    .sk-line.short { width: 40%; }
   </style>
 </head>
 <body>
-  <div style="max-width:1000px;margin:0 auto;">
-    <h1 style="font-size:24px;font-weight:700;margin-bottom:32px;">骨架屏加载态</h1>
+  <div class="demo-wrap">
+    <h1 style="font-size:24px;font-weight:700;margin-bottom:8px;">骨架屏加载态</h1>
+    <p style="font-size:13px;color:var(--text-tertiary);margin-bottom:40px;">
+      严格对应 <code>SkeletonList.vue</code>：<code>&lt;SkeletonList :count="N" :cols="C" /&gt;</code>。
+      每个骨架项由 1 条加粗头行 + 3 条正文行 + 1 条 40% 宽尾行组成，整体按 cols 网格排列。
+    </p>
 
-    <!-- Stat cards skeleton -->
+    <!-- cols=1（首页 公开题库 / 公开试卷 加载时） -->
     <div class="demo-section">
-      <div class="demo-label">统计卡片骨架</div>
-      <div class="grid grid-cols-4 gap-4">
-        <!-- 4 skeleton stat cards -->
-        <div class="stat-card">
-          <div class="skeleton skeleton-text-sm" style="width:55%;"></div>
-          <div class="skeleton" style="height:28px;width:70%;margin-top:12px;"></div>
+      <div class="demo-label">列表骨架<span class="demo-code">:count="3" :cols="1"</span></div>
+      <div class="skeleton-list grid-cols-1">
+        <div class="sk-item">
+          <div class="skeleton sk-line sk-line-head"></div>
+          <div class="skeleton sk-line"></div>
+          <div class="skeleton sk-line"></div>
+          <div class="skeleton sk-line"></div>
+          <div class="skeleton sk-line short"></div>
         </div>
-        <div class="stat-card">
-          <div class="skeleton skeleton-text-sm" style="width:45%;"></div>
-          <div class="skeleton" style="height:28px;width:60%;margin-top:12px;"></div>
+        <div class="sk-item">
+          <div class="skeleton sk-line sk-line-head"></div>
+          <div class="skeleton sk-line"></div>
+          <div class="skeleton sk-line"></div>
+          <div class="skeleton sk-line"></div>
+          <div class="skeleton sk-line short"></div>
         </div>
-        <div class="stat-card">
-          <div class="skeleton skeleton-text-sm" style="width:60%;"></div>
-          <div class="skeleton" style="height:28px;width:75%;margin-top:12px;"></div>
-        </div>
-        <div class="stat-card">
-          <div class="skeleton skeleton-text-sm" style="width:50%;"></div>
-          <div class="skeleton" style="height:28px;width:65%;margin-top:12px;"></div>
+        <div class="sk-item">
+          <div class="skeleton sk-line sk-line-head"></div>
+          <div class="skeleton sk-line"></div>
+          <div class="skeleton sk-line"></div>
+          <div class="skeleton sk-line"></div>
+          <div class="skeleton sk-line short"></div>
         </div>
       </div>
     </div>
 
-    <!-- Table skeleton -->
+    <!-- cols=2 -->
     <div class="demo-section">
-      <div class="demo-label">表格骨架</div>
-      <div class="table-wrapper">
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th>名称</th>
-              <th>类型</th>
-              <th>状态</th>
-              <th>创建时间</th>
-              <th class="col-narrow">操作</th>
-            </tr>
-          </thead>
-          <tbody>
-            <!-- 5 skeleton table rows -->
-            <tr>
-              <td><div class="skeleton skeleton-text" style="width:80%;"></div></td>
-              <td><div class="skeleton skeleton-text-sm" style="width:50%;"></div></td>
-              <td><div class="skeleton skeleton-text-sm" style="width:40%;"></div></td>
-              <td><div class="skeleton skeleton-text-sm" style="width:60%;"></div></td>
-              <td><div class="skeleton skeleton-text-sm" style="width:50%;"></div></td>
-            </tr>
-            <tr>
-              <td><div class="skeleton skeleton-text" style="width:70%;"></div></td>
-              <td><div class="skeleton skeleton-text-sm" style="width:45%;"></div></td>
-              <td><div class="skeleton skeleton-text-sm" style="width:35%;"></div></td>
-              <td><div class="skeleton skeleton-text-sm" style="width:55%;"></div></td>
-              <td><div class="skeleton skeleton-text-sm" style="width:50%;"></div></td>
-            </tr>
-            <tr>
-              <td><div class="skeleton skeleton-text" style="width:85%;"></div></td>
-              <td><div class="skeleton skeleton-text-sm" style="width:50%;"></div></td>
-              <td><div class="skeleton skeleton-text-sm" style="width:45%;"></div></td>
-              <td><div class="skeleton skeleton-text-sm" style="width:60%;"></div></td>
-              <td><div class="skeleton skeleton-text-sm" style="width:50%;"></div></td>
-            </tr>
-            <tr>
-              <td><div class="skeleton skeleton-text" style="width:65%;"></div></td>
-              <td><div class="skeleton skeleton-text-sm" style="width:40%;"></div></td>
-              <td><div class="skeleton skeleton-text-sm" style="width:38%;"></div></td>
-              <td><div class="skeleton skeleton-text-sm" style="width:58%;"></div></td>
-              <td><div class="skeleton skeleton-text-sm" style="width:50%;"></div></td>
-            </tr>
-            <tr>
-              <td><div class="skeleton skeleton-text" style="width:75%;"></div></td>
-              <td><div class="skeleton skeleton-text-sm" style="width:48%;"></div></td>
-              <td><div class="skeleton skeleton-text-sm" style="width:42%;"></div></td>
-              <td><div class="skeleton skeleton-text-sm" style="width:56%;"></div></td>
-              <td><div class="skeleton skeleton-text-sm" style="width:50%;"></div></td>
-            </tr>
-          </tbody>
-        </table>
+      <div class="demo-label">双列卡片骨架<span class="demo-code">:count="4" :cols="2"</span></div>
+      <div class="skeleton-list grid-cols-2">
+        <div class="sk-item">
+          <div class="skeleton sk-line sk-line-head"></div>
+          <div class="skeleton sk-line"></div>
+          <div class="skeleton sk-line"></div>
+          <div class="skeleton sk-line"></div>
+          <div class="skeleton sk-line short"></div>
+        </div>
+        <div class="sk-item">
+          <div class="skeleton sk-line sk-line-head"></div>
+          <div class="skeleton sk-line"></div>
+          <div class="skeleton sk-line"></div>
+          <div class="skeleton sk-line"></div>
+          <div class="skeleton sk-line short"></div>
+        </div>
+        <div class="sk-item">
+          <div class="skeleton sk-line sk-line-head"></div>
+          <div class="skeleton sk-line"></div>
+          <div class="skeleton sk-line"></div>
+          <div class="skeleton sk-line"></div>
+          <div class="skeleton sk-line short"></div>
+        </div>
+        <div class="sk-item">
+          <div class="skeleton sk-line sk-line-head"></div>
+          <div class="skeleton sk-line"></div>
+          <div class="skeleton sk-line"></div>
+          <div class="skeleton sk-line"></div>
+          <div class="skeleton sk-line short"></div>
+        </div>
       </div>
     </div>
 
-    <!-- Card list skeleton -->
+    <!-- cols=3（默认） -->
     <div class="demo-section">
-      <div class="demo-label">卡片列表骨架</div>
-      <div class="grid grid-cols-3 gap-4">
-        <!-- 3 skeleton cards -->
-        <div class="card">
-          <div class="card-body">
-            <div class="skeleton-row">
-              <div class="skeleton skeleton-avatar"></div>
-              <div style="flex:1;">
-                <div class="skeleton skeleton-title"></div>
-                <div class="skeleton skeleton-text-sm"></div>
-              </div>
-            </div>
-            <div class="skeleton skeleton-text" style="width:90%;margin-bottom:8px;"></div>
-            <div class="skeleton skeleton-text" style="width:100%;margin-bottom:8px;"></div>
-            <div class="skeleton skeleton-text" style="width:75%;margin-bottom:16px;"></div>
-            <div class="skeleton" style="height:36px;width:100%;"></div>
-          </div>
+      <div class="demo-label">三列卡片骨架（默认）<span class="demo-code">:count="3" :cols="3"</span></div>
+      <div class="skeleton-list grid-cols-3">
+        <div class="sk-item">
+          <div class="skeleton sk-line sk-line-head"></div>
+          <div class="skeleton sk-line"></div>
+          <div class="skeleton sk-line"></div>
+          <div class="skeleton sk-line"></div>
+          <div class="skeleton sk-line short"></div>
         </div>
-        <div class="card">
-          <div class="card-body">
-            <div class="skeleton-row">
-              <div class="skeleton skeleton-avatar"></div>
-              <div style="flex:1;">
-                <div class="skeleton skeleton-title"></div>
-                <div class="skeleton skeleton-text-sm"></div>
-              </div>
-            </div>
-            <div class="skeleton skeleton-text" style="width:88%;margin-bottom:8px;"></div>
-            <div class="skeleton skeleton-text" style="width:100%;margin-bottom:8px;"></div>
-            <div class="skeleton skeleton-text" style="width:70%;margin-bottom:16px;"></div>
-            <div class="skeleton" style="height:36px;width:100%;"></div>
-          </div>
+        <div class="sk-item">
+          <div class="skeleton sk-line sk-line-head"></div>
+          <div class="skeleton sk-line"></div>
+          <div class="skeleton sk-line"></div>
+          <div class="skeleton sk-line"></div>
+          <div class="skeleton sk-line short"></div>
         </div>
-        <div class="card">
-          <div class="card-body">
-            <div class="skeleton-row">
-              <div class="skeleton skeleton-avatar"></div>
-              <div style="flex:1;">
-                <div class="skeleton skeleton-title"></div>
-                <div class="skeleton skeleton-text-sm"></div>
-              </div>
-            </div>
-            <div class="skeleton skeleton-text" style="width:92%;margin-bottom:8px;"></div>
-            <div class="skeleton skeleton-text" style="width:100%;margin-bottom:8px;"></div>
-            <div class="skeleton skeleton-text" style="width:80%;margin-bottom:16px;"></div>
-            <div class="skeleton" style="height:36px;width:100%;"></div>
-          </div>
+        <div class="sk-item">
+          <div class="skeleton sk-line sk-line-head"></div>
+          <div class="skeleton sk-line"></div>
+          <div class="skeleton sk-line"></div>
+          <div class="skeleton sk-line"></div>
+          <div class="skeleton sk-line short"></div>
         </div>
       </div>
     </div>

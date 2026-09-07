@@ -3,511 +3,557 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Quick Study — 搜索</title>
+  <title>搜索 — Quick Study</title>
   <link rel="stylesheet" href="styles/mockup.css">
+  <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
+  <script nomodule src="https://cdn.jsdelivr.net/npm/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
   <style>
-    /* --- 搜索页专属样式 --- */
-    .search-hero {
+    /* --- PageHeader.vue --- */
+    .page-header-title {
+      font-size: var(--text-2xl);
+      font-weight: var(--font-bold);
+      color: var(--text-primary);
+      line-height: 1.25;
+      margin: 0;
+    }
+    .page-header-subtitle {
+      font-size: var(--text-sm);
+      color: var(--text-tertiary);
+      margin: 4px 0 0;
+    }
+
+    /* --- 搜索区：bg-white border border-neutral-200 rounded-xl px-5 py-6 sm:px-8 sm:py-8 mb-6 --- */
+    .search-panel {
       background: var(--bg-card);
       border: 1px solid var(--border-default);
       border-radius: var(--radius-xl);
-      padding: var(--space-8);
+      padding: var(--space-6) var(--space-5);
       margin-bottom: var(--space-6);
     }
-    .search-bar-wrap {
+    @media (min-width: 640px) { .search-panel { padding: var(--space-8); } }
+
+    /* flex flex-col sm:flex-row items-stretch sm:items-center gap-3 max-w-3xl mx-auto */
+    .search-row {
       display: flex;
+      flex-direction: column;
+      align-items: stretch;
       gap: var(--space-3);
-      max-width: 720px;
+      max-width: 768px;
       margin: 0 auto;
     }
-    .search-input-box {
+    @media (min-width: 640px) { .search-row { flex-direction: row; align-items: center; } }
+    .search-actions { display: flex; gap: var(--space-3); }
+
+    /* n-input：round + size="large" + clearable + #prefix 搜索图标 */
+    .n-input-round {
       flex: 1;
       display: flex;
       align-items: center;
-      height: 48px;
-      border: 2px solid var(--color-primary-300);
+      gap: var(--space-2);
+      height: 40px;
+      padding: 0 var(--space-4);
+      border: 1px solid var(--border-default);
       border-radius: var(--radius-full);
       background: var(--bg-card);
-      padding: 0 var(--space-5);
-      gap: var(--space-3);
       transition: all var(--transition-base);
     }
-    .search-input-box ion-icon {
-      font-size: 22px;
-      color: var(--text-brand);
-      flex-shrink: 0;
-    }
-    .search-input-box input {
+    .n-input-round:hover { border-color: var(--color-primary-300); }
+    .n-input-round > ion-icon { font-size: 18px; color: var(--text-tertiary); flex-shrink: 0; }
+    .n-input-round input {
       flex: 1;
+      min-width: 0;
       border: none;
       outline: none;
-      font-size: var(--text-base);
-      font-family: var(--font-sans);
-      color: var(--text-primary);
       background: transparent;
-    }
-    .search-input-box input::placeholder { color: var(--text-tertiary); }
-    .search-btn-lg {
-      height: 48px;
-      padding: 0 var(--space-8);
-      border-radius: var(--radius-full);
+      font-family: var(--font-sans);
       font-size: var(--text-base);
-      font-weight: var(--font-semibold);
+      color: var(--text-primary);
     }
-    .category-tabs {
-      display: flex;
-      gap: var(--space-2);
-      margin-bottom: var(--space-6);
-      border-bottom: 1px solid var(--border-default);
-      padding-bottom: 0;
-    }
-    .cat-tab {
-      display: inline-flex;
-      align-items: center;
-      gap: var(--space-2);
-      padding: var(--space-3) var(--space-4);
-      font-size: var(--text-base);
-      font-weight: var(--font-medium);
-      color: var(--text-secondary);
-      cursor: pointer;
-      border-bottom: 2px solid transparent;
-      transition: all var(--transition-base);
-      margin-bottom: -1px;
-    }
-    .cat-tab:hover { color: var(--text-primary); }
-    .cat-tab.active {
-      color: var(--text-brand);
-      border-bottom-color: var(--color-primary-500);
-      font-weight: var(--font-semibold);
-    }
-    .cat-tab .count {
-      font-size: var(--text-xs);
-      color: var(--text-tertiary);
-      background: var(--color-neutral-100);
-      border-radius: var(--radius-full);
-      padding: 1px var(--space-2);
-    }
-    .cat-tab.active .count {
-      background: var(--color-primary-50);
-      color: var(--text-brand);
-    }
-    .result-section {
-      margin-bottom: var(--space-6);
-    }
-    .result-section-header {
+    .n-input-round input::placeholder { color: var(--text-tertiary); }
+    /* clearable：有值且 hover 时出现的清除图标 */
+    .n-input-clear { font-size: 16px; color: var(--text-disabled); flex-shrink: 0; }
+
+    /* n-select：placeholder="类型"，style="width: 120px" */
+    .n-select {
+      width: 120px;
+      flex-shrink: 0;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      margin-bottom: var(--space-4);
-    }
-    .result-section-title {
-      display: flex;
-      align-items: center;
-      gap: var(--space-3);
-    }
-    .result-section-title ion-icon {
-      font-size: 20px;
-      color: var(--text-brand);
-    }
-    .result-section-title h3 {
-      font-size: var(--text-lg);
-      font-weight: var(--font-semibold);
-      color: var(--text-primary);
-    }
-    .result-section-title .result-count {
-      font-size: var(--text-sm);
+      gap: var(--space-2);
+      height: 40px;
+      padding: 0 var(--space-3);
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius-md);
+      background: var(--bg-card);
+      font-family: var(--font-sans);
+      font-size: var(--text-base);
       color: var(--text-tertiary);
     }
-    .see-more {
-      font-size: var(--text-sm);
-      font-weight: var(--font-medium);
-      color: var(--text-brand);
-      display: inline-flex;
-      align-items: center;
-      gap: var(--space-1);
-      cursor: pointer;
+    .n-select:hover { border-color: var(--color-primary-300); }
+    .n-select ion-icon { font-size: 16px; color: var(--text-tertiary); }
+
+    /* n-button type="primary" size="large" shrink-0 */
+    .btn-search { height: 40px; padding: 0 var(--space-5); border-radius: var(--radius-lg); }
+
+    /* --- 结果列表：bg-white border border-neutral-200 rounded-lg divide-y --- */
+    .result-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
     }
-    .see-more:hover { color: var(--color-primary-600); }
-    .search-item {
+    .result-row {
       display: flex;
       align-items: flex-start;
       gap: var(--space-4);
       padding: var(--space-4);
       border-bottom: 1px solid var(--border-default);
       transition: background var(--transition-base);
-      cursor: pointer;
     }
-    .search-item:last-child { border-bottom: none; }
-    .search-item:hover { background: var(--bg-subtle); }
-    .search-item-icon {
+    .result-row:last-child { border-bottom: none; }
+    @media (min-width: 640px) { .result-row { padding-left: var(--space-5); padding-right: var(--space-5); } }
+    /* 仅 resultPath(item) 非空（题库 / 试卷）的行可点击 */ 
+    .result-row.clickable { cursor: pointer; }
+    .result-row.clickable:hover { background: var(--bg-subtle); }
+
+    .type-icon {
       width: 40px; height: 40px;
-      border-radius: var(--radius-md);
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      border-radius: var(--radius-lg);
+      display: flex; align-items: center; justify-content: center;
       flex-shrink: 0;
-      font-size: 22px;
     }
-    .search-item-body { flex: 1; min-width: 0; }
-    .search-item-title {
+    .type-icon ion-icon { font-size: 20px; }
+
+    .result-main { flex: 1; min-width: 0; }
+    .result-title-line { display: flex; align-items: center; gap: var(--space-2); margin-bottom: var(--space-1); }
+    .result-title {
       font-size: var(--text-base);
       font-weight: var(--font-semibold);
-      color: var(--text-primary);
-      margin-bottom: var(--space-1);
-      display: flex;
-      align-items: center;
-      gap: var(--space-2);
+      color: var(--color-neutral-900);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
-    .search-item-title a { color: var(--text-primary); }
-    .search-item-title a:hover { color: var(--text-brand); }
-    .search-item-desc {
+    /* n-tag size="small" round :bordered="false" */
+    .tag-pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 1px 8px;
+      border-radius: var(--radius-full);
+      font-size: var(--text-xs);
+      font-weight: var(--font-medium);
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .tag-pill.primary { background: var(--color-primary-50); color: var(--text-brand); }
+    .tag-pill.success { background: var(--color-success-50); color: var(--color-success-600); }
+    .tag-pill.warning { background: var(--color-warning-50); color: var(--color-warning-600); }
+    .tag-pill.default { background: var(--color-neutral-100); color: var(--text-secondary); }
+
+    .result-desc {
       font-size: var(--text-sm);
-      color: var(--text-secondary);
-      line-height: var(--leading-normal);
+      color: var(--color-neutral-600);
       margin-bottom: var(--space-2);
+      line-height: var(--leading-normal);
       display: -webkit-box;
       -webkit-line-clamp: 2;
       -webkit-box-orient: vertical;
       overflow: hidden;
     }
-    .search-item-meta {
-      display: flex;
-      align-items: center;
-      gap: var(--space-3);
-      flex-wrap: wrap;
-    }
-    .search-item-meta-item {
-      display: inline-flex;
-      align-items: center;
-      gap: var(--space-1);
-      font-size: var(--text-xs);
-      color: var(--text-tertiary);
-    }
-    .search-item-meta-item ion-icon { font-size: 14px; }
-    .keyword-highlight {
+    .result-meta { display: flex; align-items: center; gap: var(--space-4); font-size: var(--text-xs); color: var(--color-neutral-500); }
+    .meta-item { display: inline-flex; align-items: center; gap: var(--space-1); }
+    .meta-item ion-icon { font-size: 14px; }
+
+    .result-action { flex-shrink: 0; padding-top: var(--space-1); }
+    /* n-button size="tiny" quaternary type="primary" */
+    .btn-tiny {
+      border: none;
+      background: transparent;
       color: var(--text-brand);
-      font-weight: var(--font-semibold);
+      font-family: var(--font-sans);
+      font-size: var(--text-xs);
+      padding: 2px 6px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
     }
+    .btn-tiny:hover { background: var(--bg-selected); }
+
+    /* 关键词高亮命中段：text-primary-500 font-semibold */
+    .hl { color: var(--text-brand); font-weight: var(--font-semibold); }
+
+    /* 分页容器：flex justify-end mt-4 */
+    .pagination-bar { display: flex; align-items: center; justify-content: flex-end; gap: var(--space-2); margin-top: var(--space-4); }
+
+    /* --- 加载骨架：SkeletonList(:count="4", :cols="1") --- */
+    .sk-list { display: grid; grid-template-columns: 1fr; gap: var(--space-4); }
+    .sk-item {
+      background: var(--bg-card);
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius-lg);
+      padding: var(--space-5);
+    }
+    .sk-line-head { height: 20px; margin-bottom: var(--space-4); }
+    .sk-line { height: 14px; margin-bottom: var(--space-2); }
+
+    /* --- EmptyState.vue（本页无卡片包裹，直接渲染） --- */
+    .es-icon { font-size: 56px; color: var(--color-neutral-300); margin-bottom: var(--space-4); }
+    .es-title { font-size: var(--text-base); font-weight: var(--font-semibold); color: var(--text-secondary); margin: 0 0 var(--space-1); }
+    .es-desc { font-size: var(--text-sm); color: var(--text-tertiary); margin: 0; }
+
+    /* n-select 展开菜单（typeOptions 预览） */
+    .select-menu {
+      width: 120px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-md);
+      padding: var(--space-1) 0;
+    }
+    .select-option {
+      padding: 6px var(--space-3);
+      font-size: var(--text-base);
+      color: var(--text-primary);
+      cursor: pointer;
+    }
+    .select-option:hover { background: var(--bg-subtle); }
+
+    /* 多形态预览分隔 */
+    .state-divider { display: flex; align-items: center; gap: var(--space-3); margin: var(--space-8) 0 var(--space-4); }
+    .state-divider h2 { font-size: var(--text-lg); font-weight: var(--font-bold); color: var(--text-primary); margin: 0; white-space: nowrap; }
+    .state-divider::after { content: ""; flex: 1; height: 1px; background: var(--border-default); }
+    .state-note { font-size: var(--text-xs); color: var(--text-tertiary); margin-bottom: var(--space-4); }
   </style>
 </head>
 <body>
   <div class="app-shell">
+    <!-- ===== Sidebar（MainLayout.vue：已登录 + 管理员完整形态；/search 高亮「搜索」） ===== -->
     <aside class="sidebar">
       <div class="sidebar-logo">
         <div class="sidebar-logo-icon">QS</div>
         <span class="sidebar-logo-text">Quick Study</span>
-      <button class="sidebar-toggle" data-tooltip="折叠侧边栏">
-        <ion-icon name="chevron-back-outline"></ion-icon>
-      </button>
+        <button class="sidebar-toggle" data-tooltip="折叠侧边栏"><ion-icon name="chevron-back-outline"></ion-icon></button>
       </div>
       <nav class="sidebar-nav">
-        <div class="sidebar-nav-item" onclick="window.location.href='01-home.html'"><ion-icon name="home-outline"></ion-icon><span>首页</span></div>
-        <div class="sidebar-nav-item" onclick="window.location.href='02-bank-list.html'"><ion-icon name="library-outline"></ion-icon><span>题库</span></div>
-        <div class="sidebar-nav-item" onclick="window.location.href='04-question-list.html'"><ion-icon name="document-text-outline"></ion-icon><span>题目</span></div>
-        <div class="sidebar-nav-item" onclick="window.location.href='05-paper-list.html'"><ion-icon name="file-tray-full-outline"></ion-icon><span>试卷</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='01-home.html'"><ion-icon name="home-outline"></ion-icon><span>首页</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='02-bank-list.html'"><ion-icon name="library-outline"></ion-icon><span>题库</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='04-question-list.html'"><ion-icon name="document-text-outline"></ion-icon><span>题目</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='05-paper-list.html'"><ion-icon name="file-tray-full-outline"></ion-icon><span>试卷</span></div>
         <div class="sidebar-nav-label">学习中心</div>
-        <div class="sidebar-nav-item" onclick="window.location.href='24-practice-list.html'"><ion-icon name="game-controller-outline"></ion-icon><span>练习</span></div>
-        <div class="sidebar-nav-item" onclick="window.location.href='10-wrong-questions.html'"><ion-icon name="close-circle-outline"></ion-icon><span>错题本</span></div>
-        <div class="sidebar-nav-item" onclick="window.location.href='18-favorites.html'"><ion-icon name="star-outline"></ion-icon><span>收藏题目</span></div>
-        <div class="sidebar-nav-item" onclick="window.location.href='11-records.html'"><ion-icon name="time-outline"></ion-icon><span>做题记录</span></div>
-        <div class="sidebar-nav-item" onclick="window.location.href='09-statistics.html'"><ion-icon name="bar-chart-outline"></ion-icon><span>统计</span></div>
-        <div class="sidebar-nav-item" onclick="window.location.href='13-notifications.html'"><ion-icon name="notifications-outline"></ion-icon><span>通知</span></div>
-        <div class="sidebar-nav-item active" onclick="window.location.href='12-search.html'"><ion-icon name="search-outline"></ion-icon><span>搜索</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='24-practice-list.html'"><ion-icon name="game-controller-outline"></ion-icon><span>练习</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='19-playground.html'"><ion-icon name="code-slash-outline"></ion-icon><span>代码运行台</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='10-wrong-questions.html'"><ion-icon name="close-circle-outline"></ion-icon><span>错题本</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='18-favorites.html'"><ion-icon name="star-outline"></ion-icon><span>收藏题目</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='11-records.html'"><ion-icon name="time-outline"></ion-icon><span>做题记录</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='20-exam-records.html'"><ion-icon name="document-text-outline"></ion-icon><span>考试记录</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='09-statistics.html'"><ion-icon name="bar-chart-outline"></ion-icon><span>统计</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='13-notifications.html'"><ion-icon name="notifications-outline"></ion-icon><span>通知</span></div>
+        <div class="sidebar-nav-item active" onclick="location.href='12-search.html'"><ion-icon name="search-outline"></ion-icon><span>搜索</span></div>
         <div class="sidebar-nav-label">管理</div>
-        <div class="sidebar-nav-item" onclick="window.location.href='15-admin-users.html'"><ion-icon name="people-outline"></ion-icon><span>用户管理</span></div>
-        <div class="sidebar-nav-item" onclick="window.location.href='28-admin-reviews.html'"><ion-icon name="checkmark-done-outline"></ion-icon><span>审核列表</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='15-admin-users.html'"><ion-icon name="people-outline"></ion-icon><span>用户管理</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='31-admin-reviews.html'"><ion-icon name="checkmark-done-outline"></ion-icon><span>审核列表</span></div>
       </nav>
       <div class="sidebar-footer">
         <div class="sidebar-nav-item"><ion-icon name="log-out-outline"></ion-icon><span>退出登录</span></div>
       </div>
     </aside>
+
     <div class="main-area">
       <header class="app-header">
         <div class="app-header-left">
           <button class="mobile-menu-btn" onclick="document.querySelector('.sidebar').classList.toggle('mobile-open')"><ion-icon name="menu-outline"></ion-icon></button>
-          <button class="mobile-menu-btn" onclick="document.querySelector('.sidebar').classList.toggle('mobile-open')"><ion-icon name="menu-outline"></ion-icon></button>
-          <div class="breadcrumb">
-            <span class="breadcrumb-current">搜索</span>
-          </div>
+          <!-- MENU_TITLES: /search → 搜索 -->
+          <div class="breadcrumb"><span class="breadcrumb-current">搜索</span></div>
         </div>
         <div class="app-header-right">
           <div class="header-search">
             <ion-icon name="search-outline"></ion-icon>
-            <input class="input" type="text" placeholder="搜索题目 / 题库 / 试卷" readonly style="cursor:pointer;" onclick="window.location.href='12-search.html'">
+            <input class="input" type="text" placeholder="搜索题目 / 题库 / 试卷" readonly style="cursor:pointer;" onclick="location.href='12-search.html'">
           </div>
-          <div style="position:relative;cursor:pointer;" onclick="window.location.href='13-notifications.html'">
+          <div style="position:relative;cursor:pointer;" onclick="location.href='13-notifications.html'">
             <ion-icon name="notifications-outline" style="font-size:22px;color:var(--text-secondary);"></ion-icon>
             <span class="badge" style="position:absolute;top:-4px;right:-4px;">3</span>
           </div>
-          <div style="display:flex;align-items:center;gap:8px;cursor:pointer;" onclick="window.location.href='14-profile.html'">
+          <div style="display:flex;align-items:center;gap:8px;cursor:pointer;" onclick="location.href='14-profile.html'">
             <div class="avatar" style="background:var(--gradient-brand);">张</div>
             <span style="font-size:14px;font-weight:500;color:var(--text-primary);">张同学</span>
             <ion-icon name="chevron-down-outline" style="font-size:16px;color:var(--text-tertiary);"></ion-icon>
           </div>
         </div>
       </header>
+
       <main class="app-content">
-        <!-- 搜索英雄区 -->
-        <div class="search-hero">
-          <div class="search-bar-wrap">
-            <div class="search-input-box">
+        <!-- ===== PageHeader：title="搜索" subtitle="搜索题库、题目、试卷"（subtitle 恒显示，无 actions） ===== -->
+        <div class="page-header">
+          <div>
+            <h1 class="page-header-title">搜索</h1>
+            <p class="page-header-subtitle">搜索题库、题目、试卷</p>
+          </div>
+        </div>
+
+        <!-- ===== 搜索区：主状态为「顶栏搜索跳转 /search?keyword=Java」→ onMounted 回填关键词并自动搜索 ===== -->
+        <div class="search-panel">
+          <div class="search-row">
+            <div class="n-input-round">
               <ion-icon name="search-outline"></ion-icon>
               <input type="text" value="Java" placeholder="搜索题库、题目、试卷...">
+              <ion-icon name="close-circle" class="n-input-clear" title="clearable：有值时 hover 显示清除图标"></ion-icon>
             </div>
-            <button class="btn btn-primary search-btn-lg">
+            <div class="search-actions">
+              <!-- n-select：filterType 初始为 null → 显示 placeholder「类型」 -->
+              <div class="n-select">
+                <span>类型</span>
+                <ion-icon name="chevron-down-outline"></ion-icon>
+              </div>
+              <button class="btn btn-primary btn-search">
+                <ion-icon name="search-outline"></ion-icon>
+                <span>搜索</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== 结果列表：单一扁平列表（不按类型分组、无结果计数文案） ===== -->
+        <div class="result-card">
+          <!-- 题库：type=bank → tag primary / LibraryOutline / 可点击 → /banks/:id -->
+          <div class="result-row clickable" onclick="location.href='03-bank-detail.html'">
+            <div class="type-icon" style="background:var(--color-primary-50);color:var(--text-brand);">
+              <ion-icon name="library-outline"></ion-icon>
+            </div>
+            <div class="result-main">
+              <div class="result-title-line">
+                <span class="result-title">官方<span class="hl">Java</span>题库</span>
+                <span class="tag-pill primary">题库</span>
+              </div>
+              <p class="result-desc">涵盖 <span class="hl">Java</span> 基础语法、面向对象、集合框架、多线程与 JVM 核心知识点的综合题库，适合系统学习与阶段自测。</p>
+              <div class="result-meta">
+                <span class="meta-item"><ion-icon name="time-outline"></ion-icon>ID 12</span>
+              </div>
+            </div>
+            <div class="result-action">
+              <button class="btn-tiny">查看</button>
+            </div>
+          </div>
+
+          <!-- 题目：type=question → tag success / DocumentTextOutline / resultPath 为空 → 不可点击、无「查看」 -->
+          <div class="result-row">
+            <div class="type-icon" style="background:var(--color-success-50);color:var(--color-success-600);">
+              <ion-icon name="document-text-outline"></ion-icon>
+            </div>
+            <div class="result-main">
+              <div class="result-title-line">
+                <span class="result-title"><span class="hl">Java</span> 中以下哪个关键字用于实现继承？</span>
+                <span class="tag-pill success">题目</span>
+              </div>
+              <p class="result-desc">关于 extends 与 implements 的用法，下列说法正确的是？（单选）</p>
+              <div class="result-meta">
+                <span class="meta-item"><ion-icon name="time-outline"></ion-icon>ID 1024</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 试卷：type=paper → tag warning / FileTrayFullOutline / 可点击 → /papers/:id -->
+          <div class="result-row clickable" onclick="location.href='30-paper-detail.html'">
+            <div class="type-icon" style="background:var(--color-warning-50);color:var(--color-warning-600);">
+              <ion-icon name="file-tray-full-outline"></ion-icon>
+            </div>
+            <div class="result-main">
+              <div class="result-title-line">
+                <span class="result-title"><span class="hl">Java</span>基础测试卷</span>
+                <span class="tag-pill warning">试卷</span>
+              </div>
+              <p class="result-desc">覆盖 <span class="hl">Java</span> 基础语法、流程控制、数组与字符串的综合测试卷，满分 100 分，限时 90 分钟。</p>
+              <div class="result-meta">
+                <span class="meta-item"><ion-icon name="time-outline"></ion-icon>ID 7</span>
+              </div>
+            </div>
+            <div class="result-action">
+              <button class="btn-tiny">查看</button>
+            </div>
+          </div>
+
+          <div class="result-row clickable" onclick="location.href='03-bank-detail.html'">
+            <div class="type-icon" style="background:var(--color-primary-50);color:var(--text-brand);">
+              <ion-icon name="library-outline"></ion-icon>
+            </div>
+            <div class="result-main">
+              <div class="result-title-line">
+                <span class="result-title"><span class="hl">Java</span> 高级特性</span>
+                <span class="tag-pill primary">题库</span>
+              </div>
+              <p class="result-desc">深入 <span class="hl">Java</span> 并发编程、NIO、JVM 调优与设计模式的高级题库。</p>
+              <div class="result-meta">
+                <span class="meta-item"><ion-icon name="time-outline"></ion-icon>ID 18</span>
+              </div>
+            </div>
+            <div class="result-action">
+              <button class="btn-tiny">查看</button>
+            </div>
+          </div>
+
+          <div class="result-row">
+            <div class="type-icon" style="background:var(--color-success-50);color:var(--color-success-600);">
+              <ion-icon name="document-text-outline"></ion-icon>
+            </div>
+            <div class="result-main">
+              <div class="result-title-line">
+                <span class="result-title">关于 <span class="hl">Java</span> 集合框架，以下说法正确的是？</span>
+                <span class="tag-pill success">题目</span>
+              </div>
+              <p class="result-desc">ArrayList 底层基于数组实现，HashMap 允许 null 键与 null 值，TreeMap 默认按键的自然顺序排序。</p>
+              <div class="result-meta">
+                <span class="meta-item"><ion-icon name="time-outline"></ion-icon>ID 2051</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="result-row clickable" onclick="location.href='30-paper-detail.html'">
+            <div class="type-icon" style="background:var(--color-warning-50);color:var(--color-warning-600);">
+              <ion-icon name="file-tray-full-outline"></ion-icon>
+            </div>
+            <div class="result-main">
+              <div class="result-title-line">
+                <span class="result-title"><span class="hl">Java</span>集合框架专项练习</span>
+                <span class="tag-pill warning">试卷</span>
+              </div>
+              <p class="result-desc">针对 <span class="hl">Java</span> 集合框架的深度练习，涵盖 List、Set、Map 的原理与使用场景。</p>
+              <div class="result-meta">
+                <span class="meta-item"><ion-icon name="time-outline"></ion-icon>ID 15</span>
+              </div>
+            </div>
+            <div class="result-action">
+              <button class="btn-tiny">查看</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== 分页：v-if="pagination.itemCount > pagination.pageSize(20)"，flex justify-end mt-4；n-pagination 无总数文案 ===== -->
+        <div class="pagination-bar">
+          <button class="page-btn" disabled><ion-icon name="chevron-back-outline"></ion-icon></button>
+          <button class="page-btn active">1</button>
+          <button class="page-btn">2</button>
+          <button class="page-btn"><ion-icon name="chevron-forward-outline"></ion-icon></button>
+        </div>
+
+        <!-- ============ 类型下拉（n-select typeOptions） ============ -->
+        <div class="state-divider"><h2>类型下拉（n-select）</h2></div>
+        <div class="state-note">
+          代码里没有 Tab，只有 n-select：<code>全部 all / 题库 bank / 题目 question / 试卷 paper</code>。
+          选中即触发 <code>handleSearch()</code>（page 重置为 1）；值为 <code>all</code> 时请求不传 type；初始 <code>filterType = null</code>，下拉显示 placeholder「类型」。
+        </div>
+        <div class="select-menu">
+          <div class="select-option">全部</div>
+          <div class="select-option">题库</div>
+          <div class="select-option">题目</div>
+          <div class="select-option">试卷</div>
+        </div>
+
+        <!-- ============ 加载态 ============ -->
+        <div class="state-divider"><h2>加载态</h2></div>
+        <div class="state-note">
+          <code>v-if="loading"</code> → <code>SkeletonList(:count="4", :cols="1")</code>：4 张单列骨架卡（1 条标题骨架 + 3 条文本骨架 + 1 条 40% 宽骨架）。
+        </div>
+        <div class="sk-list">
+          <div class="sk-item">
+            <div class="skeleton sk-line-head"></div>
+            <div class="skeleton sk-line"></div>
+            <div class="skeleton sk-line"></div>
+            <div class="skeleton sk-line"></div>
+            <div class="skeleton sk-line" style="width:40%"></div>
+          </div>
+          <div class="sk-item">
+            <div class="skeleton sk-line-head"></div>
+            <div class="skeleton sk-line"></div>
+            <div class="skeleton sk-line"></div>
+            <div class="skeleton sk-line"></div>
+            <div class="skeleton sk-line" style="width:40%"></div>
+          </div>
+          <div class="sk-item">
+            <div class="skeleton sk-line-head"></div>
+            <div class="skeleton sk-line"></div>
+            <div class="skeleton sk-line"></div>
+            <div class="skeleton sk-line"></div>
+            <div class="skeleton sk-line" style="width:40%"></div>
+          </div>
+          <div class="sk-item">
+            <div class="skeleton sk-line-head"></div>
+            <div class="skeleton sk-line"></div>
+            <div class="skeleton sk-line"></div>
+            <div class="skeleton sk-line"></div>
+            <div class="skeleton sk-line" style="width:40%"></div>
+          </div>
+        </div>
+
+        <!-- ============ 空态一：未搜索（直接进入 /search，URL 无 keyword） ============ -->
+        <div class="state-divider"><h2>空态一：未搜索</h2></div>
+        <div class="state-note">
+          无 <code>keyword</code>/<code>q</code> 参数 → <code>onMounted</code> 不发起请求，<code>searchResults = []</code>、
+          <code>loading = false</code> → 落入 <code>v-else-if</code> 分支渲染同一个 <code>EmptyState</code>；搜索框为空、类型下拉显示「类型」。
+        </div>
+        <div class="search-panel">
+          <div class="search-row">
+            <div class="n-input-round">
               <ion-icon name="search-outline"></ion-icon>
-              <span>搜索</span>
-            </button>
-          </div>
-        </div>
-
-        <!-- 分类标签 -->
-        <div class="category-tabs">
-          <div class="cat-tab active">
-            <span>全部</span>
-            <span class="count">10</span>
-          </div>
-          <div class="cat-tab">
-            <span>题库</span>
-            <span class="count">3</span>
-          </div>
-          <div class="cat-tab">
-            <span>题目</span>
-            <span class="count">5</span>
-          </div>
-          <div class="cat-tab">
-            <span>试卷</span>
-            <span class="count">2</span>
-          </div>
-        </div>
-
-        <!-- 搜索结果 — 题库 -->
-        <div class="result-section">
-          <div class="card">
-            <div class="card-header">
-              <div class="result-section-title">
-                <ion-icon name="library-outline"></ion-icon>
-                <h3>题库</h3>
-                <span class="result-count">3 个结果</span>
-              </div>
-              <a class="see-more">查看更多 <ion-icon name="chevron-forward-outline"></ion-icon></a>
+              <input type="text" value="" placeholder="搜索题库、题目、试卷...">
             </div>
-            <div class="card-body-sm" style="padding:0;">
-              <!-- 题库 1 -->
-              <div class="search-item">
-                <div class="search-item-icon" style="background:var(--color-primary-50);color:var(--text-brand);">
-                  <ion-icon name="library-outline"></ion-icon>
-                </div>
-                <div class="search-item-body">
-                  <div class="search-item-title">
-                    <a>官方<span class="keyword-highlight">Java</span>题库</a>
-                    <span class="tag tag-warning">官方</span>
-                  </div>
-                  <div class="search-item-desc">涵盖 <span class="keyword-highlight">Java</span> 基础语法、面向对象、集合框架、多线程、IO 流、JVM 原理等核心知识点的综合性题库。</div>
-                  <div class="search-item-meta">
-                    <span class="search-item-meta-item"><ion-icon name="document-text-outline"></ion-icon> 1,245 道题</span>
-                    <span class="search-item-meta-item"><ion-icon name="people-outline"></ion-icon> 练习 8,932 次</span>
-                    <span class="search-item-meta-item"><ion-icon name="star-outline"></ion-icon> 4.8 评分</span>
-                  </div>
-                </div>
-              </div>
-              <!-- 题库 2 -->
-              <div class="search-item">
-                <div class="search-item-icon" style="background:var(--color-primary-50);color:var(--text-brand);">
-                  <ion-icon name="library-outline"></ion-icon>
-                </div>
-                <div class="search-item-body">
-                  <div class="search-item-title">
-                    <a><span class="keyword-highlight">Java</span> 高级特性</a>
-                  </div>
-                  <div class="search-item-desc">深入 <span class="keyword-highlight">Java</span> 并发编程、NIO、JVM 调优、设计模式及框架源码分析的高级题库。</div>
-                  <div class="search-item-meta">
-                    <span class="search-item-meta-item"><ion-icon name="document-text-outline"></ion-icon> 568 道题</span>
-                    <span class="search-item-meta-item"><ion-icon name="people-outline"></ion-icon> 练习 2,104 次</span>
-                    <span class="search-item-meta-item"><ion-icon name="star-outline"></ion-icon> 4.6 评分</span>
-                  </div>
-                </div>
-              </div>
-              <!-- 题库 3 -->
-              <div class="search-item">
-                <div class="search-item-icon" style="background:var(--color-primary-50);color:var(--text-brand);">
-                  <ion-icon name="library-outline"></ion-icon>
-                </div>
-                <div class="search-item-body">
-                  <div class="search-item-title">
-                    <a><span class="keyword-highlight">Java</span> 面试精讲</a>
-                    <span class="tag tag-success">推荐</span>
-                  </div>
-                  <div class="search-item-desc">精选 <span class="keyword-highlight">Java</span> 高频面试题，涵盖八股文、算法与系统设计，助你高效备战面试。</div>
-                  <div class="search-item-meta">
-                    <span class="search-item-meta-item"><ion-icon name="document-text-outline"></ion-icon> 320 道题</span>
-                    <span class="search-item-meta-item"><ion-icon name="people-outline"></ion-icon> 练习 5,678 次</span>
-                    <span class="search-item-meta-item"><ion-icon name="star-outline"></ion-icon> 4.9 评分</span>
-                  </div>
-                </div>
-              </div>
+            <div class="search-actions">
+              <div class="n-select"><span>类型</span><ion-icon name="chevron-down-outline"></ion-icon></div>
+              <button class="btn btn-primary btn-search"><ion-icon name="search-outline"></ion-icon><span>搜索</span></button>
             </div>
           </div>
         </div>
+        <div class="empty-state">
+          <ion-icon name="search-outline" class="es-icon"></ion-icon>
+          <h3 class="es-title">暂无结果</h3>
+          <p class="es-desc">换个关键词或类型试试吧</p>
+        </div>
 
-        <!-- 搜索结果 — 题目 -->
-        <div class="result-section">
-          <div class="card">
-            <div class="card-header">
-              <div class="result-section-title">
-                <ion-icon name="document-text-outline"></ion-icon>
-                <h3>题目</h3>
-                <span class="result-count">5 个结果</span>
-              </div>
-              <a class="see-more">查看更多 <ion-icon name="chevron-forward-outline"></ion-icon></a>
+        <!-- ============ 空态二：搜索无结果 ============ -->
+        <div class="state-divider"><h2>空态二：搜索无结果</h2></div>
+        <div class="state-note">
+          已搜索但 <code>records</code> 为空（如 <code>/search?keyword=Kotlin</code>）→ 与「未搜索」共用同一 <code>EmptyState</code>，文案完全一致；
+          代码不区分两种空态，也不渲染「共 N 条结果」之类的计数文案。
+        </div>
+        <div class="search-panel">
+          <div class="search-row">
+            <div class="n-input-round">
+              <ion-icon name="search-outline"></ion-icon>
+              <input type="text" value="Kotlin" placeholder="搜索题库、题目、试卷...">
+              <ion-icon name="close-circle" class="n-input-clear"></ion-icon>
             </div>
-            <div class="card-body-sm" style="padding:0;">
-              <!-- 题目 1 -->
-              <div class="search-item">
-                <div class="search-item-icon" style="background:var(--color-success-50);color:var(--color-success-600);">
-                  <ion-icon name="radio-button-on-outline"></ion-icon>
-                </div>
-                <div class="search-item-body">
-                  <div class="search-item-desc"><span class="keyword-highlight">Java</span> 中以下哪个关键字用于实现继承？</div>
-                  <div class="search-item-meta">
-                    <span class="tag tag-primary">单选</span>
-                    <span class="tag tag-success">简单</span>
-                    <span class="search-item-meta-item">来源：官方<span class="keyword-highlight">Java</span>题库</span>
-                    <span class="tag tag-default">继承</span>
-                    <span class="tag tag-default">OOP</span>
-                  </div>
-                </div>
-              </div>
-              <!-- 题目 2 -->
-              <div class="search-item">
-                <div class="search-item-icon" style="background:var(--color-info-50);color:var(--color-info-600);">
-                  <ion-icon name="checkbox-outline"></ion-icon>
-                </div>
-                <div class="search-item-body">
-                  <div class="search-item-desc">关于 <span class="keyword-highlight">Java</span> 集合框架，以下说法正确的是？ ArrayList 底层基于数组实现，HashMap 是线程安全的...</div>
-                  <div class="search-item-meta">
-                    <span class="tag tag-primary">多选</span>
-                    <span class="tag tag-error">困难</span>
-                    <span class="search-item-meta-item">来源：<span class="keyword-highlight">Java</span> 高级特性</span>
-                    <span class="tag tag-default">集合框架</span>
-                    <span class="tag tag-default">HashMap</span>
-                  </div>
-                </div>
-              </div>
-              <!-- 题目 3 -->
-              <div class="search-item">
-                <div class="search-item-icon" style="background:var(--color-success-50);color:var(--color-success-600);">
-                  <ion-icon name="radio-button-on-outline"></ion-icon>
-                </div>
-                <div class="search-item-body">
-                  <div class="search-item-desc">在 <span class="keyword-highlight">Java</span> 中，以下哪个不是基本数据类型？</div>
-                  <div class="search-item-meta">
-                    <span class="tag tag-primary">单选</span>
-                    <span class="tag tag-success">简单</span>
-                    <span class="search-item-meta-item">来源：官方<span class="keyword-highlight">Java</span>题库</span>
-                    <span class="tag tag-default">基础语法</span>
-                  </div>
-                </div>
-              </div>
-              <!-- 题目 4 -->
-              <div class="search-item">
-                <div class="search-item-icon" style="background:var(--color-warning-50);color:var(--color-warning-600);">
-                  <ion-icon name="create-outline"></ion-icon>
-                </div>
-                <div class="search-item-body">
-                  <div class="search-item-desc">请简述 <span class="keyword-highlight">Java</span> 中 == 和 equals() 方法的区别，并举例说明在什么场景下使用它们。</div>
-                  <div class="search-item-meta">
-                    <span class="tag tag-warning">简答</span>
-                    <span class="tag tag-warning">中等</span>
-                    <span class="search-item-meta-item">来源：<span class="keyword-highlight">Java</span> 面试精讲</span>
-                    <span class="tag tag-default">equals</span>
-                    <span class="tag tag-default">String</span>
-                  </div>
-                </div>
-              </div>
-              <!-- 题目 5 -->
-              <div class="search-item">
-                <div class="search-item-icon" style="background:var(--color-info-50);color:var(--color-info-600);">
-                  <ion-icon name="checkbox-outline"></ion-icon>
-                </div>
-                <div class="search-item-body">
-                  <div class="search-item-desc">关于 <span class="keyword-highlight">Java</span> 多线程，以下哪些方式可以创建线程？ 继承 Thread 类、实现 Runnable 接口、实现 Callable 接口...</div>
-                  <div class="search-item-meta">
-                    <span class="tag tag-primary">多选</span>
-                    <span class="tag tag-warning">中等</span>
-                    <span class="search-item-meta-item">来源：<span class="keyword-highlight">Java</span> 高级特性</span>
-                    <span class="tag tag-default">多线程</span>
-                    <span class="tag tag-default">并发</span>
-                  </div>
-                </div>
-              </div>
+            <div class="search-actions">
+              <div class="n-select"><span>类型</span><ion-icon name="chevron-down-outline"></ion-icon></div>
+              <button class="btn btn-primary btn-search"><ion-icon name="search-outline"></ion-icon><span>搜索</span></button>
             </div>
           </div>
         </div>
+        <div class="empty-state">
+          <ion-icon name="search-outline" class="es-icon"></ion-icon>
+          <h3 class="es-title">暂无结果</h3>
+          <p class="es-desc">换个关键词或类型试试吧</p>
+        </div>
 
-        <!-- 搜索结果 — 试卷 -->
-        <div class="result-section">
-          <div class="card">
-            <div class="card-header">
-              <div class="result-section-title">
-                <ion-icon name="file-tray-full-outline"></ion-icon>
-                <h3>试卷</h3>
-                <span class="result-count">2 个结果</span>
-              </div>
-              <a class="see-more">查看更多 <ion-icon name="chevron-forward-outline"></ion-icon></a>
-            </div>
-            <div class="card-body-sm" style="padding:0;">
-              <!-- 试卷 1 -->
-              <div class="search-item">
-                <div class="search-item-icon" style="background:var(--color-warning-50);color:var(--color-warning-600);">
-                  <ion-icon name="file-tray-full-outline"></ion-icon>
-                </div>
-                <div class="search-item-body">
-                  <div class="search-item-title">
-                    <a><span class="keyword-highlight">Java</span>基础测试卷</a>
-                    <span class="tag tag-success">已发布</span>
-                  </div>
-                  <div class="search-item-desc">覆盖 <span class="keyword-highlight">Java</span> 基础语法、流程控制、数组与字符串的综合测试卷，适合初学者检验学习成果。</div>
-                  <div class="search-item-meta">
-                    <span class="search-item-meta-item"><ion-icon name="document-text-outline"></ion-icon> 50 道题</span>
-                    <span class="search-item-meta-item"><ion-icon name="trophy-outline"></ion-icon> 总分 100 分</span>
-                    <span class="search-item-meta-item"><ion-icon name="time-outline"></ion-icon> 90 分钟</span>
-                  </div>
-                </div>
-              </div>
-              <!-- 试卷 2 -->
-              <div class="search-item">
-                <div class="search-item-icon" style="background:var(--color-warning-50);color:var(--color-warning-600);">
-                  <ion-icon name="file-tray-full-outline"></ion-icon>
-                </div>
-                <div class="search-item-body">
-                  <div class="search-item-title">
-                    <a><span class="keyword-highlight">Java</span>集合框架专项练习</a>
-                    <span class="tag tag-primary">进行中</span>
-                  </div>
-                  <div class="search-item-desc">针对 <span class="keyword-highlight">Java</span> 集合框架的深度练习，涵盖 List、Set、Map 的原理与使用场景。</div>
-                  <div class="search-item-meta">
-                    <span class="search-item-meta-item"><ion-icon name="document-text-outline"></ion-icon> 30 道题</span>
-                    <span class="search-item-meta-item"><ion-icon name="trophy-outline"></ion-icon> 总分 60 分</span>
-                    <span class="search-item-meta-item"><ion-icon name="time-outline"></ion-icon> 60 分钟</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+        <!-- ============ 校验提示：关键词为空点击搜索 ============ -->
+        <div class="state-divider"><h2>校验 / 错误提示</h2></div>
+        <div class="state-note">
+          关键词为空点搜索 → <code>message.warning('请输入搜索关键词')</code> 并 return（不发起请求）；
+          请求异常 → <code>message.error('搜索失败')</code>。两者都是顶部 toast，页面无错误块。
+        </div>
+        <div class="toast toast-warning" style="position:relative;top:auto;right:auto;">
+          <ion-icon name="warning-outline" class="toast-icon"></ion-icon>
+          <div class="toast-content">请输入搜索关键词</div>
         </div>
 
       </main>
     </div>
   </div>
-  <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
-  <script nomodule src="https://cdn.jsdelivr.net/npm/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
-<script>
+  <script>
     document.querySelector(".sidebar-toggle")?.addEventListener("click", function() {
-      var s=document.querySelector(".sidebar"),m=document.querySelector(".main-area");
-      s.classList.toggle("sidebar-collapsed");m.classList.toggle("main-area-collapsed");
-      var i=this.querySelector("ion-icon");
-      i.setAttribute("name",s.classList.contains("sidebar-collapsed")?"chevron-forward-outline":"chevron-back-outline");
+      var s = document.querySelector(".sidebar"), m = document.querySelector(".main-area");
+      s.classList.toggle("sidebar-collapsed");
+      m.classList.toggle("main-area-collapsed");
+      var i = this.querySelector("ion-icon");
+      i.setAttribute("name", s.classList.contains("sidebar-collapsed") ? "chevron-forward-outline" : "chevron-back-outline");
     });
   </script>
 </body>

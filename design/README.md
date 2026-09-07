@@ -1,6 +1,9 @@
 # Quick Study Web — UI 设计稿
 
-> 大厂级 UI 重设计 · 16 个核心页面 · AI 可读结构化输出
+> 与 `frontend/src` 代码同步的 UI 设计稿 · 27 个页面/弹窗/抽屉 · AI 可读结构化输出
+>
+> **同步约定：`frontend/src` 是唯一事实源，设计稿（mockups / docs）跟随代码更新；
+> 两者冲突时以代码为准。**
 
 ## 目录结构
 
@@ -30,11 +33,24 @@ frontend/design/
 │   ├── 12-search.html                  # 搜索
 │   ├── 13-notifications.html           # 通知中心
 │   ├── 14-profile.html                 # 个人中心
-│   └── 15-admin-users.html             # 用户管理
+│   ├── 18-favorites.html               # 收藏题目
+│   ├── 19-playground.html              # 代码运行台 (Playground)
+│   ├── 20-exam-records.html            # 考试记录
+│   ├── 21-grading-list.html            # 待批改列表
+│   ├── 22-grading-detail.html          # 批改详情
+│   ├── 23-practice-create-dialog.html  # 创建练习弹窗
+│   ├── 24-practice-list.html           # 练习记录列表
+│   ├── 25-paper-form.html              # 创建/编辑试卷（组卷向导）
+│   ├── 26-question-create.html         # 创建/编辑题目表单（含题目详情形态）
+│   ├── 27-bank-import-dialog.html      # 导入题库弹窗
+│   ├── 28-question-import-dialog.html  # 导入题目弹窗
+│   ├── 29-tag-manage-modal.html        # 标签管理弹窗
+│   ├── 30-paper-detail.html            # 试卷详情
+│   └── 31-admin-reviews.html           # 审核列表
 └── docs/                               # 设计文档
     ├── design-system.md                # 设计系统文档 (色彩/字体/间距/圆角/阴影/布局/Naive UI 主题)
-    ├── component-specs.md              # 组件规范 (17 个组件的 HTML 结构 + Naive UI 映射)
-    ├── page-specs.md                   # 页面规范 (16 个页面的布局/组件/接口/交互)
+    ├── component-specs.md              # 组件规范 (25 个真实组件 + 组合式函数 + 工具函数)
+    ├── page-specs.md                   # 页面规范 (33 章的布局/组件/接口/交互)
     └── ai-implementation-guide.md      # AI 实现指南 (7 步改造流程 + 代码示例)
 ```
 

@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>待批改 — Quick Study</title>
+  <link rel="stylesheet" href="styles/mockup.css">
+  <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
+  <script nomodule src="https://cdn.jsdelivr.net/npm/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
+  <style>
+    /* 最小补充：对齐代码中的 n-button type="primary" quaternary size="small" */
+    .btn-quaternary {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-2);
+      padding: 6px 16px;
+      font-size: var(--text-sm);
+      font-weight: var(--font-semibold);
+      border: none;
+      background: transparent;
+      color: var(--text-brand);
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: all var(--transition-base);
+      white-space: nowrap;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+    .btn-quaternary:hover { background: var(--color-primary-50); }
+
+    /* 加载骨架：对齐 SkeletonList(:count=3,:cols=1) */
+    .sk-list { display: grid; grid-template-columns: 1fr; gap: var(--space-3); }
+    .sk-item {
+      background: var(--bg-card);
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius-lg);
+      padding: var(--space-5);
+    }
+    .sk-line-head { height: 20px; margin-bottom: var(--space-4); }
+    .sk-line { height: 14px; margin-bottom: var(--space-2); }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <!-- ===== Sidebar（批改无独立菜单项，无高亮；按 CHROME.md 已登录+管理员完整形态） ===== -->
+    <aside class="sidebar">
+      <div class="sidebar-logo">
+        <div class="sidebar-logo-icon">QS</div>
+        <span class="sidebar-logo-text">Quick Study</span>
+        <button class="sidebar-toggle" data-tooltip="折叠侧边栏"><ion-icon name="chevron-back-outline"></ion-icon></button>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="sidebar-nav-item" onclick="location.href='01-home.html'"><ion-icon name="home-outline"></ion-icon><span>首页</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='02-bank-list.html'"><ion-icon name="library-outline"></ion-icon><span>题库</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='04-question-list.html'"><ion-icon name="document-text-outline"></ion-icon><span>题目</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='05-paper-list.html'"><ion-icon name="file-tray-full-outline"></ion-icon><span>试卷</span></div>
+        <div class="sidebar-nav-label">学习中心</div>
+        <div class="sidebar-nav-item" onclick="location.href='24-practice-list.html'"><ion-icon name="game-controller-outline"></ion-icon><span>练习</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='19-playground.html'"><ion-icon name="code-slash-outline"></ion-icon><span>代码运行台</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='10-wrong-questions.html'"><ion-icon name="close-circle-outline"></ion-icon><span>错题本</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='18-favorites.html'"><ion-icon name="star-outline"></ion-icon><span>收藏题目</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='11-records.html'"><ion-icon name="time-outline"></ion-icon><span>做题记录</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='20-exam-records.html'"><ion-icon name="document-text-outline"></ion-icon><span>考试记录</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='09-statistics.html'"><ion-icon name="bar-chart-outline"></ion-icon><span>统计</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='13-notifications.html'"><ion-icon name="notifications-outline"></ion-icon><span>通知</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='12-search.html'"><ion-icon name="search-outline"></ion-icon><span>搜索</span></div>
+        <div class="sidebar-nav-label">管理</div>
+        <div class="sidebar-nav-item" onclick="location.href='15-admin-users.html'"><ion-icon name="people-outline"></ion-icon><span>用户管理</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='31-admin-reviews.html'"><ion-icon name="checkmark-done-outline"></ion-icon><span>审核列表</span></div>
+      </nav>
+      <div class="sidebar-footer"><div class="sidebar-nav-item"><ion-icon name="log-out-outline"></ion-icon><span>退出登录</span></div></div>
+    </aside>
+
+    <div class="main-area">
+      <header class="app-header">
+        <div class="app-header-left">
+          <button class="mobile-menu-btn"><ion-icon name="menu-outline"></ion-icon></button>
+          <div class="breadcrumb"><span class="breadcrumb-current">批改</span></div>
+        </div>
+        <div class="app-header-right">
+          <div class="header-search">
+            <ion-icon name="search-outline"></ion-icon>
+            <input class="input" type="text" placeholder="搜索题目 / 题库 / 试卷" readonly style="cursor:pointer;">
+          </div>
+          <div style="position:relative;cursor:pointer;">
+            <ion-icon name="notifications-outline" style="font-size:22px;color:var(--text-secondary);"></ion-icon>
+            <span class="badge" style="position:absolute;top:-4px;right:-4px;">3</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+            <div class="avatar" style="background:var(--gradient-brand);">王</div>
+            <span style="font-size:14px;font-weight:500;color:var(--text-primary);">王老师</span>
+            <ion-icon name="chevron-down-outline" style="font-size:16px;color:var(--text-tertiary);"></ion-icon>
+          </div>
+        </div>
+      </header>
+
+      <main class="app-content">
+        <!-- ===== 页面标题区：PageHeader(title="待批改", subtitle 仅 itemCount>0 时显示) ===== -->
+        <div class="page-header">
+          <div>
+            <h1 class="page-header-title">待批改</h1>
+            <p class="page-header-subtitle">共 8 份待批改</p>
+          </div>
+        </div>
+
+        <!-- ===== 列表态（pendingList.length > 0，默认渲染） ===== -->
+        <!-- 整张卡片可点击 → /grading/sessions/:id；「去批改」按钮同样跳转（@click.stop 防重复） -->
+        <div class="flex flex-col gap-3">
+          <div class="card card-hover cursor-pointer flex items-center gap-4 px-5 py-4" onclick="location.href='22-grading-detail.html'">
+            <div style="width:40px;height:40px;border-radius:var(--radius-lg);background:var(--color-primary-50);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+              <ion-icon name="document-text-outline" style="font-size:22px;color:var(--text-brand);"></ion-icon>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap;">
+                <span style="font-size:var(--text-base);font-weight:var(--font-semibold);color:var(--text-primary);" class="truncate">Java 基础测试卷 (一)</span>
+                <span class="tag tag-warning rounded-full">待批改</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:16px;font-size:var(--text-sm);color:var(--text-secondary);">
+                <span style="display:inline-flex;align-items:center;gap:4px;"><ion-icon name="person-outline" style="font-size:14px;"></ion-icon>李同学</span>
+                <span style="display:inline-flex;align-items:center;gap:4px;"><ion-icon name="time-outline" style="font-size:14px;"></ion-icon>提交于 2025-09-03 14:45</span>
+              </div>
+            </div>
+            <button class="btn-quaternary" onclick="location.href='22-grading-detail.html'">去批改</button>
+          </div>
+
+          <div class="card card-hover cursor-pointer flex items-center gap-4 px-5 py-4" onclick="location.href='22-grading-detail.html'">
+            <div style="width:40px;height:40px;border-radius:var(--radius-lg);background:var(--color-primary-50);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+              <ion-icon name="document-text-outline" style="font-size:22px;color:var(--text-brand);"></ion-icon>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap;">
+                <span style="font-size:var(--text-base);font-weight:var(--font-semibold);color:var(--text-primary);" class="truncate">Python 入门测验</span>
+                <span class="tag tag-warning rounded-full">待批改</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:16px;font-size:var(--text-sm);color:var(--text-secondary);">
+                <span style="display:inline-flex;align-items:center;gap:4px;"><ion-icon name="person-outline" style="font-size:14px;"></ion-icon>张同学</span>
+                <span style="display:inline-flex;align-items:center;gap:4px;"><ion-icon name="time-outline" style="font-size:14px;"></ion-icon>提交于 2025-09-02 10:20</span>
+              </div>
+            </div>
+            <button class="btn-quaternary" onclick="location.href='22-grading-detail.html'">去批改</button>
+          </div>
+
+          <div class="card card-hover cursor-pointer flex items-center gap-4 px-5 py-4" onclick="location.href='22-grading-detail.html'">
+            <div style="width:40px;height:40px;border-radius:var(--radius-lg);background:var(--color-primary-50);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+              <ion-icon name="document-text-outline" style="font-size:22px;color:var(--text-brand);"></ion-icon>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap;">
+                <span style="font-size:var(--text-base);font-weight:var(--font-semibold);color:var(--text-primary);" class="truncate">数据结构期中考试</span>
+                <span class="tag tag-warning rounded-full">待批改</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:16px;font-size:var(--text-sm);color:var(--text-secondary);">
+                <span style="display:inline-flex;align-items:center;gap:4px;"><ion-icon name="person-outline" style="font-size:14px;"></ion-icon>赵同学</span>
+                <span style="display:inline-flex;align-items:center;gap:4px;"><ion-icon name="time-outline" style="font-size:14px;"></ion-icon>提交于 2025-09-01 16:00</span>
+              </div>
+            </div>
+            <button class="btn-quaternary" onclick="location.href='22-grading-detail.html'">去批改</button>
+          </div>
+
+          <div class="card card-hover cursor-pointer flex items-center gap-4 px-5 py-4" onclick="location.href='22-grading-detail.html'">
+            <div style="width:40px;height:40px;border-radius:var(--radius-lg);background:var(--color-primary-50);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+              <ion-icon name="document-text-outline" style="font-size:22px;color:var(--text-brand);"></ion-icon>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap;">
+                <span style="font-size:var(--text-base);font-weight:var(--font-semibold);color:var(--text-primary);" class="truncate">计算机网络随堂测</span>
+                <span class="tag tag-warning rounded-full">待批改</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:16px;font-size:var(--text-sm);color:var(--text-secondary);">
+                <span style="display:inline-flex;align-items:center;gap:4px;"><ion-icon name="person-outline" style="font-size:14px;"></ion-icon>孙同学</span>
+                <span style="display:inline-flex;align-items:center;gap:4px;"><ion-icon name="time-outline" style="font-size:14px;"></ion-icon>提交于 2025-08-31 09:15</span>
+              </div>
+            </div>
+            <button class="btn-quaternary" onclick="location.href='22-grading-detail.html'">去批改</button>
+          </div>
+
+          <div class="card card-hover cursor-pointer flex items-center gap-4 px-5 py-4" onclick="location.href='22-grading-detail.html'">
+            <div style="width:40px;height:40px;border-radius:var(--radius-lg);background:var(--color-primary-50);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+              <ion-icon name="document-text-outline" style="font-size:22px;color:var(--text-brand);"></ion-icon>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap;">
+                <span style="font-size:var(--text-base);font-weight:var(--font-semibold);color:var(--text-primary);" class="truncate">操作系统期末模拟</span>
+                <span class="tag tag-warning rounded-full">待批改</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:16px;font-size:var(--text-sm);color:var(--text-secondary);">
+                <span style="display:inline-flex;align-items:center;gap:4px;"><ion-icon name="person-outline" style="font-size:14px;"></ion-icon>周同学</span>
+                <span style="display:inline-flex;align-items:center;gap:4px;"><ion-icon name="time-outline" style="font-size:14px;"></ion-icon>提交于 2025-08-30 20:40</span>
+              </div>
+            </div>
+            <button class="btn-quaternary" onclick="location.href='22-grading-detail.html'">去批改</button>
+          </div>
+
+          <div class="card card-hover cursor-pointer flex items-center gap-4 px-5 py-4" onclick="location.href='22-grading-detail.html'">
+            <div style="width:40px;height:40px;border-radius:var(--radius-lg);background:var(--color-primary-50);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+              <ion-icon name="document-text-outline" style="font-size:22px;color:var(--text-brand);"></ion-icon>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap;">
+                <span style="font-size:var(--text-base);font-weight:var(--font-semibold);color:var(--text-primary);" class="truncate">数据库原理作业</span>
+                <span class="tag tag-warning rounded-full">待批改</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:16px;font-size:var(--text-sm);color:var(--text-secondary);">
+                <span style="display:inline-flex;align-items:center;gap:4px;"><ion-icon name="person-outline" style="font-size:14px;"></ion-icon>吴同学</span>
+                <span style="display:inline-flex;align-items:center;gap:4px;"><ion-icon name="time-outline" style="font-size:14px;"></ion-icon>提交于 2025-08-29 13:25</span>
+              </div>
+            </div>
+            <button class="btn-quaternary" onclick="location.href='22-grading-detail.html'">去批改</button>
+          </div>
+
+          <div class="card card-hover cursor-pointer flex items-center gap-4 px-5 py-4" onclick="location.href='22-grading-detail.html'">
+            <div style="width:40px;height:40px;border-radius:var(--radius-lg);background:var(--color-primary-50);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+              <ion-icon name="document-text-outline" style="font-size:22px;color:var(--text-brand);"></ion-icon>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap;">
+                <span style="font-size:var(--text-base);font-weight:var(--font-semibold);color:var(--text-primary);" class="truncate">高等数学练习题</span>
+                <span class="tag tag-warning rounded-full">待批改</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:16px;font-size:var(--text-sm);color:var(--text-secondary);">
+                <span style="display:inline-flex;align-items:center;gap:4px;"><ion-icon name="person-outline" style="font-size:14px;"></ion-icon>郑同学</span>
+                <span style="display:inline-flex;align-items:center;gap:4px;"><ion-icon name="time-outline" style="font-size:14px;"></ion-icon>提交于 2025-08-28 11:05</span>
+              </div>
+            </div>
+            <button class="btn-quaternary" onclick="location.href='22-grading-detail.html'">去批改</button>
+          </div>
+
+          <div class="card card-hover cursor-pointer flex items-center gap-4 px-5 py-4" onclick="location.href='22-grading-detail.html'">
+            <div style="width:40px;height:40px;border-radius:var(--radius-lg);background:var(--color-primary-50);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+              <ion-icon name="document-text-outline" style="font-size:22px;color:var(--text-brand);"></ion-icon>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap;">
+                <span style="font-size:var(--text-base);font-weight:var(--font-semibold);color:var(--text-primary);" class="truncate">英语四级模拟卷</span>
+                <span class="tag tag-warning rounded-full">待批改</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:16px;font-size:var(--text-sm);color:var(--text-secondary);">
+                <span style="display:inline-flex;align-items:center;gap:4px;"><ion-icon name="person-outline" style="font-size:14px;"></ion-icon>冯同学</span>
+                <span style="display:inline-flex;align-items:center;gap:4px;"><ion-icon name="time-outline" style="font-size:14px;"></ion-icon>提交于 2025-08-27 15:50</span>
+              </div>
+            </div>
+            <button class="btn-quaternary" onclick="location.href='22-grading-detail.html'">去批改</button>
+          </div>
+        </div>
+
+        <!-- ===== 空态（pendingList.length === 0 且非加载中）：EmptyState ===== -->
+        <!-- 生产中与上方列表态互斥；此处为派生状态示意 -->
+        <div class="card" style="margin-top:var(--space-8);">
+          <div class="empty-state">
+            <ion-icon name="document-text-outline" class="empty-state-icon" style="font-size:56px;color:var(--color-neutral-300);"></ion-icon>
+            <h3 class="empty-state-title">暂无待批改</h3>
+            <p class="empty-state-desc">有作答者提交试卷后，会显示在这里等待你批改</p>
+          </div>
+        </div>
+
+        <!-- ===== 加载态（loading && pendingList.length === 0）：SkeletonList(:count=3,:cols=1) ===== -->
+        <div style="margin-top:var(--space-8);">
+          <div class="sk-list">
+            <div class="sk-item">
+              <div class="skeleton sk-line-head"></div>
+              <div class="skeleton sk-line"></div>
+              <div class="skeleton sk-line"></div>
+              <div class="skeleton sk-line" style="width:40%"></div>
+            </div>
+            <div class="sk-item">
+              <div class="skeleton sk-line-head"></div>
+              <div class="skeleton sk-line"></div>
+              <div class="skeleton sk-line"></div>
+              <div class="skeleton sk-line" style="width:40%"></div>
+            </div>
+            <div class="sk-item">
+              <div class="skeleton sk-line-head"></div>
+              <div class="skeleton sk-line"></div>
+              <div class="skeleton sk-line"></div>
+              <div class="skeleton sk-line" style="width:40%"></div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+  <script>
+    document.querySelector(".sidebar-toggle")?.addEventListener("click", function() {
+      var s=document.querySelector(".sidebar"),m=document.querySelector(".main-area");
+      s.classList.toggle("sidebar-collapsed");m.classList.toggle("main-area-collapsed");
+      var i=this.querySelector("ion-icon");
+      i.setAttribute("name",s.classList.contains("sidebar-collapsed")?"chevron-forward-outline":"chevron-back-outline");
+    });
+  </script>
+</body>
+</html>

@@ -49,32 +49,7 @@
       pointer-events: none;
     }
     .filter-search .input { padding-left: 38px; }
-    .filter-select { width: auto; min-width: 170px; }
-
-    /* ---- Status tabs ---- */
-    .status-tabs {
-      display: inline-flex;
-      gap: 4px;
-      background: var(--bg-subtle);
-      padding: 4px;
-      border-radius: var(--radius-md);
-    }
-    .status-tab {
-      padding: 6px 14px;
-      border-radius: var(--radius-sm);
-      font-size: var(--text-sm);
-      font-weight: var(--font-medium);
-      color: var(--text-secondary);
-      cursor: pointer;
-      transition: all var(--transition-base);
-    }
-    .status-tab:hover { color: var(--text-primary); }
-    .status-tab.active {
-      background: var(--bg-card);
-      color: var(--text-primary);
-      font-weight: var(--font-semibold);
-      box-shadow: var(--shadow-xs);
-    }
+    .filter-select { width: auto; min-width: 150px; }
 
     /* ---- Paper cards ---- */
     .paper-grid {
@@ -150,23 +125,22 @@
       color: var(--text-secondary);
       margin-bottom: 16px;
     }
-    .paper-meta .dot {
-      width: 3px; height: 3px; border-radius: 50%;
-      background: var(--color-neutral-300);
-    }
+    .paper-meta .date { margin-left: auto; color: var(--text-tertiary); white-space: nowrap; }
     .paper-footer {
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 12px;
       margin-top: auto;
+      padding-top: 12px;
+      border-top: 1px solid var(--border-default);
     }
-    .paper-footer-actions { display: flex; gap: 8px; }
+    .paper-footer-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 
     .pagination-bar {
       display: flex;
       align-items: center;
-      justify-content: center;
+      justify-content: flex-end;
       gap: 6px;
       padding: 16px;
     }
@@ -189,15 +163,17 @@
         <div class="sidebar-nav-item active" onclick="window.location.href='05-paper-list.html'"><ion-icon name="file-tray-full-outline"></ion-icon><span>试卷</span></div>
         <div class="sidebar-nav-label">学习中心</div>
         <div class="sidebar-nav-item" onclick="window.location.href='24-practice-list.html'"><ion-icon name="game-controller-outline"></ion-icon><span>练习</span></div>
+        <div class="sidebar-nav-item" onclick="window.location.href='19-playground.html'"><ion-icon name="code-slash-outline"></ion-icon><span>代码运行台</span></div>
         <div class="sidebar-nav-item" onclick="window.location.href='10-wrong-questions.html'"><ion-icon name="close-circle-outline"></ion-icon><span>错题本</span></div>
         <div class="sidebar-nav-item" onclick="window.location.href='18-favorites.html'"><ion-icon name="star-outline"></ion-icon><span>收藏题目</span></div>
         <div class="sidebar-nav-item" onclick="window.location.href='11-records.html'"><ion-icon name="time-outline"></ion-icon><span>做题记录</span></div>
+        <div class="sidebar-nav-item" onclick="window.location.href='20-exam-records.html'"><ion-icon name="document-text-outline"></ion-icon><span>考试记录</span></div>
         <div class="sidebar-nav-item" onclick="window.location.href='09-statistics.html'"><ion-icon name="bar-chart-outline"></ion-icon><span>统计</span></div>
         <div class="sidebar-nav-item" onclick="window.location.href='13-notifications.html'"><ion-icon name="notifications-outline"></ion-icon><span>通知</span></div>
         <div class="sidebar-nav-item" onclick="window.location.href='12-search.html'"><ion-icon name="search-outline"></ion-icon><span>搜索</span></div>
         <div class="sidebar-nav-label">管理</div>
         <div class="sidebar-nav-item" onclick="window.location.href='15-admin-users.html'"><ion-icon name="people-outline"></ion-icon><span>用户管理</span></div>
-        <div class="sidebar-nav-item" onclick="window.location.href='28-admin-reviews.html'"><ion-icon name="checkmark-done-outline"></ion-icon><span>审核列表</span></div>
+        <div class="sidebar-nav-item" onclick="window.location.href='31-admin-reviews.html'"><ion-icon name="checkmark-done-outline"></ion-icon><span>审核列表</span></div>
       </nav>
       <div class="sidebar-footer">
         <div class="sidebar-nav-item"><ion-icon name="log-out-outline"></ion-icon><span>退出登录</span></div>
@@ -208,8 +184,7 @@
       <header class="app-header">
         <div class="app-header-left">
           <button class="mobile-menu-btn" onclick="document.querySelector('.sidebar').classList.toggle('mobile-open')"><ion-icon name="menu-outline"></ion-icon></button>
-          <button class="mobile-menu-btn" onclick="document.querySelector('.sidebar').classList.toggle('mobile-open')"><ion-icon name="menu-outline"></ion-icon></button>
-          <div class="breadcrumb"><span>试卷</span></div>
+          <div class="breadcrumb"><span class="breadcrumb-current">试卷</span></div>
         </div>
         <div class="app-header-right">
           <div class="header-search">
@@ -218,7 +193,6 @@
           </div>
           <div style="position:relative;cursor:pointer;" onclick="window.location.href='13-notifications.html'">
             <ion-icon name="notifications-outline" style="font-size:22px;color:var(--text-secondary);"></ion-icon>
-            <span class="badge" style="position:absolute;top:-4px;right:-4px;">3</span>
           </div>
           <div style="display:flex;align-items:center;gap:8px;cursor:pointer;" onclick="window.location.href='14-profile.html'">
             <div class="avatar" style="background:var(--gradient-brand);">张</div>
@@ -235,7 +209,7 @@
             <h1>试卷</h1>
             <div class="subtitle">创建、管理试卷，组织在线考试与练习</div>
           </div>
-          <button class="btn btn-primary">
+          <button class="btn btn-primary" onclick="window.location.href='25-paper-form.html'">
             <ion-icon name="add-circle-outline"></ion-icon>
             <span>创建试卷</span>
           </button>
@@ -246,27 +220,28 @@
           <div class="filter-row">
             <div class="filter-search">
               <ion-icon name="search-outline"></ion-icon>
-              <input type="text" class="input" placeholder="搜索试卷名称...">
-            </div>
-            <div class="status-tabs">
-              <div class="status-tab active">全部</div>
-              <div class="status-tab">草稿</div>
-              <div class="status-tab">已发布</div>
-              <div class="status-tab">已关闭</div>
+              <input type="text" class="input" placeholder="搜索试卷标题...">
             </div>
             <select class="select filter-select">
-              <option>全部共享类型</option>
+              <option>全部分享类型</option>
+              <option>私有</option>
+              <option>链接</option>
+              <option>密码</option>
               <option>公开</option>
-              <option>私有+密码</option>
-              <option>私有+链接</option>
+            </select>
+            <select class="select filter-select">
+              <option>全部状态</option>
+              <option>草稿</option>
+              <option>已发布</option>
+              <option>已关闭</option>
             </select>
           </div>
         </div>
 
         <!-- Paper cards -->
         <div class="paper-grid">
-          <!-- Paper 1 -->
-          <div class="card paper-card card-hover">
+          <!-- Paper 1: PUBLISHED / PUBLIC -->
+          <div class="card paper-card">
             <div class="paper-card-top">
               <div class="paper-title">Java 基础测试卷 (一)</div>
               <span class="tag tag-success">已发布</span>
@@ -280,20 +255,21 @@
             <div class="paper-meta">
               <div class="avatar avatar-sm" style="background:#22B570;">张</div>
               <span>张老师</span>
-              <span class="dot"></span>
-              <span>2026-08-20 创建</span>
+              <span class="date">2026-08-20</span>
             </div>
             <div class="paper-footer">
               <div class="paper-footer-actions">
-                <button class="btn btn-primary btn-sm"><ion-icon name="play-outline"></ion-icon><span>开始考试</span></button>
-                <button class="btn btn-ghost btn-sm"><ion-icon name="eye-outline"></ion-icon><span>查看详情</span></button>
+                <button class="btn btn-primary btn-sm" onclick="window.location.href='06-exam-page.html'"><ion-icon name="play-outline"></ion-icon><span>开始考试</span></button>
+                <button class="btn btn-ghost btn-sm" onclick="window.location.href='30-paper-detail.html'"><ion-icon name="eye-outline"></ion-icon><span>查看详情</span></button>
+                <button class="btn btn-ghost btn-sm" onclick="window.location.href='25-paper-form.html'"><ion-icon name="create-outline"></ion-icon><span>编辑</span></button>
+                <button class="btn btn-ghost btn-sm" style="color:var(--color-error-600);"><ion-icon name="trash-outline"></ion-icon><span>删除</span></button>
               </div>
-              <span class="tag tag-success"><ion-icon name="globe-outline" style="font-size:13px;"></ion-icon>公开</span>
+              <span class="tag tag-success">公开</span>
             </div>
           </div>
 
-          <!-- Paper 2 -->
-          <div class="card paper-card card-hover">
+          <!-- Paper 2: PUBLISHED / PASSWORD -->
+          <div class="card paper-card">
             <div class="paper-card-top">
               <div class="paper-title">Python 编程能力评估</div>
               <span class="tag tag-success">已发布</span>
@@ -307,20 +283,21 @@
             <div class="paper-meta">
               <div class="avatar avatar-sm" style="background:#3B8BFF;">李</div>
               <span>李老师</span>
-              <span class="dot"></span>
-              <span>2026-08-18 创建</span>
+              <span class="date">2026-08-18</span>
             </div>
             <div class="paper-footer">
               <div class="paper-footer-actions">
-                <button class="btn btn-primary btn-sm"><ion-icon name="play-outline"></ion-icon><span>开始考试</span></button>
-                <button class="btn btn-ghost btn-sm"><ion-icon name="eye-outline"></ion-icon><span>查看详情</span></button>
+                <button class="btn btn-primary btn-sm" onclick="window.location.href='06-exam-page.html'"><ion-icon name="play-outline"></ion-icon><span>开始考试</span></button>
+                <button class="btn btn-ghost btn-sm" onclick="window.location.href='30-paper-detail.html'"><ion-icon name="eye-outline"></ion-icon><span>查看详情</span></button>
+                <button class="btn btn-ghost btn-sm" onclick="window.location.href='25-paper-form.html'"><ion-icon name="create-outline"></ion-icon><span>编辑</span></button>
+                <button class="btn btn-ghost btn-sm" style="color:var(--color-error-600);"><ion-icon name="trash-outline"></ion-icon><span>删除</span></button>
               </div>
-              <span class="tag tag-warning"><ion-icon name="lock-closed-outline" style="font-size:13px;"></ion-icon>私有+密码</span>
+              <span class="tag tag-warning">密码</span>
             </div>
           </div>
 
-          <!-- Paper 3 -->
-          <div class="card paper-card card-hover">
+          <!-- Paper 3: PUBLISHED / LINK -->
+          <div class="card paper-card">
             <div class="paper-card-top">
               <div class="paper-title">数据结构期末考试</div>
               <span class="tag tag-success">已发布</span>
@@ -334,20 +311,21 @@
             <div class="paper-meta">
               <div class="avatar avatar-sm" style="background:#FFA42B;">王</div>
               <span>王老师</span>
-              <span class="dot"></span>
-              <span>2026-08-15 创建</span>
+              <span class="date">2026-08-15</span>
             </div>
             <div class="paper-footer">
               <div class="paper-footer-actions">
-                <button class="btn btn-primary btn-sm"><ion-icon name="play-outline"></ion-icon><span>开始考试</span></button>
-                <button class="btn btn-ghost btn-sm"><ion-icon name="eye-outline"></ion-icon><span>查看详情</span></button>
+                <button class="btn btn-primary btn-sm" onclick="window.location.href='06-exam-page.html'"><ion-icon name="play-outline"></ion-icon><span>开始考试</span></button>
+                <button class="btn btn-ghost btn-sm" onclick="window.location.href='30-paper-detail.html'"><ion-icon name="eye-outline"></ion-icon><span>查看详情</span></button>
+                <button class="btn btn-ghost btn-sm" onclick="window.location.href='25-paper-form.html'"><ion-icon name="create-outline"></ion-icon><span>编辑</span></button>
+                <button class="btn btn-ghost btn-sm" style="color:var(--color-error-600);"><ion-icon name="trash-outline"></ion-icon><span>删除</span></button>
               </div>
-              <span class="tag tag-success"><ion-icon name="globe-outline" style="font-size:13px;"></ion-icon>公开</span>
+              <span class="tag tag-info">链接</span>
             </div>
           </div>
 
-          <!-- Paper 4 -->
-          <div class="card paper-card card-hover">
+          <!-- Paper 4: DRAFT / PRIVATE -->
+          <div class="card paper-card">
             <div class="paper-card-top">
               <div class="paper-title">计算机网络单元测试</div>
               <span class="tag tag-default">草稿</span>
@@ -361,23 +339,24 @@
             <div class="paper-meta">
               <div class="avatar avatar-sm" style="background:#F0503C;">赵</div>
               <span>赵老师</span>
-              <span class="dot"></span>
-              <span>2026-08-12 创建</span>
+              <span class="date">2026-08-12</span>
             </div>
             <div class="paper-footer">
               <div class="paper-footer-actions">
-                <button class="btn btn-secondary btn-sm"><ion-icon name="create-outline"></ion-icon><span>继续编辑</span></button>
-                <button class="btn btn-ghost btn-sm"><ion-icon name="eye-outline"></ion-icon><span>查看详情</span></button>
+                <button class="btn btn-ghost btn-sm" onclick="window.location.href='30-paper-detail.html'"><ion-icon name="eye-outline"></ion-icon><span>查看详情</span></button>
+                <button class="btn btn-ghost btn-sm" onclick="window.location.href='25-paper-form.html'"><ion-icon name="create-outline"></ion-icon><span>编辑</span></button>
+                <button class="btn btn-ghost btn-sm" style="color:var(--color-success-600);"><ion-icon name="send-outline"></ion-icon><span>发布</span></button>
+                <button class="btn btn-ghost btn-sm" style="color:var(--color-error-600);"><ion-icon name="trash-outline"></ion-icon><span>删除</span></button>
               </div>
-              <span class="tag tag-info"><ion-icon name="link-outline" style="font-size:13px;"></ion-icon>私有+链接</span>
+              <span class="tag tag-default">私有</span>
             </div>
           </div>
 
-          <!-- Paper 5 -->
-          <div class="card paper-card card-hover">
+          <!-- Paper 5: CLOSED / PUBLIC -->
+          <div class="card paper-card">
             <div class="paper-card-top">
               <div class="paper-title">操作系统模拟卷</div>
-              <span class="tag tag-warning">已关闭</span>
+              <span class="tag tag-error">已关闭</span>
             </div>
             <div class="paper-desc">进程管理、内存管理、文件系统、IO 管理等操作系统核心内容，考试已结束。</div>
             <div class="paper-stats">
@@ -388,20 +367,21 @@
             <div class="paper-meta">
               <div class="avatar avatar-sm" style="background:#22B570;">张</div>
               <span>张老师</span>
-              <span class="dot"></span>
-              <span>2026-08-10 创建</span>
+              <span class="date">2026-08-10</span>
             </div>
             <div class="paper-footer">
               <div class="paper-footer-actions">
-                <button class="btn btn-ghost btn-sm" disabled><ion-icon name="ban-outline"></ion-icon><span>已关闭</span></button>
-                <button class="btn btn-ghost btn-sm"><ion-icon name="eye-outline"></ion-icon><span>查看详情</span></button>
+                <button class="btn btn-ghost btn-sm" onclick="window.location.href='30-paper-detail.html'"><ion-icon name="eye-outline"></ion-icon><span>查看详情</span></button>
+                <button class="btn btn-ghost btn-sm" onclick="window.location.href='25-paper-form.html'"><ion-icon name="create-outline"></ion-icon><span>编辑</span></button>
+                <button class="btn btn-ghost btn-sm" style="color:var(--color-success-600);"><ion-icon name="send-outline"></ion-icon><span>发布</span></button>
+                <button class="btn btn-ghost btn-sm" style="color:var(--color-error-600);"><ion-icon name="trash-outline"></ion-icon><span>删除</span></button>
               </div>
-              <span class="tag tag-success"><ion-icon name="globe-outline" style="font-size:13px;"></ion-icon>公开</span>
+              <span class="tag tag-success">公开</span>
             </div>
           </div>
 
-          <!-- Paper 6 -->
-          <div class="card paper-card card-hover">
+          <!-- Paper 6: PUBLISHED / LINK -->
+          <div class="card paper-card">
             <div class="paper-card-top">
               <div class="paper-title">数据库原理练习卷</div>
               <span class="tag tag-success">已发布</span>
@@ -415,15 +395,16 @@
             <div class="paper-meta">
               <div class="avatar avatar-sm" style="background:#3B8BFF;">李</div>
               <span>李老师</span>
-              <span class="dot"></span>
-              <span>2026-08-08 创建</span>
+              <span class="date">2026-08-08</span>
             </div>
             <div class="paper-footer">
               <div class="paper-footer-actions">
-                <button class="btn btn-primary btn-sm"><ion-icon name="play-outline"></ion-icon><span>开始考试</span></button>
-                <button class="btn btn-ghost btn-sm"><ion-icon name="eye-outline"></ion-icon><span>查看详情</span></button>
+                <button class="btn btn-primary btn-sm" onclick="window.location.href='06-exam-page.html'"><ion-icon name="play-outline"></ion-icon><span>开始考试</span></button>
+                <button class="btn btn-ghost btn-sm" onclick="window.location.href='30-paper-detail.html'"><ion-icon name="eye-outline"></ion-icon><span>查看详情</span></button>
+                <button class="btn btn-ghost btn-sm" onclick="window.location.href='25-paper-form.html'"><ion-icon name="create-outline"></ion-icon><span>编辑</span></button>
+                <button class="btn btn-ghost btn-sm" style="color:var(--color-error-600);"><ion-icon name="trash-outline"></ion-icon><span>删除</span></button>
               </div>
-              <span class="tag tag-info"><ion-icon name="link-outline" style="font-size:13px;"></ion-icon>私有+链接</span>
+              <span class="tag tag-info">链接</span>
             </div>
           </div>
         </div>

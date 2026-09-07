@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>代码运行台 — Quick Study</title>
+  <link rel="stylesheet" href="styles/mockup.css">
+  <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
+  <script nomodule src="https://cdn.jsdelivr.net/npm/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
+  <style>
+    /* ---- Page header ---- */
+    .page-title { display: flex; align-items: center; gap: var(--space-3); }
+    .playground-badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 3px 10px; border-radius: var(--radius-full);
+      background: var(--color-primary-50); color: var(--text-brand);
+      font-size: var(--text-xs); font-weight: var(--font-semibold);
+    }
+    .playground-badge ion-icon { font-size: 13px; }
+
+    /* ---- Editor card ---- */
+    .editor-card { overflow: hidden; }
+    .editor-toolbar {
+      display: flex; align-items: center; gap: var(--space-3);
+      padding: var(--space-3) var(--space-5); border-bottom: 1px solid var(--border-default);
+      background: var(--bg-subtle); flex-wrap: wrap;
+    }
+    .lang-select {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px;
+      border: 1px solid var(--border-default); border-radius: var(--radius-md);
+      background: var(--bg-card); color: var(--text-primary); font-size: var(--text-sm); font-weight: var(--font-medium);
+      font-family: var(--font-sans); cursor: pointer; outline: none; transition: all var(--transition-base);
+    }
+    .lang-select:hover { border-color: var(--color-primary-300); }
+    .lang-select:focus { border-color: var(--color-primary-500); box-shadow: 0 0 0 3px rgba(91,95,233,.12); }
+
+    .file-tab {
+      display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px;
+      border: 1px solid var(--border-default); border-radius: var(--radius-md);
+      background: var(--bg-card); font-family: var(--font-mono); font-size: var(--text-sm); color: var(--text-primary);
+    }
+    .file-tab ion-icon { font-size: 14px; color: var(--text-brand); }
+    .toolbar-divider { width: 1px; height: 20px; background: var(--border-default); }
+
+    .toolbar-btn {
+      display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px;
+      border-radius: var(--radius-md); border: none; background: transparent; color: var(--text-secondary);
+      cursor: pointer; transition: all var(--transition-base);
+    }
+    .toolbar-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
+    .toolbar-btn ion-icon { font-size: 18px; }
+
+    /* ---- Editor area (light theme default) ---- */
+    .editor-wrap { position: relative; display: flex; background: #FFFFFF; }
+    .editor-gutter {
+      width: 52px; flex-shrink: 0; display: flex; flex-direction: column; align-items: flex-end;
+      padding: 12px 10px; gap: 0; font-family: var(--font-mono); font-size: 13px; line-height: 21px;
+      color: var(--color-neutral-400); background: var(--bg-subtle); border-right: 1px solid var(--border-default);
+      user-select: none;
+    }
+    .editor-code {
+      flex: 1; min-width: 0; font-family: var(--font-mono); font-size: 14px; line-height: 21px;
+      padding: 12px 16px; border: none; outline: none; resize: none; color: var(--text-primary);
+      background: transparent; tab-size: 4; white-space: pre; overflow: auto;
+    }
+    .editor-code::placeholder { color: var(--text-tertiary); }
+
+    /* ---- stdin panel ---- */
+    .stdin-panel { border-top: 1px solid var(--border-default); }
+    .stdin-head {
+      display: flex; align-items: center; gap: var(--space-2); padding: var(--space-3) var(--space-5);
+      font-size: var(--text-sm); font-weight: var(--font-semibold); color: var(--text-secondary);
+      background: var(--bg-subtle); border-bottom: 1px solid var(--border-default);
+    }
+    .stdin-head ion-icon { font-size: 16px; color: var(--text-brand); }
+    .stdin-head .stdin-hint { margin-left: auto; font-size: var(--text-xs); font-weight: var(--font-normal); color: var(--text-tertiary); }
+    .stdin-input {
+      width: 100%; min-height: 68px; padding: var(--space-3) var(--space-5); border: none; outline: none;
+      resize: vertical; font-family: var(--font-mono); font-size: 13px; line-height: 1.6; color: var(--text-primary); background: var(--bg-card);
+    }
+    .stdin-input::placeholder { color: var(--text-tertiary); }
+
+    /* ---- Run bar ---- */
+    .run-bar { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-4) var(--space-5); border-top: 1px solid var(--border-default); background: var(--bg-subtle); flex-wrap: wrap; }
+    .btn-run {
+      display: inline-flex; align-items: center; gap: var(--space-2); padding: var(--space-3) var(--space-6);
+      border-radius: var(--radius-lg); border: none; background: var(--color-primary-500); color: white;
+      font-size: var(--text-base); font-weight: var(--font-semibold); cursor: pointer; transition: all var(--transition-base); box-shadow: var(--shadow-brand);
+    }
+    .btn-run:hover { background: var(--color-primary-600); }
+    .btn-run ion-icon { font-size: 18px; }
+    .run-bar-hint { font-size: var(--text-xs); color: var(--text-tertiary); }
+    .run-bar-hint kbd {
+      display: inline-flex; align-items: center; justify-content: center; min-width: 20px; height: 18px; padding: 0 5px;
+      border: 1px solid var(--border-strong); border-bottom-width: 2px; border-radius: 4px; background: var(--bg-card);
+      font-family: var(--font-mono); font-size: 11px; color: var(--text-secondary); margin: 0 2px;
+    }
+    .run-bar-meta { margin-left: auto; font-size: var(--text-xs); color: var(--text-tertiary); display: flex; align-items: center; gap: var(--space-3); }
+    .run-bar-meta-item { display: inline-flex; align-items: center; gap: 4px; }
+    .run-bar-meta-item ion-icon { font-size: 14px; }
+
+    /* ---- Output card ---- */
+    .output-card { margin-top: var(--space-5); overflow: hidden; }
+    .output-header {
+      display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3) var(--space-5);
+      border-bottom: 1px solid var(--border-default); background: var(--bg-subtle); flex-wrap: wrap;
+    }
+    .output-header-title { display: inline-flex; align-items: center; gap: 6px; font-size: var(--text-sm); font-weight: var(--font-semibold); color: var(--text-primary); }
+    .output-header-title ion-icon { font-size: 16px; color: var(--text-brand); }
+    .output-status {
+      display: none; align-items: center; gap: 5px; padding: 2px 10px; border-radius: var(--radius-full);
+      font-size: var(--text-xs); font-weight: var(--font-semibold);
+    }
+    .output-status.success { display: inline-flex; background: var(--color-success-50); color: var(--color-success-600); }
+    .output-status.error   { display: inline-flex; background: var(--color-error-50);   color: var(--color-error-600); }
+    .output-status.running, .output-status.timedout { display: inline-flex; background: var(--color-warning-50); color: var(--color-warning-600); }
+    .output-status ion-icon { font-size: 13px; }
+    .output-header-right { margin-left: auto; display: flex; align-items: center; gap: var(--space-2); }
+
+    .output-body { background: var(--bg-card); }
+    .output-empty { display: none; flex-direction: column; align-items: center; gap: var(--space-2); padding: var(--space-12) var(--space-6); color: var(--text-tertiary); text-align: center; }
+    .output-empty ion-icon { font-size: 40px; color: var(--color-neutral-300); }
+    .output-empty p { font-size: var(--text-sm); }
+    .output-content { padding: var(--space-5); display: none; }
+    .output-content.show { display: block; }
+
+    .output-stream { margin-bottom: var(--space-4); }
+    .stream-label { display: inline-flex; align-items: center; gap: 6px; font-size: var(--text-xs); font-weight: var(--font-semibold); margin-bottom: var(--space-2); text-transform: uppercase; letter-spacing: .04em; color: var(--text-tertiary); }
+    .stream-box {
+      background: var(--bg-subtle); border: 1px solid var(--border-default); border-radius: var(--radius-lg);
+      padding: var(--space-3) var(--space-4); font-family: var(--font-mono); font-size: 13px; line-height: 1.7;
+      color: var(--text-primary); white-space: pre-wrap; word-break: break-all; max-height: 220px; overflow: auto;
+    }
+    .stream-box.stderr { background: var(--color-error-50); border-color: var(--color-error-100); color: var(--color-error-600); }
+    .output-meta { display: flex; align-items: center; gap: var(--space-5); padding-top: var(--space-3); border-top: 1px solid var(--border-default); font-size: var(--text-xs); color: var(--text-tertiary); flex-wrap: wrap; }
+    .output-meta-item { display: inline-flex; align-items: center; gap: 4px; }
+    .output-meta-item ion-icon { font-size: 14px; }
+    .output-meta-item strong { color: var(--text-secondary); font-weight: var(--font-semibold); }
+
+    /* ---- Sample code quick fill ---- */
+    .sample-bar { display: flex; align-items: center; gap: var(--space-3); margin-top: var(--space-5); flex-wrap: wrap; }
+    .sample-bar-title { display: inline-flex; align-items: center; gap: 6px; font-size: var(--text-sm); font-weight: var(--font-semibold); color: var(--text-secondary); }
+    .sample-bar-title ion-icon { font-size: 15px; color: var(--text-brand); }
+    .sample-chip {
+      display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: var(--radius-full);
+      border: 1px solid var(--border-default); background: var(--bg-card); font-size: var(--text-sm); color: var(--text-secondary);
+      cursor: pointer; transition: all var(--transition-base);
+    }
+    .sample-chip:hover { border-color: var(--color-primary-300); color: var(--text-brand); }
+    .sample-chip.active { background: var(--bg-selected); border-color: var(--color-primary-300); color: var(--text-brand); font-weight: var(--font-medium); }
+    .lang-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+    .lang-dot.js { background: #F7DF1E; } .lang-dot.py { background: #3776AB; } .lang-dot.java { background: #E76F00; }
+    .lang-dot.ts { background: #3178C6; } .lang-dot.cpp { background: #00599C; } .lang-dot.go { background: #00ADD8; }
+
+    /* ---- Info alert ---- */
+    .pg-notice {
+      display: flex; align-items: flex-start; gap: var(--space-3); background: var(--color-info-50);
+      border: 1px solid #B8D4FF; border-radius: var(--radius-lg); padding: var(--space-3) var(--space-4);
+      font-size: var(--text-sm); color: var(--color-info-600); margin-top: var(--space-5);
+    }
+    .pg-notice ion-icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+    .pg-notice strong { font-weight: var(--font-semibold); }
+
+    /* ---- Dark editor theme (optional toggle) ---- */
+    .editor-dark .editor-wrap { background: #1E1E1E; }
+    .editor-dark .editor-gutter { background: #252526; border-right-color: #3C3C3C; color: #858585; }
+    .editor-dark .editor-code { color: #D4D4D4; }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <!-- ===== Sidebar ===== -->
+    <aside class="sidebar">
+      <div class="sidebar-logo">
+        <div class="sidebar-logo-icon">QS</div>
+        <span class="sidebar-logo-text">Quick Study</span>
+        <button class="sidebar-toggle" data-tooltip="折叠侧边栏"><ion-icon name="chevron-back-outline"></ion-icon></button>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="sidebar-nav-item" onclick="location.href='01-home.html'"><ion-icon name="home-outline"></ion-icon><span>首页</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='02-bank-list.html'"><ion-icon name="library-outline"></ion-icon><span>题库</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='04-question-list.html'"><ion-icon name="document-text-outline"></ion-icon><span>题目</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='05-paper-list.html'"><ion-icon name="file-tray-full-outline"></ion-icon><span>试卷</span></div>
+        <div class="sidebar-nav-label">学习中心</div>
+        <div class="sidebar-nav-item" onclick="location.href='24-practice-list.html'"><ion-icon name="game-controller-outline"></ion-icon><span>练习</span></div>
+        <div class="sidebar-nav-item active" onclick="location.href='19-playground.html'"><ion-icon name="code-slash-outline"></ion-icon><span>代码运行台</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='10-wrong-questions.html'"><ion-icon name="close-circle-outline"></ion-icon><span>错题本</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='18-favorites.html'"><ion-icon name="star-outline"></ion-icon><span>收藏题目</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='11-records.html'"><ion-icon name="time-outline"></ion-icon><span>做题记录</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='20-exam-records.html'"><ion-icon name="document-text-outline"></ion-icon><span>考试记录</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='09-statistics.html'"><ion-icon name="bar-chart-outline"></ion-icon><span>统计</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='13-notifications.html'"><ion-icon name="notifications-outline"></ion-icon><span>通知</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='12-search.html'"><ion-icon name="search-outline"></ion-icon><span>搜索</span></div>
+        <div class="sidebar-nav-label">管理</div>
+        <div class="sidebar-nav-item" onclick="location.href='15-admin-users.html'"><ion-icon name="people-outline"></ion-icon><span>用户管理</span></div>
+        <div class="sidebar-nav-item" onclick="location.href='31-admin-reviews.html'"><ion-icon name="checkmark-done-outline"></ion-icon><span>审核列表</span></div>
+      </nav>
+      <div class="sidebar-footer"><div class="sidebar-nav-item"><ion-icon name="log-out-outline"></ion-icon><span>退出登录</span></div></div>
+    </aside>
+
+    <div class="main-area">
+      <header class="app-header">
+        <div class="app-header-left">
+          <button class="mobile-menu-btn" onclick="document.querySelector('.sidebar').classList.toggle('mobile-open')"><ion-icon name="menu-outline"></ion-icon></button>
+          <div class="breadcrumb"><span class="breadcrumb-current">代码运行台</span></div>
+        </div>
+        <div class="app-header-right">
+          <div class="header-search">
+            <ion-icon name="search-outline"></ion-icon>
+            <input class="input" type="text" placeholder="搜索题目 / 题库 / 试卷" readonly style="cursor:pointer;">
+          </div>
+          <div style="position:relative;cursor:pointer;">
+            <ion-icon name="notifications-outline" style="font-size:22px;color:var(--text-secondary);"></ion-icon>
+            <span class="badge" style="position:absolute;top:-4px;right:-4px;">3</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+            <div class="avatar" style="background:var(--gradient-brand);">张</div>
+            <span style="font-size:14px;font-weight:500;color:var(--text-primary);">张同学</span>
+            <ion-icon name="chevron-down-outline" style="font-size:16px;color:var(--text-tertiary);"></ion-icon>
+          </div>
+        </div>
+      </header>
+
+      <main class="app-content">
+        <!-- Page Header -->
+        <div class="page-header">
+          <div>
+            <h1 class="page-title" style="display:flex;align-items:center;gap:12px;">
+              代码运行台
+              <span class="playground-badge"><ion-icon name="flash-outline"></ion-icon>Playground</span>
+            </h1>
+            <p style="font-size:var(--text-sm);color:var(--text-tertiary);margin-top:4px;">编写并运行任意语言的代码片段 · 随时实验、不保存、不计分</p>
+          </div>
+          <div class="page-header-actions">
+            <button class="btn btn-secondary" onclick="loadSample()">
+              <ion-icon name="sparkles-outline"></ion-icon><span>恢复示例</span>
+            </button>
+            <button class="btn btn-ghost" onclick="clearAll()">
+              <ion-icon name="trash-outline"></ion-icon><span>清空</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Editor Card -->
+        <div class="card editor-card" id="editorCard">
+          <div class="editor-toolbar">
+            <select class="lang-select" id="langSelect" onchange="onLangChange(this.value)">
+              <option value="js" selected>JavaScript</option>
+              <option value="py">Python</option>
+              <option value="java">Java</option>
+              <option value="ts">TypeScript</option>
+              <option value="cpp">C++</option>
+              <option value="go">Go</option>
+            </select>
+            <div class="file-tab" id="fileTab">
+              <ion-icon name="document-text-outline"></ion-icon><span>main.js</span>
+            </div>
+            <div class="toolbar-divider"></div>
+            <button class="toolbar-btn" id="themeSwitch" data-tooltip="切换编辑器主题" onclick="toggleTheme()">
+              <ion-icon name="sunny-outline"></ion-icon>
+            </button>
+            <div style="flex:1;"></div>
+            <button class="toolbar-btn" data-tooltip="复制代码" onclick="copyCode()"><ion-icon name="copy-outline"></ion-icon></button>
+            <button class="toolbar-btn" data-tooltip="全屏编辑器" onclick="toggleFullscreen()"><ion-icon name="open-outline"></ion-icon></button>
+          </div>
+
+          <div class="editor-wrap" id="editorWrap">
+            <div class="editor-gutter" id="editorGutter">
+              <span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span>
+            </div>
+            <textarea class="editor-code" id="editorCode" spellcheck="false" oninput="updateGutter()">// 欢迎使用代码运行台
+// 选择语言后运行示例，或清空后编写任意代码
+
+function greet(name) {
+  return "Hello, " + name + "!";
+}
+
+console.log(greet("Quick Study"));</textarea>
+          </div>
+
+          <!-- stdin -->
+          <div class="stdin-panel">
+            <div class="stdin-head">
+              <ion-icon name="terminal-outline"></ion-icon>
+              <span>标准输入 (stdin)</span>
+              <span class="stdin-hint">代码通过 readline / input() / Scanner 读取时将显示在终端</span>
+            </div>
+            <textarea class="stdin-input" id="stdinInput" placeholder="标准输入：每行一个输入，行末自带换行&#10;例如：&#10;Quick Study&#10;123 456" spellcheck="false"></textarea>
+          </div>
+
+          <!-- Run bar -->
+          <div class="run-bar">
+            <button class="btn-run" id="runBtn" onclick="runCode()">
+              <ion-icon name="play-outline"></ion-icon><span>运行</span>
+            </button>
+            <span class="run-bar-hint">快捷键 <kbd>Ctrl</kbd> + <kbd>Enter</kbd></span>
+            <div class="run-bar-meta">
+              <span class="run-bar-meta-item"><ion-icon name="time-outline"></ion-icon>单次运行 ≤ 30s</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Output Card -->
+        <div class="card output-card">
+          <div class="output-header">
+            <span class="output-header-title"><ion-icon name="terminal-outline"></ion-icon>输出结果</span>
+            <span class="output-status success" id="outputStatus">
+              <ion-icon name="checkmark-circle-outline"></ion-icon><span>运行成功</span>
+            </span>
+            <div class="output-header-right">
+              <button class="btn btn-ghost" style="height:26px;padding:0 10px;font-size:var(--text-xs);border-radius:var(--radius-md);" onclick="clearOutput()">
+                <ion-icon name="trash-outline" style="font-size:14px;"></ion-icon><span>清空</span>
+              </button>
+              <button class="toolbar-btn" data-tooltip="复制输出" onclick="copyOutput()"><ion-icon name="copy-outline"></ion-icon></button>
+            </div>
+          </div>
+
+          <div class="output-body" id="outputBody">
+            <div class="output-empty" id="outputEmpty">
+              <ion-icon name="terminal-outline"></ion-icon>
+              <p>点击「运行」执行代码，输出将显示在这里</p>
+            </div>
+            <div class="output-content show" id="outputContent">
+              <div class="output-stream">
+                <div class="stream-label"><ion-icon name="arrow-up-outline"></ion-icon>标准输出 stdout</div>
+                <div class="stream-box">Hello, Quick Study!</div>
+              </div>
+              <div class="output-meta">
+                <span class="output-meta-item"><ion-icon name="flag-outline"></ion-icon>退出码 <strong>0</strong></span>
+                <span class="output-meta-item"><ion-icon name="time-outline"></ion-icon>耗时 <strong>8ms</strong></span>
+                <span class="output-meta-item"><ion-icon name="language-outline"></ion-icon>JavaScript</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sample quick fill -->
+        <div class="sample-bar">
+          <span class="sample-bar-title"><ion-icon name="book-outline"></ion-icon>示例代码</span>
+          <div class="sample-chip active" data-lang="js" onclick="insertSample('js')"><span class="lang-dot js"></span> JavaScript</div>
+          <div class="sample-chip" data-lang="py" onclick="insertSample('py')"><span class="lang-dot py"></span> Python</div>
+          <div class="sample-chip" data-lang="java" onclick="insertSample('java')"><span class="lang-dot java"></span> Java</div>
+          <div class="sample-chip" data-lang="ts" onclick="insertSample('ts')"><span class="lang-dot ts"></span> TypeScript</div>
+          <div class="sample-chip" data-lang="cpp" onclick="insertSample('cpp')"><span class="lang-dot cpp"></span> C++</div>
+          <div class="sample-chip" data-lang="go" onclick="insertSample('go')"><span class="lang-dot go"></span> Go</div>
+          <span style="flex:1;"></span>
+          <span style="font-size:var(--text-xs);color:var(--text-tertiary);">点击示例代码将自动填充到编辑器并切换对应语言</span>
+        </div>
+
+        <!-- Notice -->
+        <div class="pg-notice">
+          <ion-icon name="information-circle-outline"></ion-icon>
+          <div>
+            <strong>关于代码运行台：</strong>所有代码在<strong>安全沙箱</strong>中运行，仅返回运行输出，<strong>不保存、不落库、不计入学习记录</strong>。适合验证语法、实验算法、练习 I/O。提交正式练习/考试请使用题目对应的答题页。
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    var SAMPLES = {
+      js: '// 欢迎使用代码运行台\n// 选择语言后运行示例，或清空后编写任意代码\n\nfunction greet(name) {\n  return "Hello, " + name + "!";\n}\n\nconsole.log(greet("Quick Study"));',
+      py: '# Python 示例\nname = input("请输入姓名: ")\nprint(f"Hello, {name}!")\n\n# 读写 stdin 示例\nnums = input().split()\nprint("输入了", len(nums), "个数字")',
+      java: '// Java 示例\nimport java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        String name = sc.nextLine();\n        System.out.println("Hello, " + name + "!");\n    }\n}',
+      ts: '// TypeScript 示例\nfunction greet(name: string): string {\n  return `Hello, ${name}!`;\n}\n\nconsole.log(greet("Quick Study"));',
+      cpp: '// C++ 示例\n#include <iostream>\n#include <string>\nusing namespace std;\n\nint main() {\n    string name;\n    getline(cin, name);\n    cout << "Hello, " << name << "!" << endl;\n    return 0;\n}',
+      go: '// Go 示例\npackage main\n\nimport (\n    "fmt"\n)\n\nfunc main() {\n    var name string\n    fmt.Scanln(&name)\n    fmt.Printf("Hello, %s!", name)\n}'
+    };
+    var SAMPLE_STDIN = { py: 'Quick\n10 20 30', java: 'Quick\n', cpp: 'Quick\n', go: 'Quick\n' };
+    var FILES = { js: 'main.js', py: 'main.py', java: 'Main.java', ts: 'main.ts', cpp: 'main.cpp', go: 'main.go' };
+
+    function updateGutter() {
+      var code = document.getElementById('editorCode').value;
+      var n = Math.max(1, code.split('\n').length);
+      var g = document.getElementById('editorGutter');
+      g.innerHTML = '';
+      for (var i = 1; i <= n; i++) { var s = document.createElement('span'); s.textContent = i; g.appendChild(s); }
+    }
+    function onLangChange(lang) {
+      document.getElementById('fileTab').querySelector('span').textContent = FILES[lang];
+      var val = document.getElementById('editorCode').value;
+      var isSampleOrBlank = val.trim() === '' || Object.values(SAMPLES).some(function (s) { return s === val; });
+      if (isSampleOrBlank) {
+        document.getElementById('editorCode').value = SAMPLES[lang] || '';
+        document.getElementById('stdinInput').value = SAMPLE_STDIN[lang] || '';
+        updateGutter();
+      }
+    }
+    function loadSample() {
+      var lang = document.getElementById('langSelect').value;
+      document.getElementById('editorCode').value = SAMPLES[lang] || '';
+      document.getElementById('stdinInput').value = SAMPLE_STDIN[lang] || '';
+      updateGutter();
+    }
+    function insertSample(lang) {
+      document.getElementById('langSelect').value = lang;
+      document.getElementById('fileTab').querySelector('span').textContent = FILES[lang];
+      document.getElementById('editorCode').value = SAMPLES[lang] || '';
+      document.getElementById('stdinInput').value = SAMPLE_STDIN[lang] || '';
+      updateGutter();
+      document.querySelectorAll('.sample-chip').forEach(function (c) { c.classList.toggle('active', c.dataset.lang === lang); });
+    }
+    function clearAll() {
+      document.getElementById('editorCode').value = '';
+      document.getElementById('stdinInput').value = '';
+      updateGutter();
+      clearOutput();
+    }
+    function toggleTheme() {
+      var on = document.getElementById('editorCard').classList.toggle('editor-dark');
+      var ic = document.querySelector('#themeSwitch > ion-icon');
+      ic.setAttribute('name', on ? 'moon-outline' : 'sunny-outline');
+    }
+    function toggleFullscreen() {
+      var c = document.getElementById('editorCard');
+      if (c.style.position === 'fixed') { c.style.position=''; c.style.inset=''; c.style.zIndex=''; c.style.display=''; }
+      else { c.style.position='fixed'; c.style.inset='0'; c.style.zIndex='1300'; c.style.display='flex'; c.style.flexDirection='column'; }
+    }
+    function runCode() {
+      var s = document.getElementById('outputStatus');
+      s.className = 'output-status running';
+      s.innerHTML = '<ion-icon name="hourglass-outline"></ion-icon><span>正在运行…</span>';
+    }
+    function clearOutput() {
+      var s = document.getElementById('outputStatus');
+      s.className = 'output-status';
+      s.innerHTML = '';
+      document.getElementById('outputEmpty').style.display = 'flex';
+      document.getElementById('outputContent').classList.remove('show');
+    }
+    function copyCode() { var t = document.getElementById('editorCode'); t.select(); document.execCommand('copy'); }
+    function copyOutput() {
+      var t = document.createElement('textarea'); t.value = document.querySelector('.stream-box').innerText;
+      document.body.appendChild(t); t.select(); document.execCommand('copy'); document.body.removeChild(t);
+    }
+    document.querySelector(".sidebar-toggle")?.addEventListener("click", function() {
+      var s = document.querySelector(".sidebar"), m = document.querySelector(".main-area");
+      s.classList.toggle("sidebar-collapsed"); m.classList.toggle("main-area-collapsed");
+      var i = this.querySelector("ion-icon");
+      i.setAttribute("name", s.classList.contains("sidebar-collapsed") ? "chevron-forward-outline" : "chevron-back-outline");
+    });
+    updateGutter();
+  </script>
+</body>
+</html>
