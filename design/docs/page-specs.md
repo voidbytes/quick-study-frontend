@@ -2785,6 +2785,7 @@ n-spin
 - **状态**：后端下发 `displayStatus` / `statusLabel`，前端只做颜色映射 —— `AVAILABLE→success`、`EXHAUSTED→info`、`EXPIRED→warning`、`DISABLED→default`。前端不重复计算状态。
 - **授权角色**：`USER→default` 标签「普通用户」；`ADMIN→warning` 标签「管理员」。
 - **操作**：`禁用 / 启用`（按 `status` 切换文案与颜色：禁用=warning，启用=success）· `使用记录`（primary）· `删除`（error，仅 `isSuperAdmin && usedCount === 0` 显示）。
+- **管理员角色码（`grant_role === 'ADMIN'`）的启停/删除仅超管可见**：`v-if="isSuperAdmin"`，非超管该行只保留「使用记录」。前端隐藏是体验，**后端以 `95203` 独立拦截**。
 
 ### 接口
 
@@ -2823,10 +2824,17 @@ n-spin
 | 生成数量 | `n-input-number` | 1 | 1 ~ 50 |
 | 最大使用次数 | `n-input-number` | 1 | 1 ~ 9999，hint「1 = 一次性」 |
 | 有效期 | 分段选择（7/30/90 天、永不过期、自定义） | 30 天 | 自定义时出 `n-date-picker`，必须晚于当前 |
-| 注册后角色 | `n-radio-group`（普通用户 / 管理员） | 普通用户 | 选管理员 → 备注必填 |
+| 注册后角色 | `n-radio-group`（普通用户 / 管理员） | 普通用户 | 选管理员 → 备注必填；**非超管时「管理员」项 `disabled` + 提示「仅超级管理员可选」**（95203） |
 | 备注 | `n-input` | 空 | ≤ 200 字 |
 
-底部：取消 / 生成（primary）。请求 `POST /admin/invite-codes`，失败按错误码 toast（95201 数量超限、95202 参数非法）。
+底部：取消 / 生成（primary）。请求 `POST /admin/invite-codes`，失败按错误码 toast（95201 数量超限、95202 参数非法、95203 非超管生成管理员码）。
+
+**角色权限视角**：
+
+| 登录角色 | 「管理员」单选项 | 说明 |
+|---|---|---|
+| `SUPER_ADMIN` | 可选 | 选中后备注必填，默认一次性 |
+| `ADMIN` | `disabled` + 提示「仅超级管理员可选」 | 只能生成 `USER` 角色码；绕过前端提交仍被后端 `95203` 拦截 |
 
 ### 33.2 生成结果（原地切换，不关闭弹窗）
 

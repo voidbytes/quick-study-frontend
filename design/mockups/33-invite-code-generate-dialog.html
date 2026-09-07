@@ -53,6 +53,15 @@
     .radio-item.checked .radio-dot { border-color: var(--color-primary-500); }
     .radio-item.checked .radio-dot::after { content: ""; width: 8px; height: 8px; border-radius: var(--radius-full); background: var(--color-primary-500); }
     .radio-hint { font-size: var(--text-xs); color: var(--text-tertiary); }
+    /* 禁用态（非超管不可选「管理员」：错误码 95203） */
+    .radio-item.disabled { color: var(--text-disabled); cursor: not-allowed; }
+    .radio-item.disabled .radio-dot { border-color: var(--border-default); background: var(--color-neutral-100); }
+    .radio-item.disabled::after {
+      content: "仅超级管理员可选";
+      font-size: var(--text-xs); color: var(--text-tertiary);
+      background: var(--color-neutral-100); border: 1px solid var(--border-default);
+      border-radius: var(--radius-sm); padding: 1px 6px; margin-left: 2px;
+    }
 
     .input-hint { font-size: var(--text-xs); color: var(--text-tertiary); margin-top: 4px; }
 
@@ -101,16 +110,18 @@
   <div class="doc-wrap">
     <h1 class="doc-title">邀请码弹窗设计稿</h1>
     <p class="doc-desc">
-      三个弹窗均为 <code>n-modal preset="card"</code>：<b>生成邀请码</b>（表单态）→ 提交成功<b>原地切换为生成结果</b>（不关闭弹窗）；
-      <b>使用记录</b>为列表页行操作触发的独立弹窗。对应 <code>views/admin/InviteCodeList.vue</code> 内的三个 modal。
+      均为 <code>n-modal preset="card"</code>：<b>生成邀请码</b>（表单态，分超管视角与普通管理员视角两种）→ 提交成功<b>原地切换为生成结果</b>（不关闭弹窗）；
+      <b>使用记录</b>为列表页行操作触发的独立弹窗。对应 <code>views/admin/InviteCodeList.vue</code> 内的 modal。
+      <b>权限要点：仅超级管理员可生成 <code>grant_role=ADMIN</code> 的邀请码（95203）。</b>
       <a href="32-invite-code-manage.html" style="color:var(--color-primary-500);">← 返回邀请码管理页</a>
     </p>
 
-    <!-- ================= 形态一：生成邀请码（表单态） ================= -->
-    <div class="state-divider"><h2>形态一 · 生成邀请码（560px）</h2></div>
+    <!-- ================= 形态一 A：生成邀请码（超级管理员视角） ================= -->
+    <div class="state-divider"><h2>形态一 A · 生成邀请码 / 超级管理员视角（560px）</h2></div>
     <p class="state-note">
-      触发：页头 / 空状态「<b>生成邀请码</b>」按钮 · 权限 <code>@RequireRole({ADMIN, SUPER_ADMIN})</code>。
+      触发：页头 / 空状态「<b>生成邀请码</b>」按钮 · 接口级权限 <code>@RequireRole({ADMIN, SUPER_ADMIN})</code>。
       字段默认值：数量 1、使用次数 1、有效期 30 天、角色 普通用户。
+      <b>「管理员」单选项仅 <code>SUPER_ADMIN</code> 可选</b>，普通管理员视角见形态一 B。
     </p>
     <div class="dialog-stage">
       <div class="modal-overlay">
@@ -164,10 +175,85 @@
                 <span class="radio-item checked"><span class="radio-dot"></span>普通用户</span>
                 <span class="radio-item"><span class="radio-dot"></span>管理员</span>
               </div>
-              <div class="input-hint">选择「管理员」时，用该码注册的账号将直接获得管理员权限，<b>备注必填</b>且默认一次性</div>
+              <div class="input-hint">选择「管理员」时，用该码注册的账号将直接获得管理员权限，<b>备注必填</b>且默认一次性；<b>该项仅超级管理员可选</b>，普通管理员为禁用态</div>
             </div>
 
             <!-- 备注 -->
+            <div class="input-group">
+              <label class="input-label">备注 <span class="radio-hint">（选填，用于标记用途，仅管理员可见）</span></label>
+              <input class="input" type="text" placeholder="例如：2026 秋季内测 / 合作院校 A" maxlength="200" />
+              <div class="input-hint">0 / 200</div>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button class="btn btn-secondary">取消</button>
+            <button class="btn btn-primary">生成</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= 形态一 B：普通管理员视角（管理员角色项禁用） ================= -->
+    <div class="state-divider"><h2>形态一 B · 普通管理员（ADMIN）视角：管理员角色项禁用</h2></div>
+    <p class="state-note">
+      <code>v-if="!authStore.isSuperAdmin"</code>：「管理员」单选项 <code>disabled</code>，hover 显示「仅超级管理员可选」。
+      <b>前端禁用只是体验优化</b>——后端在 <code>InviteCodeServiceImpl</code> 内独立校验操作者角色，
+      普通管理员绕过前端直接提交 <code>grantRole=ADMIN</code> 仍会被拦截并返回 <code>95203</code>。
+      该码的<b>启用/禁用/删除</b>同样只认超管（列表页对非超管隐藏这些入口）。
+    </p>
+    <div class="dialog-stage" style="min-height:420px;">
+      <div class="modal-overlay">
+        <div class="modal">
+          <div class="modal-header">
+            <div>
+              <div class="modal-title">生成邀请码</div>
+              <div class="modal-sub">生成的邀请码用于注册本站账号，请按需设置有效期与使用次数</div>
+            </div>
+            <button class="modal-close" aria-label="关闭">&times;</button>
+          </div>
+
+          <div class="modal-body">
+            <div class="input-group">
+              <label class="input-label">生成数量</label>
+              <div class="num-box">
+                <input type="number" value="1" min="1" max="50" />
+                <span class="unit">个</span>
+              </div>
+              <div class="input-hint">单次最多生成 50 个</div>
+            </div>
+
+            <div class="input-group">
+              <label class="input-label">最大使用次数</label>
+              <div class="num-box">
+                <input type="number" value="1" min="1" max="9999" />
+                <span class="unit">次</span>
+              </div>
+              <div class="input-hint">1 = 一次性邀请码；大于 1 表示该码可被多人复用</div>
+            </div>
+
+            <div class="input-group">
+              <label class="input-label">有效期</label>
+              <div class="seg">
+                <div class="seg-item">7 天</div>
+                <div class="seg-item active">30 天</div>
+                <div class="seg-item">90 天</div>
+                <div class="seg-item">永不过期</div>
+                <div class="seg-item">自定义</div>
+              </div>
+              <div class="input-hint">默认 30 天；选择「自定义」后在下方选择具体日期（必须晚于当前时间）</div>
+            </div>
+
+            <!-- 注册后角色：非超管时「管理员」项 disabled -->
+            <div class="input-group">
+              <label class="input-label">注册后角色</label>
+              <div class="radio-row">
+                <span class="radio-item checked"><span class="radio-dot"></span>普通用户</span>
+                <span class="radio-item disabled"><span class="radio-dot"></span>管理员</span>
+              </div>
+              <div class="input-hint">当前账号为<b>管理员</b>，只能生成普通用户邀请码；如需生成管理员邀请码请联系超级管理员</div>
+            </div>
+
             <div class="input-group">
               <label class="input-label">备注 <span class="radio-hint">（选填，用于标记用途，仅管理员可见）</span></label>
               <input class="input" type="text" placeholder="例如：2026 秋季内测 / 合作院校 A" maxlength="200" />
@@ -386,6 +472,9 @@
           <li>生成请求：<code>POST /admin/invite-codes</code> body <code>{ count, maxUses, validDays|expireAt, grantRole, remark }</code>，返回明文码数组。</li>
           <li>数量上限 50（<code>invite-code.max-generate-count</code>）；前端 <code>n-input-number</code> 的 <code>max</code> 与后端配置保持一致。</li>
           <li><code>grantRole = ADMIN</code> 时备注必填，前端在切换单选时动态加 <code>required</code>，后端同样校验（95202）。</li>
+          <li><b>仅 <code>SUPER_ADMIN</code> 可选「管理员」角色</b>（防自我提权）：前端对非超管置 <code>disabled</code>，
+              后端 <code>InviteCodeServiceImpl</code> 独立校验操作者角色并抛 <code>95203</code>；
+              管理员角色码的<b>启用/禁用/删除</b>同样只认超管，列表对非超管隐藏这些入口。</li>
           <li>结果弹窗的「复制全部」输出换行分隔的<b>无连字符原始码</b>，「下载 .txt」同理。</li>
           <li>使用记录 IP 脱敏由后端返回已处理字符串（保留前两段），前端不做二次处理。</li>
           <li>结果弹窗关闭时触发列表刷新（<code>emit('success')</code> → <code>loadList()</code>）。</li>

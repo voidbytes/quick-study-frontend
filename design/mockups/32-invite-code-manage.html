@@ -394,11 +394,12 @@
             <table class="data-table" style="border:none;">
               <thead>
                 <tr>
-                  <th style="width:120px;">角色</th>
-                  <th style="width:180px;">侧边栏入口</th>
-                  <th style="width:180px;">生成邀请码</th>
-                  <th style="width:180px;">启用 / 禁用</th>
-                  <th>删除</th>
+                  <th style="width:110px;">角色</th>
+                  <th style="width:90px;">侧边栏入口</th>
+                  <th style="width:120px;">生成普通码</th>
+                  <th style="width:150px;">生成管理员码</th>
+                  <th style="width:130px;">启停 / 删除普通码</th>
+                  <th>启停 / 删除管理员码</th>
                 </tr>
               </thead>
               <tbody>
@@ -408,26 +409,34 @@
                   <td class="muted">403</td>
                   <td class="muted">403</td>
                   <td class="muted">403</td>
+                  <td class="muted">403</td>
                 </tr>
                 <tr>
                   <td><span class="n-tag n-tag-primary">管理员</span></td>
                   <td>可见</td>
                   <td>允许</td>
+                  <td><span class="n-tag n-tag-error">95203</span> 禁止</td>
                   <td>允许</td>
-                  <td class="muted">403（仅超管）</td>
+                  <td><span class="n-tag n-tag-error">95203</span> 禁止（入口隐藏）</td>
                 </tr>
                 <tr>
                   <td><span class="n-tag n-tag-warning">超级管理员</span></td>
                   <td>可见</td>
                   <td>允许</td>
-                  <td>允许</td>
-                  <td>允许（<code>used_count = 0</code> 才可删）</td>
+                  <td>允许（备注必填、默认一次性）</td>
+                  <td>允许（删除需 <code>used_count = 0</code>）</td>
+                  <td>允许（删除需 <code>used_count = 0</code>）</td>
                 </tr>
               </tbody>
             </table>
             <p class="state-note mt-4" style="margin-bottom:0;">
               前端由 <code>authStore.isAdmin</code> 控制菜单渲染 + <code>meta.requiresAdmin</code> 路由守卫；
               后端由 <code>@RequireRole({ADMIN, SUPER_ADMIN})</code> 兜底，两侧任一缺失都不算完成。
+              <br>
+              <b>「管理员角色码」是提权口子，收口到超级管理员</b>：凡是 <code>grant_role = ADMIN</code> 的码，
+              其<b>生成、启用/禁用、删除</b>一律只认 <code>SUPER_ADMIN</code>；普通管理员在列表里看不到这些入口，
+              绕过前端直调接口会被后端以 <code>95203</code> 拦截（<code>@RequireRole</code> 只能表达接口级权限，
+              细粒度校验必须写在 Service 里）。
             </p>
           </div>
         </div>
@@ -442,7 +451,8 @@
               <li>状态为<b>计算态</b>（后端由 <code>status / expireAt / usedCount / maxUses</code> 实时算），不落库、无定时任务。</li>
               <li>邀请码存储为 12 位大写无分隔明文，展示层每 4 位插 <code>-</code>；复制时复制<b>不带连字符</b>的原始值。</li>
               <li>「使用次数」列 <code>usedCount / maxUses</code>，用尽时数字用 info 色强调。</li>
-              <li><code>grant_role = ADMIN</code> 的码：角色标签 warning 高亮，创建时<b>备注必填</b>，默认一次性。</li>
+              <li><code>grant_role = ADMIN</code> 的码：角色标签 warning 高亮，创建时<b>备注必填</b>，默认一次性；
+                  <b>生成与启停/删除均限超级管理员</b>（<code>95203</code>），前端对非超管隐藏入口，后端独立校验。</li>
               <li>删除仅超管可见且仅 <code>usedCount === 0</code>；已使用的码只能禁用，保证审计链完整。</li>
               <li>「禁用 / 删除」均走 <code>useConfirm()</code> / <code>confirmDanger()</code>，与全站交互一致。</li>
               <li>统计数据随列表接口的 <code>summary</code> 字段一并返回，不额外请求。</li>
