@@ -2762,3 +2762,100 @@ n-spin
 - 卡片行 `flex items-center gap-4`，中间信息区 `flex-1 min-w-0`，长题库名/提交人 `truncate` 截断，右侧按钮 `flex-shrink-0`。
 - 弹窗固定 720px 宽（小屏由 Naive UI card 弹窗自适应收窄）；底部操作行 `justify-between`，意见输入 `max-width: 420px`，窄屏下按钮组换行。
 - 无独立移动端布局分支；外壳侧边栏 <1024px 折叠为抽屉（MainLayout 通用行为）。
+
+## 32. 邀请码管理（`/admin/invite-codes`）
+
+**文件**：`views/admin/InviteCodeList.vue` · **mockup**：`32-invite-code-manage.html`
+**权限**：`ADMIN` / `SUPER_ADMIN`（侧边栏 `authStore.isAdmin` 控制 + 路由 `meta.requiresAdmin` + 后端 `@RequireRole`）
+
+### 页面结构
+
+| 区块 | 内容 |
+|---|---|
+| PageHeader | 标题「邀请码管理」+ 副标题「生成并管理注册邀请码，控制谁可以注册本站账号」+ 右上主按钮「生成邀请码」 |
+| 统计概览 | `grid grid-cols-4 gap-4`：全部 / 可用（success 色）/ 已用尽（info 色）/ 已失效（过期+禁用，neutral 色） |
+| 筛选行 | 搜索框（邀请码 / 备注，260px）+ 状态下拉（可用/已用尽/已过期/已禁用，140px）+ 创建人下拉（160px）+ 重置 |
+| 数据表 | 邀请码 · 使用次数 · 状态 · 有效期 · 授权角色 · 备注 · 创建人 · 创建时间 · 操作 |
+| 分页 | `n-data-table` 内置分页，右下角「共 N 条」，pageSize 20 |
+
+### 列渲染规则
+
+- **邀请码**：等宽字体（`--font-mono`）展示 `codeDisplay`（每 4 位插 `-`），右侧 `copy-outline` 图标，点击复制**不带连字符的原始码**，`message.success('已复制')`。
+- **使用次数**：`usedCount / maxUses`，用尽时数字用 info 色强调。
+- **状态**：后端下发 `displayStatus` / `statusLabel`，前端只做颜色映射 —— `AVAILABLE→success`、`EXHAUSTED→info`、`EXPIRED→warning`、`DISABLED→default`。前端不重复计算状态。
+- **授权角色**：`USER→default` 标签「普通用户」；`ADMIN→warning` 标签「管理员」。
+- **操作**：`禁用 / 启用`（按 `status` 切换文案与颜色：禁用=warning，启用=success）· `使用记录`（primary）· `删除`（error，仅 `isSuperAdmin && usedCount === 0` 显示）。
+
+### 接口
+
+| 接口 | 方法 | 说明 |
+|---|---|---|
+| `/admin/invite-codes` | GET | `fetchInviteCodes({ page, size, keyword, status, createdBy })`，响应含 `list` 与 `summary` |
+| `/admin/invite-codes/{id}/status` | PUT | `updateInviteCodeStatus(id, 'DISABLED' \| 'ACTIVE')` |
+| `/admin/invite-codes/{id}` | DELETE | `deleteInviteCode(id)`，仅超管且 `usedCount === 0` |
+
+### 交互逻辑
+
+- `onMounted` → `loadList()`；筛选变更与分页切换均重新拉取（`remote` 分页）。
+- 「生成邀请码」→ 打开生成弹窗（见第 33 章），成功后 `loadList()`。
+- 「禁用 / 删除」走 `useConfirm()` / `confirmDanger()`，二次确认后调用接口，成功 `message.success` 并刷新。
+- 复制失败（无 clipboard 权限）降级提示 `message.warning('复制失败，请手动选择复制')`。
+
+### 空态 / 加载态 / 错误态
+
+- 加载态：`n-spin :show="loading"` 覆盖表格区。
+- 空态：`EmptyState`「还没有邀请码 / 生成第一个邀请码，用户才能注册本站账号」+ 主按钮。
+- 错误态：统一 toast「加载邀请码列表失败」/「操作失败」。
+
+### 响应式
+
+- 统计卡 `grid-cols-4`，<1024px 由外层容器自然折行（沿用全站 `grid` 行为）。
+- 表格外层 `table-card` 横向滚动；操作列文字链接 `white-space: nowrap`。
+
+## 33. 邀请码弹窗（生成 / 生成结果 / 使用记录）
+
+**mockup**：`33-invite-code-generate-dialog.html` · 均为 `n-modal preset="card"`
+
+### 33.1 生成邀请码（560px）
+
+| 字段 | 控件 | 默认值 | 校验 |
+|---|---|---|---|
+| 生成数量 | `n-input-number` | 1 | 1 ~ 50 |
+| 最大使用次数 | `n-input-number` | 1 | 1 ~ 9999，hint「1 = 一次性」 |
+| 有效期 | 分段选择（7/30/90 天、永不过期、自定义） | 30 天 | 自定义时出 `n-date-picker`，必须晚于当前 |
+| 注册后角色 | `n-radio-group`（普通用户 / 管理员） | 普通用户 | 选管理员 → 备注必填 |
+| 备注 | `n-input` | 空 | ≤ 200 字 |
+
+底部：取消 / 生成（primary）。请求 `POST /admin/invite-codes`，失败按错误码 toast（95201 数量超限、95202 参数非法）。
+
+### 33.2 生成结果（原地切换，不关闭弹窗）
+
+- 顶部 success 提示条「邀请码已生成，请立即复制保存。关闭本窗口后仍可在列表中查看与复制。」
+- 只读码列表（等宽字体，逐行「复制」图标）
+- 底部：复制全部 · 下载 .txt · 关闭（primary）
+- 输出均为**无连字符的原始码**，换行分隔；关闭时 `emit('success')` 触发列表刷新。
+
+### 33.3 使用记录（640px）
+
+- 标题「使用记录」+ 副标题 `<code> · 已使用 N / M 次`
+- 表格：序号 · 使用者（头像+昵称+@username）· 注册时间 · 来源 IP（后端脱敏，保留前两段）· 账号状态（正常 success / 已禁用 error）
+- 空态：「该邀请码尚未被使用」+ 剩余额度与有效期
+- 底部：关闭
+
+## 34. 注册页邀请码字段（`/register`）
+
+**文件**：`views/Register.vue` · **mockup**：`00-login.html`（注册形态）
+
+- `onMounted` 调 `getRegisterConfig()` → `GET /auth/register-config`，取 `inviteCodeRequired`（同时可复用 `captchaEnabled` 替换现有硬编码 `false`）。
+- 字段位置：邮箱之后、验证码之前；`v-if="inviteCodeRequired"`；label 带红色 `*`。
+- 输入即时规范化：`v.replace(/[\s-]/g, '').toUpperCase()`，粘贴带连字符/小写也能通过。
+- 校验：`required` + `max 32`；helper「注册需有效邀请码，请联系管理员获取」；底部补充「没有邀请码？请联系站点管理员。」
+- 注册失败按错误码映射 toast：
+
+| code | 文案 |
+|---|---|
+| 95001 | 请输入邀请码 |
+| 95002 | 邀请码无效，请核对后重试 |
+| 95003 | 邀请码已被禁用 |
+| 95004 | 邀请码已过期 |
+| 95005 | 邀请码使用次数已用完 |

@@ -59,6 +59,33 @@
       color: var(--text-tertiary);
       margin-top: var(--space-4);
     }
+    /* 邀请码字段（Register.vue：v-if="inviteCodeRequired"） */
+    .invite-required { color: var(--color-error-500); margin-left: 2px; }
+    .input-mono {
+      font-family: var(--font-mono);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+    .invite-hint {
+      font-size: var(--text-xs);
+      color: var(--text-tertiary);
+      margin-top: var(--space-1);
+      line-height: var(--leading-normal);
+    }
+    .invite-footer {
+      text-align: center;
+      font-size: var(--text-xs);
+      color: var(--text-tertiary);
+      margin: var(--space-3) 0 0;
+    }
+    /* 注册失败提示条（错误码 95001–95005） */
+    .auth-error {
+      display: flex; align-items: center; gap: var(--space-2);
+      background: var(--color-error-50); border: 1px solid var(--color-error-100);
+      color: var(--color-error-600); border-radius: var(--radius-md);
+      padding: var(--space-2) var(--space-3); font-size: var(--text-sm);
+      margin-bottom: var(--space-3);
+    }
     /* Tab 内容切换 */
     .auth-panel { display: none; }
     .auth-panel.active { display: block; }
@@ -80,7 +107,8 @@
         <div class="auth-tab" data-panel="register" onclick="switchPanel('register')">注册</div>
       </div>
 
-      <p class="auth-note">本页同时呈现 <b>/login</b> 与 <b>/register</b> 两种形态：二者为独立页面，由 AuthLayout 顶部 Tab 切换路由。</p>
+      <p class="auth-note">本页同时呈现 <b>/login</b> 与 <b>/register</b> 两种形态：二者为独立页面，由 AuthLayout 顶部 Tab 切换路由。<br>
+      注册形态已包含<b>邀请码必填字段</b>（由 <code>GET /auth/register-config</code> 的 <code>inviteCodeRequired</code> 控制显隐）。</p>
 
       <!-- ============ /login 形态 ============ -->
       <form class="auth-panel active" id="panel-login" onsubmit="return false;">
@@ -110,6 +138,12 @@
 
       <!-- ============ /register 形态 ============ -->
       <form class="auth-panel" id="panel-register" onsubmit="return false;">
+        <!-- 邀请码校验失败提示（错误码 95001–95005 由 handleRegister 的 catch 分支映射） -->
+        <div class="auth-error">
+          <ion-icon name="alert-circle-outline"></ion-icon>
+          <span>邀请码无效，请核对后重试</span>
+        </div>
+
         <div class="input-group">
           <label class="input-label">用户名</label>
           <input class="input" type="text" placeholder="3-50 字符" maxlength="50">
@@ -135,6 +169,14 @@
           <input class="input" type="email" placeholder="example@mail.com" maxlength="100">
         </div>
 
+        <!-- 邀请码：v-if="inviteCodeRequired"（由 GET /auth/register-config 下发）；
+             输入时即时规范化：去空格与连字符 + 转大写，粘贴 qs7k-3m9p-2x4r 也能通过 -->
+        <div class="input-group">
+          <label class="input-label">邀请码 <span class="invite-required">*</span></label>
+          <input class="input input-mono" type="text" placeholder="请输入管理员提供的邀请码" maxlength="32">
+          <div class="invite-hint">注册需有效邀请码，请联系管理员获取</div>
+        </div>
+
         <!-- 验证码：captchaEnabled 为 true 时渲染；本地默认禁用，占位显示「已关闭」 -->
         <div class="input-group">
           <label class="input-label">验证码</label>
@@ -147,6 +189,8 @@
         </div>
 
         <button class="btn btn-primary btn-block btn-lg mt-2" type="button">注册</button>
+
+        <p class="invite-footer">没有邀请码？请联系站点管理员。</p>
       </form>
     </div>
   </div>

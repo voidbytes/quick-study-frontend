@@ -1,6 +1,6 @@
 # Quick Study Web — UI 设计稿
 
-> 与 `frontend/src` 代码同步的 UI 设计稿 · 27 个页面/弹窗/抽屉 · AI 可读结构化输出
+> 与 `frontend/src` 代码同步的 UI 设计稿 · 33 个页面/弹窗/抽屉 · AI 可读结构化输出
 >
 > **同步约定：`frontend/src` 是唯一事实源，设计稿（mockups / docs）跟随代码更新；
 > 两者冲突时以代码为准。**
@@ -18,7 +18,7 @@ frontend/design/
 │   ├── styles/
 │   │   └── mockup.css                  # 共享样式文件 (所有 mockup 引用)
 │   ├── index.html                      # 设计稿索引页
-│   ├── 00-login.html                   # 登录 / 注册
+│   ├── 00-login.html                   # 登录 / 注册（注册含邀请码必填字段）
 │   ├── 01-home.html                    # 首页 / Dashboard
 │   ├── 02-bank-list.html               # 题库列表
 │   ├── 03-bank-detail.html             # 题库详情
@@ -46,7 +46,9 @@ frontend/design/
 │   ├── 28-question-import-dialog.html  # 导入题目弹窗
 │   ├── 29-tag-manage-modal.html        # 标签管理弹窗
 │   ├── 30-paper-detail.html            # 试卷详情
-│   └── 31-admin-reviews.html           # 审核列表
+│   ├── 31-admin-reviews.html           # 审核列表
+│   ├── 32-invite-code-manage.html      # 邀请码管理（ADMIN+ 可见）
+│   └── 33-invite-code-generate-dialog.html  # 生成邀请码 / 生成结果 / 使用记录弹窗
 └── docs/                               # 设计文档
     ├── design-system.md                # 设计系统文档 (色彩/字体/间距/圆角/阴影/布局/Naive UI 主题)
     ├── component-specs.md              # 组件规范 (25 个真实组件 + 组合式函数 + 工具函数)
