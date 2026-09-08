@@ -233,6 +233,8 @@ export interface PracticeSession {
 
 export interface PracticeQuestion {
   index: number
+  /** 题目 ID（字符串序列化；笔记等按题引用的功能使用） */
+  id?: number | string
   type: string
   content: string
   options: string
