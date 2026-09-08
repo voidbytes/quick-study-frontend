@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<html lang="zh-CN" data-page-node-id="WwhepzC9WFQ0MW8hL9jEvw">
+<head data-page-node-id="wsz2XzetoLOhKTW8cgljlU">
+  <meta charset="UTF-8" data-page-node-id="AzVxE1FjMwtxQnWvaiyyJt">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" data-page-node-id="asWoEBH0Okq0hZM8mcby7G">
   <title>登录/注册 — Quick Study</title>
-  <link rel="stylesheet" href="styles/mockup.css">
+  <link rel="stylesheet" href="styles/mockup.css" data-page-node-id="5LVdS26ioHZntFObOkol5O">
   <style>
     /* Auth tab switcher（来自 AuthLayout.vue） */
     .auth-tabs {
@@ -91,106 +91,106 @@
     .auth-panel.active { display: block; }
   </style>
 </head>
-<body>
-  <div class="auth-page">
-    <div class="auth-card">
+<body data-page-node-id="BtFxsKrFNtzwoc5jE1Oo1f">
+  <div class="auth-page" data-page-node-id="dmVCKmegthJ0CTpBA4fhVX">
+    <div class="auth-card" data-page-node-id="qkjAe63Pf5uAJT7yEFwKBy">
       <!-- Logo（来自 AuthLayout.vue） -->
-      <div class="auth-logo">
-        <div class="auth-logo-icon">QS</div>
-        <div class="auth-title">题库与组卷练习系统</div>
-        <div class="auth-subtitle">快学 · 每一道题都算数</div>
+      <div class="auth-logo" data-page-node-id="WgvYqYN3eyOmSqw7JIJYuy">
+        <div class="auth-logo-icon" data-page-node-id="aakxKk0fA1VsCtAlUq5MBk">QS</div>
+        <div class="auth-title" data-page-node-id="C8kuDTaj3ouBHBpiRi2Y97">题库与组卷练习系统</div>
+        <div class="auth-subtitle" data-page-node-id="MAQoGJTzjcwdn0xrrqcoo1">快学 · 每一道题都算数</div>
       </div>
 
       <!-- Tab 切换：/login 与 /register（AuthLayout 顶部，点击路由跳转） -->
-      <div class="auth-tabs">
-        <div class="auth-tab active" data-panel="login" onclick="switchPanel('login')">登录</div>
-        <div class="auth-tab" data-panel="register" onclick="switchPanel('register')">注册</div>
+      <div class="auth-tabs" data-page-node-id="FtAgwa67rUYY6AlKkBBqbz">
+        <div class="auth-tab active" data-panel="login" onclick="switchPanel('login')" data-page-node-id="ZZ6K6eAdDKrII2ZeDZMJ2l">登录</div>
+        <div class="auth-tab" data-panel="register" onclick="switchPanel('register')" data-page-node-id="Mt5DGJyk9ASn4hnuYiRBqY">注册</div>
       </div>
 
-      <p class="auth-note">本页同时呈现 <b>/login</b> 与 <b>/register</b> 两种形态：二者为独立页面，由 AuthLayout 顶部 Tab 切换路由。<br>
-      注册形态已包含<b>邀请码必填字段</b>（由 <code>GET /auth/register-config</code> 的 <code>inviteCodeRequired</code> 控制显隐）。</p>
+      <p class="auth-note" data-page-node-id="Z3zyfzLcaLWa4h0dGIhAcF">本页同时呈现 <b data-page-node-id="we44xmB682tqlbC7C2NZhJ">/login</b> 与 <b data-page-node-id="whOKizD83ICMsvk3vBMihD">/register</b> 两种形态：二者为独立页面，由 AuthLayout 顶部 Tab 切换路由。<br data-page-node-id="mnz6pzosQqKYZWACdyMaCU">
+      注册形态已包含<b data-page-node-id="9D6GipFLf3fFkCcXcd2kmj">邀请码必填字段</b>（由 <code data-page-node-id="uyTDKEgXrfAKDJkhFUBL39">GET /auth/register-config</code> 的 <code data-page-node-id="wAwyx9HGEk66qA3g6RKLFQ">inviteCodeRequired</code> 控制显隐）。</p>
 
       <!-- ============ /login 形态 ============ -->
-      <form class="auth-panel active" id="panel-login" onsubmit="return false;">
-        <div class="input-group">
-          <label class="input-label">用户名</label>
-          <input class="input" type="text" placeholder="请输入用户名" maxlength="50">
+      <form class="auth-panel active" id="panel-login" onsubmit="return false;" data-page-node-id="HkwR8SILwmlqI3UtMzULfu">
+        <div class="input-group" data-page-node-id="fZBUtYSYAP3yHLuEI39scN">
+          <label class="input-label" data-page-node-id="8lKZEVaJj5BVDrQFQXhVbw">用户名</label>
+          <input class="input" type="text" placeholder="请输入用户名" maxlength="50" data-page-node-id="xq8pjALbFeHjUy89uFHke8">
         </div>
 
-        <div class="input-group">
-          <label class="input-label">密码</label>
-          <input class="input" type="password" placeholder="请输入密码" maxlength="64">
+        <div class="input-group" data-page-node-id="JMsGcyJCrHPtuYbIHTBjk9">
+          <label class="input-label" data-page-node-id="qjVBVfob3ShWQGWd7jV7ek">密码</label>
+          <input class="input" type="password" placeholder="请输入密码" maxlength="64" data-page-node-id="WOpH1JMjPDYWvNt4jKjMcc">
         </div>
 
         <!-- 验证码：captchaEnabled 为 true 时渲染；本地默认禁用，占位显示「已关闭」 -->
-        <div class="input-group">
-          <label class="input-label">验证码</label>
-          <div class="captcha-row">
-            <div class="input-group">
-              <input class="input" type="text" placeholder="请输入验证码" maxlength="6">
+        <div class="input-group" data-page-node-id="g4FYHgHDMgDatp7UNR0ffb">
+          <label class="input-label" data-page-node-id="84UzXxDKJcoOdYF3FbI0gi">验证码</label>
+          <div class="captcha-row" data-page-node-id="FsZ9oQz0i0yGkSVYbInjaw">
+            <div class="input-group" data-page-node-id="Am3kxEEXelaMPnmOuJgy1I">
+              <input class="input" type="text" placeholder="请输入验证码" maxlength="6" data-page-node-id="JsPyTk0RIUp8SfRe9rwrl6">
             </div>
-            <div class="captcha-box" title="点击刷新验证码">已关闭</div>
+            <div class="captcha-box" title="点击刷新验证码" data-page-node-id="L5tG6SeSOoSUWmeG2WIdNo">已关闭</div>
           </div>
         </div>
 
-        <button class="btn btn-primary btn-block btn-lg mt-2" type="button">登录</button>
+        <button class="btn btn-primary btn-block btn-lg mt-2" type="button" data-page-node-id="9p32uGABu6jOgwHC7aruBj">登录</button>
       </form>
 
       <!-- ============ /register 形态 ============ -->
-      <form class="auth-panel" id="panel-register" onsubmit="return false;">
+      <form class="auth-panel" id="panel-register" onsubmit="return false;" data-page-node-id="tGBboAAozNSjBSxsgP0PFG">
         <!-- 邀请码校验失败提示（错误码 95001–95005 由 handleRegister 的 catch 分支映射） -->
-        <div class="auth-error">
-          <ion-icon name="alert-circle-outline"></ion-icon>
-          <span>邀请码无效，请核对后重试</span>
+        <div class="auth-error" data-page-node-id="Ia8cErDYcjWIC0G1fOw59f">
+          <ion-icon name="alert-circle-outline" data-page-node-id="gaeWoN5E0W3NEj6cDogQYK"></ion-icon>
+          <span data-page-node-id="mP9Spf8CATCTWPDd7wIRPi">邀请码无效，请核对后重试</span>
         </div>
 
-        <div class="input-group">
-          <label class="input-label">用户名</label>
-          <input class="input" type="text" placeholder="3-50 字符" maxlength="50">
+        <div class="input-group" data-page-node-id="HW35C3gGf1BNIGHVl09AlO">
+          <label class="input-label" data-page-node-id="3wnWfPCB1QUX8iamvXHYCp">用户名</label>
+          <input class="input" type="text" placeholder="3-50 字符" maxlength="50" data-page-node-id="OC7M9YRl7nKBRNZORdaMhA">
         </div>
 
-        <div class="input-group">
-          <label class="input-label">密码</label>
-          <input class="input" type="password" placeholder="8-64 字符" maxlength="64">
+        <div class="input-group" data-page-node-id="TQYAixNhK3RQOcEG0WDIGv">
+          <label class="input-label" data-page-node-id="sp6VBzIj338QTV5S1IVhV1">密码</label>
+          <input class="input" type="password" placeholder="8-64 字符" maxlength="64" data-page-node-id="9DyjiChnhrKdUiiAWqdFs3">
         </div>
 
-        <div class="input-group">
-          <label class="input-label">确认密码</label>
-          <input class="input" type="password" placeholder="再次输入密码" maxlength="64">
+        <div class="input-group" data-page-node-id="OnRjKQBaOqCmY0CXGoqsxc">
+          <label class="input-label" data-page-node-id="fyrG32nPijBKBygMnbsHcj">确认密码</label>
+          <input class="input" type="password" placeholder="再次输入密码" maxlength="64" data-page-node-id="Ygmf8heXLfcfLbEvk8vskO">
         </div>
 
-        <div class="input-group">
-          <label class="input-label">昵称</label>
-          <input class="input" type="text" placeholder="1-50 字符" maxlength="50">
+        <div class="input-group" data-page-node-id="EaTc1bCbZpusDa4epyM1qu">
+          <label class="input-label" data-page-node-id="6dM0hd1DHHsXA4tm5jLT2W">昵称</label>
+          <input class="input" type="text" placeholder="1-50 字符" maxlength="50" data-page-node-id="mEdl19dnFxXb1hJCWyfcia">
         </div>
 
-        <div class="input-group">
-          <label class="input-label">邮箱（可选）</label>
-          <input class="input" type="email" placeholder="example@mail.com" maxlength="100">
+        <div class="input-group" data-page-node-id="IXLAnpGf3PS8601tXC0ej4">
+          <label class="input-label" data-page-node-id="HtAD7HDyt3kNZd4gWpa5It">邮箱（可选）</label>
+          <input class="input" type="email" placeholder="example@mail.com" maxlength="100" data-page-node-id="bkEobNWBxaGk3b3NfH1Rry">
         </div>
 
         <!-- 邀请码：v-if="inviteCodeRequired"（由 GET /auth/register-config 下发）；
              输入时即时规范化：去空格与连字符 + 转大写，粘贴 qs7k-3m9p-2x4r 也能通过 -->
-        <div class="input-group">
-          <label class="input-label">邀请码 <span class="invite-required">*</span></label>
-          <input class="input input-mono" type="text" placeholder="请输入管理员提供的邀请码" maxlength="32">
-          <div class="invite-hint">注册需有效邀请码，请联系管理员获取</div>
+        <div class="input-group" data-page-node-id="OJ1iQXLUI9iREtSZIlWb4e">
+          <label class="input-label" data-page-node-id="LpOlRKFJzfpBo5ibOmkfro">邀请码 <span class="invite-required" data-page-node-id="G3wFqgoEFPmAZdjl32njFp">*</span></label>
+          <input class="input input-mono" type="text" placeholder="请输入管理员提供的邀请码" maxlength="32" data-page-node-id="cJq7R3RCbzjoA3pmyEmuks">
+          <div class="invite-hint" data-page-node-id="WCN6HwhPPtKpzAfwZIET4C">注册需有效邀请码，请联系管理员获取</div>
         </div>
 
         <!-- 验证码：captchaEnabled 为 true 时渲染；本地默认禁用，占位显示「已关闭」 -->
-        <div class="input-group">
-          <label class="input-label">验证码</label>
-          <div class="captcha-row">
-            <div class="input-group">
-              <input class="input" type="text" placeholder="请输入验证码" maxlength="6">
+        <div class="input-group" data-page-node-id="tMjMsDP83PwxSxnMzOYcyl">
+          <label class="input-label" data-page-node-id="qOScHr9mXUAS5xDG5vHaY7">验证码</label>
+          <div class="captcha-row" data-page-node-id="RHFVTHNTOKMu1MMBW4Wows">
+            <div class="input-group" data-page-node-id="f0DeaQTPsMDjCvNBU09WdT">
+              <input class="input" type="text" placeholder="请输入验证码" maxlength="6" data-page-node-id="beP5CwCDVRpnuBJj9BH2ty">
             </div>
-            <div class="captcha-box" title="点击刷新验证码">已关闭</div>
+            <div class="captcha-box" title="点击刷新验证码" data-page-node-id="qc7LAzMiUt3OjUNFD0i7yo">已关闭</div>
           </div>
         </div>
 
-        <button class="btn btn-primary btn-block btn-lg mt-2" type="button">注册</button>
+        <button class="btn btn-primary btn-block btn-lg mt-2" type="button" data-page-node-id="4SwV3EuXKsXZrWWKJcHTbB">注册</button>
 
-        <p class="invite-footer">没有邀请码？请联系站点管理员。</p>
+        <p class="invite-footer" data-page-node-id="9NuKS33Fjx8g7wJ3ACB0N7">没有邀请码？请联系站点管理员。</p>
       </form>
     </div>
   </div>
