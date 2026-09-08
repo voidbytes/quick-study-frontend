@@ -111,6 +111,6 @@ export function getResult(sessionId: string) {
 }
 
 /** 「我的考试记录」：当前用户的历史作答会话分页列表 */
-export function getMyExamSessions(params?: { page?: number; size?: number }) {
+export function getMyExamSessions(params?: { page?: number; size?: number; keyword?: string }) {
   return request.get<ApiResponse<PageResult<MyExamSession>>>('/my/exam-sessions', { params })
 }

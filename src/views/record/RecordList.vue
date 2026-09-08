@@ -12,6 +12,14 @@
     <template v-if="activeTab === 'practice'">
       <!-- 筛选 -->
       <FilterBar>
+        <n-input
+          v-model:value="filterKeyword"
+          placeholder="搜索题目内容"
+          clearable
+          style="width: 220px"
+          @keyup.enter="handleSearch"
+          @clear="handleSearch"
+        />
         <n-select
           v-model:value="filterBankId"
           :options="bankOptions"
@@ -115,6 +123,16 @@
 
     <!-- ==================== 考试记录 ==================== -->
     <template v-else>
+      <FilterBar>
+        <n-input
+          v-model:value="examKeyword"
+          placeholder="搜索试卷标题"
+          clearable
+          style="width: 240px"
+          @keyup.enter="fetchExamList"
+          @clear="fetchExamList"
+        />
+      </FilterBar>
       <SkeletonList v-if="examLoading && examList.length === 0" :count="3" :cols="1" />
 
       <template v-else-if="examList.length > 0">
@@ -225,6 +243,8 @@ const activeTab = ref<'practice' | 'exam'>('practice')
 const loading = ref(false)
 const filterBankId = ref<number | null>(null)
 const filterSourceType = ref<string | null>(null)
+const filterKeyword = ref('')
+const examKeyword = ref('')
 const dateRange = ref<[number, number] | null>(null)
 const recordList = ref<RecordRow[]>([])
 const bankOptions = ref<{ label: string; value: number }[]>([])
@@ -364,8 +384,9 @@ async function fetchList() {
     const res = await getRecordList({
       page: pagination.page,
       size: pagination.pageSize,
+      keyword: filterKeyword.value.trim() || undefined,
       bankId: filterBankId.value ?? undefined,
-      type: filterSourceType.value || undefined,
+      sourceType: filterSourceType.value || undefined,
       startDate: dateRange.value ? dayjs(dateRange.value[0]).format('YYYY-MM-DD') : undefined,
       endDate: dateRange.value ? dayjs(dateRange.value[1]).format('YYYY-MM-DD') : undefined
     })
@@ -383,7 +404,8 @@ async function fetchExamList() {
   try {
     const res = await getMyExamSessions({
       page: examPagination.page,
-      size: examPagination.pageSize
+      size: examPagination.pageSize,
+      keyword: examKeyword.value.trim() || undefined
     })
     examList.value = res.data.records || []
     examPagination.itemCount = res.data.total || 0

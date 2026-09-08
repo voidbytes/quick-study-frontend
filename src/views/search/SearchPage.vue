@@ -116,9 +116,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, watch } from 'vue'
+import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useMessage } from 'naive-ui'
+import { useAuthStore } from '@/stores/auth'
 import type { Component } from 'vue'
 import { search } from '@/api/search'
 import type { SearchParams, SearchResultItem } from '@/api/search'
@@ -130,7 +131,10 @@ import {
   LibraryOutline,
   DocumentTextOutline,
   FileTrayFullOutline,
-  TimeOutline
+  TimeOutline,
+  CreateOutline,
+  GameControllerOutline,
+  CloseCircleOutline
 } from '@vicons/ionicons5'
 
 const router = useRouter()
@@ -142,12 +146,27 @@ const filterType = ref<string | null>(null)
 const loading = ref(false)
 const searchResults = ref<SearchResultItem[]>([])
 
-const typeOptions = [
-  { label: '全部', value: 'all' },
-  { label: '题库', value: 'bank' },
-  { label: '题目', value: 'question' },
-  { label: '试卷', value: 'paper' }
-]
+const authStore = useAuthStore()
+
+// 个人五类 Tab 仅登录后展示（后端 owner 强制，游客搜个人类型恒为空）
+const typeOptions = computed(() => {
+  const base = [
+    { label: '全部', value: 'all' },
+    { label: '题库', value: 'bank' },
+    { label: '题目', value: 'question' },
+    { label: '试卷', value: 'paper' }
+  ]
+  if (authStore.isAuthenticated) {
+    base.push(
+      { label: '我的笔记', value: 'note' },
+      { label: '练习记录', value: 'practice_session' },
+      { label: '考试记录', value: 'exam_session' },
+      { label: '错题本', value: 'wrong_question' },
+      { label: '做题记录', value: 'answer_record' }
+    )
+  }
+  return base
+})
 
 const pagination = reactive({
   page: 1,
@@ -160,7 +179,12 @@ type SearchTypeMeta = { label: string; icon: Component; iconClass: string; tagTy
 const TYPE_META: Record<string, SearchTypeMeta> = {
   bank: { label: '题库', icon: LibraryOutline, iconClass: 'bg-primary-50 text-primary-500', tagType: 'primary' },
   question: { label: '题目', icon: DocumentTextOutline, iconClass: 'bg-success-50 text-success-600', tagType: 'success' },
-  paper: { label: '试卷', icon: FileTrayFullOutline, iconClass: 'bg-warning-50 text-warning-600', tagType: 'warning' }
+  paper: { label: '试卷', icon: FileTrayFullOutline, iconClass: 'bg-warning-50 text-warning-600', tagType: 'warning' },
+  note: { label: '笔记', icon: CreateOutline, iconClass: 'bg-info-50 text-info-600', tagType: 'default' },
+  practice_session: { label: '练习记录', icon: GameControllerOutline, iconClass: 'bg-warning-50 text-warning-600', tagType: 'warning' },
+  exam_session: { label: '考试记录', icon: TimeOutline, iconClass: 'bg-info-50 text-info-600', tagType: 'default' },
+  wrong_question: { label: '错题本', icon: CloseCircleOutline, iconClass: 'bg-error-50 text-error-600', tagType: 'default' },
+  answer_record: { label: '做题记录', icon: DocumentTextOutline, iconClass: 'bg-neutral-100 text-neutral-600', tagType: 'default' }
 }
 
 const DEFAULT_META: SearchTypeMeta = { label: '其他', icon: DocumentTextOutline, iconClass: 'bg-neutral-100 text-neutral-500', tagType: 'default' }
@@ -173,6 +197,11 @@ function typeMeta(type: string): SearchTypeMeta {
 function resultPath(item: SearchResultItem): string {
   if (item.type === 'bank') return `/banks/${item.id}`
   if (item.type === 'paper') return `/papers/${item.id}`
+  if (item.type === 'note') return '/notes'
+  if (item.type === 'practice_session') return '/practice'
+  if (item.type === 'exam_session') return '/records?tab=exam'
+  if (item.type === 'wrong_question') return '/wrong-questions'
+  if (item.type === 'answer_record') return '/records'
   return ''
 }
 

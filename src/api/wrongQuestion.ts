@@ -4,6 +4,7 @@ import type { ApiResponse, PageResult, WrongQuestion } from '@/types'
 export interface WrongQuestionListParams {
   page?: number
   size?: number
+  keyword?: string
   bankId?: number
   tagId?: number
   sortBy?: string

@@ -3,7 +3,7 @@ import type { ApiResponse, PageResult, Question, QuestionBank, ExamPaper } from 
 
 export interface SearchParams {
   keyword: string
-  type?: 'question' | 'bank' | 'paper'
+  type?: 'question' | 'bank' | 'paper' | 'note' | 'practice_session' | 'exam_session' | 'wrong_question' | 'answer_record'
   page?: number
   size?: number
 }

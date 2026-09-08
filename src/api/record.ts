@@ -4,6 +4,8 @@ import type { ApiResponse, PageResult, PracticeRecord } from '@/types'
 export interface RecordListParams {
   page?: number
   size?: number
+  keyword?: string
+  sourceType?: string
   bankId?: number
   type?: string
   startDate?: string

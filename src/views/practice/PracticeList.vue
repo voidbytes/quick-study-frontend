@@ -13,6 +13,14 @@
 
     <!-- 筛选 -->
     <div class="flex gap-3 mb-5 flex-wrap">
+      <n-input
+        v-model:value="filterKeyword"
+        placeholder="搜索会话标题（题库/标签/题量）"
+        clearable
+        style="width: 260px"
+        @keyup.enter="handleSearch"
+        @clear="handleSearch"
+      />
       <n-select
         v-model:value="filterStatus"
         :options="statusOptions"
@@ -135,6 +143,7 @@ const { confirmDanger } = useConfirm()
 const loading = ref(false)
 const showCreateDialog = ref(false)
 const filterStatus = ref<string | null>(null)
+const filterKeyword = ref('')
 const sessionList = ref<PracticeSessionSummary[]>([])
 
 const statusOptions = [
@@ -204,7 +213,8 @@ async function fetchList() {
     const res = await getPracticeSessions({
       page: pagination.page,
       size: pagination.pageSize,
-      status: filterStatus.value || undefined
+      status: filterStatus.value || undefined,
+      keyword: filterKeyword.value.trim() || undefined
     })
     sessionList.value = res.data.records || []
     pagination.itemCount = res.data.total || 0
