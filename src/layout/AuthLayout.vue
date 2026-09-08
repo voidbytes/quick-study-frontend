@@ -3,9 +3,9 @@
     <div class="auth-card">
       <!-- Logo -->
       <div class="auth-logo">
-        <div class="auth-logo-icon">QS</div>
-        <div class="auth-title">题库与组卷练习系统</div>
-        <div class="auth-subtitle">快学 · 每一道题都算数</div>
+        <div class="auth-logo-icon">爱</div>
+        <div class="auth-title">爱刷题</div>
+        <div class="auth-subtitle">爱上刷题 · 每一道题都算数</div>
       </div>
 
       <!-- 登录 / 注册 Tab -->
