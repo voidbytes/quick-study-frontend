@@ -335,9 +335,13 @@ const form = reactive({
   difficulty: 'MEDIUM' as Difficulty,
   tagIds: [] as number[],
   status: 'DRAFT',
+  /** 选项是否可乱序（仅选择题型；含"以上都是"类位置敏感选项时关闭） */
+  optionsShufflable: true,
   /** 编程题配置（仅 type=PROGRAMMING 时非空） */
   programming: null as ProgrammingQuestionConfig | null
 })
+
+const isChoiceType = computed(() => form.type === 'SINGLE' || form.type === 'MULTIPLE')
 
 /** 状态枚举由全局字典派生（表单不提供待审核选项） */
 const statusOptions = QUESTION_STATUS_OPTIONS.filter((o) => o.value !== 'PENDING_REVIEW')
@@ -500,6 +504,8 @@ interface QuestionDetailData {
   status: string
   tags?: { id: number; name: string }[]
   tagIds: number[]
+  /** 选项是否可乱序（后端默认 true） */
+  optionsShufflable?: boolean
   createdAt?: string
   updatedAt?: string
   paperRefCount?: number
@@ -612,7 +618,10 @@ async function handleSave() {
       analysis: form.analysis || undefined,
       difficulty: form.difficulty,
       tagIds: form.tagIds.length > 0 ? form.tagIds : undefined,
-      status: form.status
+      status: form.status,
+      // 选择题型才下发乱序开关；其他题型由后端忽略
+      optionsShufflable:
+        form.type === 'SINGLE' || form.type === 'MULTIPLE' ? form.optionsShufflable : undefined
     }
 
     if (form.type === 'PROGRAMMING' && form.programming) {
