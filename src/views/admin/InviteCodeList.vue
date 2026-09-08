@@ -64,7 +64,13 @@
             <n-input-number v-model:value="generateForm.count" :min="1" :max="50" class="w-full" />
           </n-form-item>
           <n-form-item label="最大使用次数" path="maxUses">
-            <n-input-number v-model:value="generateForm.maxUses" :min="1" :max="9999" class="w-full" />
+            <n-input-number
+              v-model:value="generateForm.maxUses"
+              :min="1"
+              :max="9999"
+              :disabled="generateForm.grantRole === 'ADMIN'"
+              class="w-full"
+            />
           </n-form-item>
           <n-form-item label="有效期" path="validPreset">
             <n-select
@@ -103,7 +109,7 @@
           />
         </n-form-item>
         <n-alert v-if="generateForm.grantRole === 'ADMIN'" type="warning" class="mb-3" :show-icon="true">
-          管理员邀请码注册即为 ADMIN 角色，默认一次性，请妥善保管。
+          管理员邀请码注册即为 ADMIN 角色，强制一次性（最大使用次数固定为 1），请妥善保管。
         </n-alert>
         <n-button type="primary" block :loading="generating" @click="handleGenerate">生成</n-button>
       </n-form>
@@ -415,7 +421,8 @@ async function handleGenerate() {
   try {
     const params: any = {
       count: generateForm.count,
-      maxUses: generateForm.maxUses,
+      // 管理员角色码强制一次性（后端强制 max_uses=1，前端同步置 1）
+      maxUses: generateForm.grantRole === 'ADMIN' ? 1 : generateForm.maxUses,
       grantRole: generateForm.grantRole,
       remark: generateForm.remark.trim() || undefined
     }

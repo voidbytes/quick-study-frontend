@@ -189,6 +189,11 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/views/profile/Profile.vue')
       },
       {
+        path: 'notes',
+        name: 'NoteList',
+        component: () => import('@/views/note/NoteList.vue')
+      },
+      {
         path: 'admin/users',
         name: 'AdminUserList',
         component: () => import('@/views/admin/UserList.vue'),

@@ -203,7 +203,7 @@ async function handleRegister() {
       email: form.email || undefined,
       captchaId: captchaEnabled.value ? form.captchaId : undefined,
       captchaCode: captchaEnabled.value ? form.captchaCode : undefined,
-      inviteCode: inviteRequired.value ? form.inviteCode : undefined
+      inviteCode: inviteRequired.value ? normalizeCode(form.inviteCode) : undefined
     })
     message.success('注册成功')
     router.push('/')
