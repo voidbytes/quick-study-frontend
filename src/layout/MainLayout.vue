@@ -25,10 +25,10 @@
           :title="collapsed ? '展开菜单' : undefined"
           @click="collapsed && toggleCollapsed()"
         >
-          QS
+          爱
         </div>
         <span v-if="!collapsed" class="text-base font-bold text-neutral-900 whitespace-nowrap">
-          Quick Study
+          爱刷题
         </span>
         <div
           v-if="!collapsed"
