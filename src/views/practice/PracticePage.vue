@@ -206,6 +206,14 @@
                 >
                   提交答案
                 </n-button>
+                <n-badge :value="hasNote" dot>
+                  <n-button size="small" quaternary @click="openNoteDrawer">
+                    <template #icon>
+                      <n-icon :component="BookOutline" />
+                    </template>
+                    笔记
+                  </n-button>
+                </n-badge>
               </div>
               <div class="flex flex-wrap items-center gap-2">
                 <n-button
@@ -340,11 +348,46 @@
         </div>
       </div>
     </template>
+
+    <!-- ============ 题目笔记抽屉 ============ -->
+    <n-drawer v-model:show="showNoteDrawer" :width="520" placement="right">
+      <n-drawer-content title="题目笔记" closable>
+        <div class="flex flex-col h-full">
+          <MarkdownEditor
+            v-model="noteContent"
+            mode="edit"
+            height="340px"
+            :disable-image="true"
+            placeholder="记录这道题的易错点、思路、口诀……（支持 Markdown，不支持图片）"
+          />
+          <div
+            class="flex items-center justify-end mt-2 text-xs"
+            :class="noteOverLimit || noteImageDetected ? 'text-red-500' : 'text-neutral-400'"
+          >
+            <span v-if="noteImageDetected" class="mr-auto">笔记不支持图片，请移除图片内容</span>
+            {{ noteContent.length }} / 16000
+          </div>
+          <div class="flex-1" />
+          <div class="flex gap-2 pt-3">
+            <n-button
+              type="primary"
+              class="flex-1"
+              :loading="noteSaving"
+              :disabled="!noteCanSave"
+              @click="handleSaveNote"
+            >
+              保存
+            </n-button>
+            <n-button v-if="hasNote" quaternary type="error" @click="handleDeleteNote">删除笔记</n-button>
+          </div>
+        </div>
+      </n-drawer-content>
+    </n-drawer>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useMessage } from 'naive-ui'
 import {
@@ -353,9 +396,11 @@ import {
   CheckmarkCircleOutline,
   CloseCircleOutline,
   BulbOutline,
-  DocumentTextOutline
+  DocumentTextOutline,
+  BookOutline
 } from '@vicons/ionicons5'
 import { getPracticeSession, submitPracticeAnswer, completePractice } from '@/api/practice'
+import { getNote, saveNote, deleteNote, NOTE_IMAGE_PATTERN } from '@/api/note'
 import ProgrammingAnswerPanel from '@/components/programming/ProgrammingAnswerPanel.vue'
 import type { ProgrammingAnswerView } from '@/components/programming/ProgrammingAnswerPanel.vue'
 import type { PracticeQuestion } from '@/types'
@@ -366,6 +411,7 @@ import RichText from '@/components/common/RichText.vue'
 import PageHeader from '@/components/common/PageHeader.vue'
 import StatCard from '@/components/common/StatCard.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
+import MarkdownEditor from '@/components/MarkdownEditor.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -413,6 +459,70 @@ const result = ref<ResultView | null>(null)
 const filterParams = ref<FilterParams | null>(null)
 
 const currentQuestion = computed<QuestionRow | null>(() => questions.value[currentIndex.value] || null)
+
+// ==================== 题目笔记 ====================
+
+const NOTE_MAX_LENGTH = 16000
+const showNoteDrawer = ref(false)
+const noteSaving = ref(false)
+const hasNote = ref(false)
+const noteContent = ref('')
+
+const noteOverLimit = computed(() => noteContent.value.length > NOTE_MAX_LENGTH)
+const noteImageDetected = computed(() => NOTE_IMAGE_PATTERN.test(noteContent.value))
+const noteCanSave = computed(
+  () => noteContent.value.trim().length > 0 && !noteOverLimit.value && !noteImageDetected.value
+)
+
+async function openNoteDrawer() {
+  const questionId = currentQuestion.value?.id
+  if (!questionId) return
+  showNoteDrawer.value = true
+  try {
+    const res = await getNote(questionId)
+    hasNote.value = !!res.data
+    noteContent.value = res.data?.content || ''
+  } catch {
+    hasNote.value = false
+    noteContent.value = ''
+  }
+}
+
+async function handleSaveNote() {
+  const questionId = currentQuestion.value?.id
+  if (!questionId || !noteCanSave.value) return
+  noteSaving.value = true
+  try {
+    await saveNote(questionId, noteContent.value)
+    hasNote.value = true
+    message.success('笔记已保存')
+    showNoteDrawer.value = false
+  } catch (e: any) {
+    message.error(e?.response?.data?.message || '保存失败')
+  } finally {
+    noteSaving.value = false
+  }
+}
+
+async function handleDeleteNote() {
+  const questionId = currentQuestion.value?.id
+  if (!questionId) return
+  try {
+    await deleteNote(questionId)
+    hasNote.value = false
+    noteContent.value = ''
+    message.success('笔记已删除')
+    showNoteDrawer.value = false
+  } catch (e: any) {
+    message.error(e?.response?.data?.message || '删除失败')
+  }
+}
+
+// 切题时重置笔记标记（dot 惰性更新，回显以打开抽屉为准）
+watch(currentIndex, () => {
+  hasNote.value = false
+  noteContent.value = ''
+})
 
 /** 客观题作答区：单选/判断共用单选交互，多选单独处理 */
 const isSingleChoice = computed(() => {

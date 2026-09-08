@@ -199,6 +199,12 @@ const routes: RouteRecordRaw[] = [
         name: 'ReviewList',
         component: () => import('@/views/admin/ReviewList.vue'),
         meta: { requiresAdmin: true }
+      },
+      {
+        path: 'admin/invite-codes',
+        name: 'AdminInviteCodeList',
+        component: () => import('@/views/admin/InviteCodeList.vue'),
+        meta: { requiresAdmin: true }
       }
     ]
   }

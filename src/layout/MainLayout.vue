@@ -182,7 +182,9 @@ import {
   MenuOutline,
   ChevronBackOutline,
   ChevronForwardOutline,
-  StarOutline
+  StarOutline,
+  BookOutline,
+  TicketOutline
 } from '@vicons/ionicons5'
 
 interface MenuItem {
@@ -237,6 +239,7 @@ const menuGroups = computed<MenuGroup[]>(() => {
         { label: '错题本', key: '/wrong-questions', icon: CloseCircleOutline },
         { label: '收藏题目', key: '/favorites', icon: StarOutline },
         { label: '做题记录', key: '/records', icon: TimeOutline },
+        { label: '我的笔记', key: '/notes', icon: BookOutline },
         { label: '考试记录', key: '/exam-records', icon: DocumentTextOutline },
         { label: '统计', key: '/statistics', icon: BarChartOutline },
         { label: '通知', key: '/notifications', icon: NotificationsOutline },
@@ -254,7 +257,8 @@ const menuGroups = computed<MenuGroup[]>(() => {
       label: '管理',
       items: [
         { label: '用户管理', key: '/admin/users', icon: PeopleOutline },
-        { label: '审核列表', key: '/admin/reviews', icon: CheckmarkDoneOutline }
+        { label: '审核列表', key: '/admin/reviews', icon: CheckmarkDoneOutline },
+        { label: '邀请码', key: '/admin/invite-codes', icon: TicketOutline }
       ]
     })
   }
@@ -277,11 +281,13 @@ const MENU_TITLES: Record<string, string> = {
   '/wrong-questions': '错题本',
   '/favorites': '收藏题目',
   '/records': '做题记录',
+  '/notes': '我的笔记',
   '/statistics': '统计',
   '/notifications': '通知',
   '/search': '搜索',
   '/admin/users': '用户管理',
   '/admin/reviews': '审核列表',
+  '/admin/invite-codes': '邀请码',
   '/grading': '批改',
   '/profile': '个人中心'
 }

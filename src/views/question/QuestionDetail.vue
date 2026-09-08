@@ -3,6 +3,12 @@
     <!-- 页头：返回 + 标题 + 编辑操作 -->
     <PageHeader title="题目详情" :subtitle="bankSubtitle" showBack>
       <template #actions>
+        <n-button v-if="authStore.isAuthenticated" size="small" @click="openNoteDrawer">
+          <template #icon>
+            <n-icon :component="BookOutline" />
+          </template>
+          笔记
+        </n-button>
         <n-button
           v-if="authStore.isAdmin"
           type="primary"
@@ -18,8 +24,7 @@
       <div
         v-if="question"
         class="bg-white border border-neutral-200 rounded-lg overflow-hidden"
-      >
-        <!-- 标签行 -->
+      >        <!-- 标签行 -->
         <div class="px-6 py-4 border-b border-neutral-200 flex items-center gap-2 flex-wrap">
           <n-tag size="small" round :type="typeTagType(question.type)">{{ typeLabel }}</n-tag>
           <n-tag size="small" round :type="difficultyTagType(question.difficulty)">
@@ -185,6 +190,41 @@
       </div>
     </n-spin>
     <LoadError v-else :description="loadError" :retrying="loading" @retry="fetchDetail" />
+
+    <!-- 笔记抽屉 -->
+    <n-drawer v-model:show="showNoteDrawer" :width="520" placement="right">
+      <n-drawer-content title="题目笔记" closable>
+        <div class="flex flex-col h-full">
+          <MarkdownEditor
+            v-model="noteContent"
+            mode="edit"
+            height="340px"
+            :disable-image="true"
+            placeholder="记录这道题的易错点、思路、口诀……（支持 Markdown，不支持图片）"
+          />
+          <div
+            class="flex items-center justify-end mt-2 text-xs"
+            :class="noteOverLimit || noteImageDetected ? 'text-red-500' : 'text-neutral-400'"
+          >
+            <span v-if="noteImageDetected" class="mr-auto">笔记不支持图片，请移除图片内容</span>
+            {{ noteContent.length }} / 16000
+          </div>
+          <div class="flex-1" />
+          <div class="flex gap-2 pt-3">
+            <n-button
+              type="primary"
+              class="flex-1"
+              :loading="noteSaving"
+              :disabled="!noteCanSave"
+              @click="handleSaveNote"
+            >
+              保存
+            </n-button>
+            <n-button v-if="hasNote" quaternary type="error" @click="handleDeleteNote">删除笔记</n-button>
+          </div>
+        </div>
+      </n-drawer-content>
+    </n-drawer>
   </div>
 </template>
 
@@ -193,20 +233,76 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import type { QuestionType, Difficulty, Question, QuestionOption } from '@/types'
 import { getQuestionDetail } from '@/api/question'
+import { getNote, saveNote, deleteNote, NOTE_IMAGE_PATTERN } from '@/api/note'
 import { useAuthStore } from '@/stores/auth'
 import { QUESTION_TYPE_MAP, DIFFICULTY_MAP, QUESTION_STATUS_OPTIONS } from '@/utils/constants'
 import PageHeader from '@/components/common/PageHeader.vue'
 import RichText from '@/components/common/RichText.vue'
 import LoadError from '@/components/LoadError.vue'
-import { CheckmarkOutline, TimeOutline } from '@vicons/ionicons5'
+import MarkdownEditor from '@/components/MarkdownEditor.vue'
+import { CheckmarkOutline, TimeOutline, BookOutline } from '@vicons/ionicons5'
 import dayjs from 'dayjs'
 
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
+const message = useMessage()
 
 const bankId = route.params.bankId as string
 const questionId = route.params.questionId as string
+
+// ==================== 题目笔记 ====================
+
+const NOTE_MAX_LENGTH = 16000
+const showNoteDrawer = ref(false)
+const noteSaving = ref(false)
+const hasNote = ref(false)
+const noteContent = ref('')
+
+const noteOverLimit = computed(() => noteContent.value.length > NOTE_MAX_LENGTH)
+const noteImageDetected = computed(() => NOTE_IMAGE_PATTERN.test(noteContent.value))
+const noteCanSave = computed(
+  () => noteContent.value.trim().length > 0 && !noteOverLimit.value && !noteImageDetected.value
+)
+
+async function openNoteDrawer() {
+  showNoteDrawer.value = true
+  try {
+    const res = await getNote(questionId)
+    hasNote.value = !!res.data
+    noteContent.value = res.data?.content || ''
+  } catch {
+    hasNote.value = false
+    noteContent.value = ''
+  }
+}
+
+async function handleSaveNote() {
+  if (!noteCanSave.value) return
+  noteSaving.value = true
+  try {
+    await saveNote(questionId, noteContent.value)
+    hasNote.value = true
+    message.success('笔记已保存')
+    showNoteDrawer.value = false
+  } catch (e: any) {
+    message.error(e?.response?.data?.message || '保存失败')
+  } finally {
+    noteSaving.value = false
+  }
+}
+
+async function handleDeleteNote() {
+  try {
+    await deleteNote(questionId)
+    hasNote.value = false
+    noteContent.value = ''
+    message.success('笔记已删除')
+    showNoteDrawer.value = false
+  } catch (e: any) {
+    message.error(e?.response?.data?.message || '删除失败')
+  }
+}
 
 const loading = ref(false)
 const loadError = ref('')

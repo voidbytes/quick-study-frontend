@@ -7,7 +7,7 @@
       :height="height"
       :mode="mode"
       :placeholder="placeholder"
-      :disabled-menus="disabledMenus"
+      :disabled-menus="effectiveDisabledMenus"
       @change="handleChange"
       @upload-image="handleUploadImage"
     />
@@ -44,11 +44,17 @@ const props = withDefaults(
     disabledMenus?: string[]
     /** 图片张数上限（答题场景限制 9 张），不传则不限 */
     maxImages?: number
+    /**
+     * 禁图模式（笔记场景）：隐藏图片菜单 + 拦截拖拽/粘贴上传。
+     * 优先级高于 maxImages。
+     */
+    disableImage?: boolean
   }>(),
   {
     height: '400px',
     placeholder: '',
-    disabledMenus: () => []
+    disabledMenus: () => [],
+    disableImage: false
   }
 )
 
@@ -57,6 +63,11 @@ const emit = defineEmits<{
 }>()
 
 const message = useMessage()
+
+/** 禁图模式下追加屏蔽图片工具栏菜单 */
+const effectiveDisabledMenus = computed(() =>
+  props.disableImage ? [...props.disabledMenus, 'image'] : props.disabledMenus
+)
 
 /**
  * 已插入图片数。注意 v-model / @change 输出的是 Markdown 源码，
@@ -73,6 +84,12 @@ function handleChange(text: string) {
 async function handleUploadImage(event: any, insertImage: (url: string, alt: string) => void) {
   const file = event.target?.files?.[0]
   if (!file) return
+
+  // 禁图模式：拦截拖拽 / 粘贴 / 菜单触发的上传（笔记场景）
+  if (props.disableImage) {
+    message.warning('笔记不支持图片')
+    return
+  }
 
   if (props.maxImages != null && imageCount.value >= props.maxImages) {
     message.warning(`最多插入 ${props.maxImages} 张图片`)
