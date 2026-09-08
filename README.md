@@ -17,6 +17,53 @@
 - **图表**: ECharts + vue-echarts
 - **数学公式**: KaTeX
 
+## 快速开始（本地开发）
+
+```bash
+npm install
+npm run dev
+```
+
+开发环境 API 走 Vite 代理（`/api/v1` → `http://localhost:8080`，见 `vite.config.ts`），浏览器内同源无跨域；后端地址可用环境变量覆盖：
+
+```bash
+VITE_PROXY_TARGET=http://192.168.1.10:8080 npm run dev
+```
+
+## 构建部署（纯静态托管）
+
+适用于 GitHub Pages / Cloudflare Pages 等无反向代理的纯静态托管：API 地址在**构建时**通过 `VITE_API_BASE_URL` 注入绝对地址，前端运行时不再感知后端域名。
+
+```bash
+# 示例（占位域名）：前端部署到 your-app.example.com，后端在 api.example.com
+VITE_API_BASE_URL=https://api.example.com/api/v1 npm run build
+```
+
+- 产物输出到 `dist/`，整个目录上传到静态托管即可；`VITE_API_BASE_URL` 结尾不要带 `/`。
+- 未设置 `VITE_API_BASE_URL` 时默认 `/api/v1`（仅适用于同域反向代理场景，如 Nginx 反代 `/api` 到后端）。
+- **部署前提**：后端 CORS 需允许前端站点来源（本项目后端已全局放行，见后端 `WebMvcConfig`）。
+- **路由**：项目使用 history 模式（`createWebHistory`），静态托管必须配置 SPA fallback——所有路径回退到 `index.html`：
+  - Cloudflare Pages / Netlify：根目录放 `_redirects` 文件，内容 `/* /index.html 200`（需在 `public/` 下）；
+  - Nginx：`location / { try_files $uri $uri/ /index.html; }`；
+  - Caddy：`try_files {path} /index.html`。
+
+## 测试
+
+```bash
+npm test                # 单元测试（Vitest，覆盖 API 拦截器、组件、页面）
+npm run test:watch      # 监听模式
+npm run test:coverage   # 覆盖率报告
+```
+
+## 环境变量
+
+| 变量 | 作用 | 默认值 |
+|------|------|--------|
+| `VITE_API_BASE_URL` | 生产 API 绝对地址（构建时注入） | `/api/v1` |
+| `VITE_PROXY_TARGET` | dev 代理目标后端 | `http://localhost:8080` |
+
+---
+
 ## 目录结构
 
 ```

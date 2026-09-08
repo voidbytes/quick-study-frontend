@@ -58,3 +58,12 @@ export const PAPER_STATUS_MAP: Record<PaperStatus, { label: string; type: 'defau
 export const TOKEN_KEY = 'quick-study-token'
 export const REFRESH_TOKEN_KEY = 'quick-study-refresh-token'
 export const USER_INFO_KEY = 'quick-study-user-info'
+
+/**
+ * API 基础路径：
+ * - dev：Vite 代理走相对路径 /api/v1（见 vite.config.ts server.proxy）
+ * - 生产（纯静态托管、无反向代理）：构建时用 VITE_API_BASE_URL 注入绝对地址，
+ *   如 VITE_API_BASE_URL=https://api.example.com/api/v1 npm run build
+ * 所有请求（axios 实例、refresh 裸请求、上传）统一从这里取，禁止再硬编码 /api/v1。
+ */
+export const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? '/api/v1').replace(/\/+$/, '')

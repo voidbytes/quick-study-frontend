@@ -1,6 +1,6 @@
 import axios from 'axios'
 import type { AxiosInstance, AxiosRequestConfig, InternalAxiosRequestConfig, AxiosResponse } from 'axios'
-import { TOKEN_KEY, REFRESH_TOKEN_KEY, USER_INFO_KEY } from '@/utils/constants'
+import { TOKEN_KEY, REFRESH_TOKEN_KEY, USER_INFO_KEY, API_BASE_URL } from '@/utils/constants'
 import { createLogger } from '@/utils/logger'
 
 const log = createLogger('http')
@@ -23,7 +23,7 @@ type RequestInstance = Omit<AxiosInstance, 'get' | 'post' | 'put' | 'delete' | '
 }
 
 const request = axios.create({
-  baseURL: '/api/v1',
+  baseURL: API_BASE_URL,
   timeout: 30000,
   headers: {
     'Content-Type': 'application/json'
@@ -121,7 +121,7 @@ request.interceptors.response.use(
       }
 
       try {
-        const res = await axios.post('/api/v1/auth/refresh', { refreshToken })
+        const res = await axios.post(`${API_BASE_URL}/auth/refresh`, { refreshToken })
         const body = res.data
         const data = body?.data
         // 后端业务失败也返回 HTTP 200（如 code=10105 刷新令牌无效），

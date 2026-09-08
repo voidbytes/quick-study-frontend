@@ -38,6 +38,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useAuthStore } from '@/stores/auth'
+import { API_BASE_URL } from '@/utils/constants'
 import { CloudUploadOutline } from '@vicons/ionicons5'
 import { useMessage } from 'naive-ui'
 
@@ -53,7 +54,7 @@ const emit = defineEmits<{
 const message = useMessage()
 const authStore = useAuthStore()
 
-const uploadUrl = '/api/v1/files/upload'
+const uploadUrl = `${API_BASE_URL}/files/upload`
 const uploading = ref(false)
 const uploadProgress = ref(0)
 const showFileList = ref(false)
