@@ -262,6 +262,8 @@ export interface PracticeSessionSummary {
   sessionId: string
   status: string
   totalCount: number
+  /** 会话标题（后端创建时拼装落库；旧数据可能为空，为空时降级前端拼装） */
+  title?: string | null
   /** 命名摘要：题库/标签名称与题型（后端解析 filterParams） */
   bankNames?: string[]
   tagNames?: string[]

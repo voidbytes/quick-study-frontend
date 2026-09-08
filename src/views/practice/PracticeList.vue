@@ -49,7 +49,7 @@
           <!-- 主要信息 -->
           <div class="flex-1 min-w-0">
             <div class="flex items-center gap-2 flex-wrap">
-              <span class="text-base font-semibold text-neutral-900">{{ buildPracticeSessionTitleFromSummary(row) }}</span>
+              <span class="text-base font-semibold text-neutral-900">{{ row.title || buildPracticeSessionTitleFromSummary(row) }}</span>
               <n-tag size="small" round :type="statusTagType(row.status)">
                 {{ statusLabel(row.status) }}
               </n-tag>
