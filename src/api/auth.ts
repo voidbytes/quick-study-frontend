@@ -25,11 +25,17 @@ export interface RegisterParams {
   email?: string
   captchaId?: string
   captchaCode?: string
+  inviteCode?: string
 }
 
 export interface CaptchaResult {
   captchaId: string
   captchaImage: string
+}
+
+export interface RegisterConfig {
+  inviteCodeRequired: boolean
+  captchaEnabled: boolean
 }
 
 export function login(data: LoginParams) {
@@ -38,6 +44,10 @@ export function login(data: LoginParams) {
 
 export function register(data: RegisterParams) {
   return request.post<ApiResponse<LoginResult>>('/auth/register', data)
+}
+
+export function getRegisterConfig() {
+  return request.get<ApiResponse<RegisterConfig>>('/auth/register-config')
 }
 
 export function refreshToken(refreshToken: string) {

@@ -89,7 +89,7 @@ import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useMessage } from 'naive-ui'
 import type { FormInst, FormRules } from 'naive-ui'
-import { getCaptcha, checkUsername } from '@/api/auth'
+import { getCaptcha, checkUsername, getRegisterConfig } from '@/api/auth'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -98,6 +98,7 @@ const message = useMessage()
 const formRef = ref<FormInst | null>(null)
 const loading = ref(false)
 const captchaEnabled = ref(false)
+const inviteRequired = ref(false)
 const captchaImage = ref('')
 const captchaId = ref('')
 const usernameAvailable = ref<boolean | null>(null)
@@ -112,8 +113,14 @@ const form = reactive({
   nickname: '',
   email: '',
   captchaId: '',
-  captchaCode: ''
+  captchaCode: '',
+  inviteCode: ''
 })
+
+/** 输入规范化：去空格与连字符、统一大写（用户粘贴带连字符的码也能过） */
+function normalizeCode(v: string) {
+  return (v || '').replace(/[\s-]/g, '').toUpperCase()
+}
 
 function validatePasswordSame(_rule: any, value: string) {
   if (value !== form.password) {
@@ -195,7 +202,8 @@ async function handleRegister() {
       nickname: form.nickname,
       email: form.email || undefined,
       captchaId: captchaEnabled.value ? form.captchaId : undefined,
-      captchaCode: captchaEnabled.value ? form.captchaCode : undefined
+      captchaCode: captchaEnabled.value ? form.captchaCode : undefined,
+      inviteCode: inviteRequired.value ? form.inviteCode : undefined
     })
     message.success('注册成功')
     router.push('/')
@@ -210,6 +218,21 @@ async function handleRegister() {
         message.error('验证码错误')
         refreshCaptcha()
         break
+      case 95001:
+        message.error('请输入邀请码')
+        break
+      case 95002:
+        message.error('邀请码无效，请核对后重试')
+        break
+      case 95003:
+        message.error('邀请码已被禁用')
+        break
+      case 95004:
+        message.error('邀请码已过期')
+        break
+      case 95005:
+        message.error('邀请码使用次数已用完')
+        break
       default:
         message.error(msg)
     }
@@ -218,7 +241,14 @@ async function handleRegister() {
   }
 }
 
-onMounted(() => {
+onMounted(async () => {
+  try {
+    const res = await getRegisterConfig()
+    inviteRequired.value = !!res.data.inviteCodeRequired
+    captchaEnabled.value = !!res.data.captchaEnabled
+  } catch {
+    // 配置接口失败按默认（关闭）处理，后端仍会兜底校验
+  }
   if (captchaEnabled.value) {
     refreshCaptcha()
   }
