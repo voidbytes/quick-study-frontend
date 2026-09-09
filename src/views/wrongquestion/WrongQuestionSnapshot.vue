@@ -4,6 +4,7 @@
       title="错题详情"
       :subtitle="wrongQuestion ? `${wrongQuestion.bankName || '未知题库'} · 错 ${wrongQuestion.errorCount} 次 · 最近做错于 ${formatTime(wrongQuestion.lastWrongTime)}` : ''"
       showBack
+      back-to="/wrongquestions"
     />
 
     <n-spin v-if="!loadError" :show="loading">

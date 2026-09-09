@@ -1,6 +1,11 @@
 <template>
   <div class="max-w-5xl mx-auto">
-    <PageHeader :title="isEdit ? '编辑题目' : '创建题目'" :subtitle="isEdit ? '修改已有题目' : '向题库中添加新题目'" showBack />
+    <PageHeader
+      :title="isEdit ? '编辑题目' : '创建题目'"
+      :subtitle="isEdit ? '修改已有题目' : '向题库中添加新题目'"
+      showBack
+      :back-to="`/banks/${route.params.id}`"
+    />
 
     <div class="bg-white border border-neutral-200 rounded-lg p-6">
       <n-spin :show="loading">

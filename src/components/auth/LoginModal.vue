@@ -73,7 +73,8 @@
 
       <div class="text-center text-sm text-neutral-500 mt-3">
         还没有账号？
-        <router-link to="/register" class="text-brand hover:underline">注册</router-link>
+        <!-- 跳注册前先关模态框：否则注册页返回时弹窗仍盖在页面上 -->
+        <a class="text-brand hover:underline cursor-pointer" @click="goRegister()">注册</a>
       </div>
     </n-form>
   </n-modal>
@@ -167,6 +168,12 @@ function resetForm() {
   form.captchaId = ''
   captchaImage.value = ''
   captchaId.value = ''
+}
+
+/** 跳注册页：先关模态框（保留 redirect 意图），否则从注册页返回时弹窗仍盖在页面上 */
+function goRegister() {
+  uiStore.closeLoginModal()
+  router.push('/register')
 }
 
 async function handleLogin() {
