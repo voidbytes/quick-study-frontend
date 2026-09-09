@@ -58,9 +58,18 @@
                     删除
                   </n-button>
                 </div>
-                <n-button size="small" @click="addOption">添加选项</n-button>
+                <div class="flex items-center gap-4">
+                  <n-button size="small" @click="addOption">添加选项</n-button>
+                  <label class="flex items-center gap-1 text-sm text-neutral-500 cursor-pointer">
+                    <n-switch v-model:value="form.optionsShufflable" size="small" />
+                    选项乱序
+                  </label>
+                </div>
                 <div class="text-xs text-neutral-400">
                   选项拖拽排序仅调整展示顺序；保存后按当前顺序重新编号，答案引用将自动对齐。
+                </div>
+                <div class="text-xs text-neutral-400">
+                  开启乱序后练习/考试将随机打乱选项展示顺序，关闭则固定按录入顺序展示；选项含「以上都是」「均不正确」等指代其他选项的表述时建议关闭；若「以上」指代题干内容则无需关闭。
                 </div>
               </div>
             </n-form-item>
@@ -552,6 +561,8 @@ async function loadQuestion() {
     form.content = q.content
     const parsed = parseOptions(q.options)
     form.options = parsed.length >= 2 ? parsed.map((o) => o.text) : ['', '']
+    // 回显乱序开关（缺省 true 与后端默认一致）
+    form.optionsShufflable = q.optionsShufflable ?? true
     // 回显答案：选择题按 id 还原选中项；填空/简答为文本；编程无答案
     if (q.type === 'SINGLE' || q.type === 'MULTIPLE') {
       form.answerIds = parseAnswerIds(q.answer)

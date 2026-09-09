@@ -1,7 +1,12 @@
 <template>
   <div>
     <!-- 页头：返回 + 标题 + 编辑操作 -->
-    <PageHeader title="题目详情" :subtitle="bankSubtitle" showBack>
+    <PageHeader
+      title="题目详情"
+      :subtitle="bankSubtitle"
+      showBack
+      :back-to="`/banks/${bankId}`"
+    >
       <template #actions>
         <n-button v-if="authStore.isAuthenticated" size="small" @click="openNoteDrawer">
           <template #icon>

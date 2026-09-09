@@ -59,7 +59,7 @@ watch(root, () => nextTick(renderMath))
 </script>
 
 <style>
-/* hljs github-light 主题自带 .hljs 背景（#fff），覆盖为容器背景色（--bg-subtle）保持一致 */
+/* hljs github-light 主题自带 .hljs 背景（#fff），覆盖为透明，与容器背景保持一致 */
 .markdown-body pre code.hljs {
   background: transparent;
   padding: 0;
