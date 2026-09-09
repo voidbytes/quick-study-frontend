@@ -1,16 +1,23 @@
 import request from './request'
-import type { ApiResponse, PageResult, Question, QuestionType } from '@/types'
+import type { ApiResponse, PageResult, Question, QuestionType, OptionItem } from '@/types'
 
 export interface CreateQuestionParams {
   type: QuestionType
   difficulty: string
   content: string
-  options?: string
-  answer: string
-  referenceAnswer?: string
+  /** 选项对象数组（整题替换模型：id 从 0 起连续编号，后端防御性校验；仅选择题型） */
+  options?: OptionItem[]
+  /**
+   * 答案（option_id 模型，按题型分治）：
+   * 选择题 = id JSON 数组字符串（"[1]"/"[0,2]"）、判断题 = "[0]"/"[1]"、
+   * 填空/简答 = 文本（简答参考答案并入本字段，后端已删除 referenceAnswer）、编程题不传
+   */
+  answer?: string
   analysis?: string
   tagIds?: number[]
   status?: string
+  /** 选项是否可乱序（仅选择题型） */
+  optionsShufflable?: boolean
   /** 编程题配置（type=PROGRAMMING 时必传） */
   programming?: ProgrammingQuestionConfig
 }
@@ -19,14 +26,14 @@ export interface UpdateQuestionParams {
   type?: string
   difficulty?: string
   content?: string
-  options?: { label: string; value: string; content: string }[]
+  /** 选项对象数组（整题替换：options + answer 成对原子提交，后端校验 answer 引用 id 均存在） */
+  options?: OptionItem[]
   answer?: string
   analysis?: string
-  score?: number
   tags?: number[]
   status?: string
   tagIds?: number[]
-  referenceAnswer?: string
+  optionsShufflable?: boolean
   /** 编程题配置（type=PROGRAMMING 时全量回传，未传则后端保留原配置） */
   programming?: ProgrammingQuestionConfig
 }

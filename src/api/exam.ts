@@ -1,5 +1,5 @@
 import request from './request'
-import type { ApiResponse, PageResult, MyExamSession } from '@/types'
+import type { ApiResponse, PageResult, MyExamSession, OptionItem } from '@/types'
 
 export interface StartSessionResponse {
   sessionId: string
@@ -11,7 +11,8 @@ export interface QuestionItem {
   id: number
   type: string
   content: string
-  options: string | null
+  /** 选项对象数组（成卷快照，乱序后顺序） */
+  options: OptionItem[] | null
   score: number
   sortOrder: number
   /** 编程题配置（答题者视角，脱敏：仅公开样例、无 answerCode） */
@@ -64,9 +65,12 @@ export interface QuestionResultItem {
   paperQuestionId: number
   content: string
   type: string
-  options: string | null
-  yourAnswer: string
-  correctAnswer: string
+  /** 选项对象数组（成卷快照，乱序后顺序） */
+  options: OptionItem[] | null
+  /** 选择题=id JSON 数组字符串；填空/简答=文本；编程=代码 */
+  yourAnswer: string | null
+  /** 同上；未公布/无标准答案为 null */
+  correctAnswer: string | null
   analysis: string
   score: number | null
   isCorrect: boolean | null

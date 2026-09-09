@@ -35,24 +35,24 @@
             <div class="space-y-2">
               <div
                 v-for="(opt, index) in parsedOptions"
-                :key="index"
+                :key="opt.id"
                 class="flex items-start gap-3 p-4 border rounded-lg transition-colors"
-                :class="isCorrectOption(opt)
+                :class="isCorrectOption(index)
                   ? 'border-success-500 bg-success-50'
                   : 'border-neutral-200 bg-white'"
               >
                 <div
                   class="w-6 h-6 rounded-full flex items-center justify-center text-sm font-semibold flex-shrink-0 mt-0.5"
-                  :class="isCorrectOption(opt)
+                  :class="isCorrectOption(index)
                     ? 'bg-success-500 text-white'
                     : 'bg-neutral-100 text-neutral-600'"
                 >
                   {{ String.fromCharCode(65 + index) }}
                 </div>
                 <div class="flex-1 min-w-0 text-sm text-neutral-900 leading-relaxed pt-0.5">
-                  <RichText :content="opt" />
+                  <RichText :content="opt.text" />
                 </div>
-                <n-icon v-if="isCorrectOption(opt)" color="#22B570" size="18" class="flex-shrink-0 mt-1">
+                <n-icon v-if="isCorrectOption(index)" color="#22B570" size="18" class="flex-shrink-0 mt-1">
                   <CheckmarkOutline />
                 </n-icon>
               </div>
@@ -63,8 +63,8 @@
           <section v-if="snapshot?.type === 'TRUE_FALSE' && snapshot?.answer">
             <h3 class="text-sm font-medium text-neutral-500 mb-2">正确答案</h3>
             <div>
-              <n-tag :type="snapshot.answer === 'A' ? 'success' : 'error'" round>
-                {{ snapshot.answer === 'A' ? '正确' : '错误' }}
+              <n-tag :type="isTrueFalseTrue ? 'success' : 'error'" round>
+                {{ isTrueFalseTrue ? '正确' : '错误' }}
               </n-tag>
             </div>
           </section>
@@ -96,7 +96,8 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useMessage } from 'naive-ui'
 import { getWrongQuestionById } from '@/api/wrongQuestion'
-import type { WrongQuestion, QuestionType, Difficulty } from '@/types'
+import type { WrongQuestion, QuestionType, Difficulty, OptionItem } from '@/types'
+import { parseOptionList, parseAnswerIds, answerIdsToLabel, TRUE_FALSE_TRUE_ID } from '@/utils/answer'
 import { QUESTION_TYPE_MAP, DIFFICULTY_MAP } from '@/utils/constants'
 import PageHeader from '@/components/common/PageHeader.vue'
 import RichText from '@/components/common/RichText.vue'
@@ -171,61 +172,24 @@ const showOptions = computed(
   () => snapshot.value?.type === 'SINGLE' || snapshot.value?.type === 'MULTIPLE'
 )
 
-function toOptionText(opt: unknown): string {
-  if (typeof opt === 'string') return opt
-  if (opt && typeof opt === 'object') {
-    const record = opt as Record<string, unknown>
-    const content = record.content ?? record.text ?? record.value
-    return typeof content === 'string' ? content : ''
-  }
-  return ''
-}
+const parsedOptions = computed<OptionItem[]>(() => parseOptionList(snapshot.value?.options))
 
-const parsedOptions = computed<string[]>(() => {
-  const raw = snapshot.value?.options
-  if (!raw) return []
-  if (typeof raw === 'string') {
-    try {
-      const parsed: unknown = JSON.parse(raw)
-      if (Array.isArray(parsed)) return parsed.map(toOptionText)
-    } catch {
-      // 非 JSON，忽略
-    }
-    return []
-  }
-  if (Array.isArray(raw)) return raw.map(toOptionText)
-  return []
-})
+/** 判断题答案是否为"正确"（id=0） */
+const isTrueFalseTrue = computed(() => parseAnswerIds(snapshot.value?.answer)[0] === TRUE_FALSE_TRUE_ID)
 
-const isCorrectOption = (opt: string): boolean => {
-  const answer = snapshot.value?.answer
-  const type = snapshot.value?.type
-  if (!answer) return false
-  const idx = parsedOptions.value.indexOf(opt)
-  if (idx < 0) return false
-  const letter = String.fromCharCode(65 + idx)
-  if (type === 'SINGLE') return answer === letter
-  if (type === 'MULTIPLE') return answer.split(',').map((a) => a.trim()).includes(letter)
-  return false
+/** 展示位是否命中标准答案（按 option_id 集合比较） */
+const isCorrectOption = (index: number): boolean => {
+  const opt = parsedOptions.value[index]
+  if (!opt) return false
+  return parseAnswerIds(snapshot.value?.answer).includes(opt.id)
 }
 
 const answerLabel = computed(() => {
   const answer = snapshot.value?.answer
-  const type = snapshot.value?.type
   if (!answer) return ''
-  const format = (letter: string): string => {
-    const idx = letter.trim().charCodeAt(0) - 65
-    if (idx >= 0 && idx < parsedOptions.value.length) {
-      return `${letter.trim()}. ${parsedOptions.value[idx]}`
-    }
-    return letter.trim()
-  }
-  if (type === 'SINGLE') return format(answer)
-  if (type === 'MULTIPLE') {
-    return answer
-      .split(',')
-      .map(format)
-      .join('；')
+  const type = snapshot.value?.type
+  if (type === 'SINGLE' || type === 'MULTIPLE') {
+    return answerIdsToLabel(parsedOptions.value, answer)
   }
   return answer
 })

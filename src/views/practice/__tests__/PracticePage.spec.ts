@@ -19,6 +19,7 @@ vi.mock('@/api/practice', () => ({
 const getSessionMock = vi.mocked(getPracticeSession)
 const submitMock = vi.mocked(submitPracticeAnswer)
 
+// option_id 模型：options 为对象数组 JSON；answer 为 id JSON 数组（判断题 [1]=错误）
 function sessionPayload(overrides: Record<string, unknown> = {}): any {
   return {
     sessionId: '100',
@@ -32,8 +33,8 @@ function sessionPayload(overrides: Record<string, unknown> = {}): any {
         index: 0,
         type: 'TRUE_FALSE',
         content: 'Java 中 int 是包装类型。',
-        options: null,
-        answer: 'B',
+        options: '[{"id":0,"text":"正确"},{"id":1,"text":"错误"}]',
+        answer: '[1]',
         analysis: 'int 是基本类型',
         difficulty: 'EASY'
       },
@@ -41,8 +42,9 @@ function sessionPayload(overrides: Record<string, unknown> = {}): any {
         index: 1,
         type: 'SINGLE',
         content: '下列哪个是 JVM 语言？',
-        options: '["A. Python","B. Kotlin","C. Go","D. Rust"]',
-        answer: 'B',
+        options:
+          '[{"id":0,"text":"Python"},{"id":1,"text":"Kotlin"},{"id":2,"text":"Go"},{"id":3,"text":"Rust"}]',
+        answer: '[1]',
         analysis: '',
         difficulty: 'MEDIUM'
       }
@@ -62,7 +64,7 @@ beforeEach(() => {
 })
 
 describe('PracticePage 自由练习页', () => {
-  it('判断题无 options 时兜底渲染"正确/错误"两个选项（回归 bug-035）', async () => {
+  it('判断题渲染 正确/错误 两个选项（id 模型物化选项）', async () => {
     getSessionMock.mockResolvedValue({ code: 0, message: 'success', data: sessionPayload() })
     const wrapper = mountPage()
     await flushPromises()
@@ -75,7 +77,7 @@ describe('PracticePage 自由练习页', () => {
     expect(text).toContain('判断')
   })
 
-  it('单选题渲染解析后的选项内容（去除数据自带前缀）', async () => {
+  it('单选题渲染解析后的选项内容（id 模型对象数组）', async () => {
     const payload = sessionPayload()
     getSessionMock.mockResolvedValue({ code: 0, message: 'success', data: payload })
     const wrapper = mountPage()
@@ -87,13 +89,17 @@ describe('PracticePage 自由练习页', () => {
     expect(text).toContain('Java 中 int 是包装类型。')
   })
 
-  it('提交答案后显示对错反馈横幅（回归 bug-036）', async () => {
+  it('提交答案后显示对错反馈横幅（回归 bug-036，option_id 提交）', async () => {
     getSessionMock.mockResolvedValue({ code: 0, message: 'success', data: sessionPayload() })
     const wrapper = mountPage()
     await flushPromises()
 
-    // 选择第一项（正确 对应 A，标准答案 B → 答错）
-    submitMock.mockResolvedValue({ code: 0, message: 'success', data: false })
+    // 选择第一项（正确 id=0，标准答案 [1] → 答错）
+    submitMock.mockImplementation((_sid, data) => {
+      // 断言提交格式为 option_id JSON 数组（判断题 [0]=正确 / [1]=错误）
+      expect(data.answer).toBe('[0]')
+      return Promise.resolve({ code: 0, message: 'success', data: false })
+    })
     await wrapper.findAll('.q-option')[0].trigger('click')
     await wrapper.vm.$nextTick()
     const submitBtn = wrapper.findAll('button').find(b => b.text() === '提交答案')
@@ -112,7 +118,7 @@ describe('PracticePage 自由练习页', () => {
     await flushPromises()
 
     submitMock.mockResolvedValue({ code: 0, message: 'success', data: true })
-    await wrapper.findAll('.q-option')[0].trigger('click')
+    await wrapper.findAll('.q-option')[1].trigger('click')
     await wrapper.vm.$nextTick()
     const submitBtn = wrapper.findAll('button').find(b => b.text() === '提交答案')
     await submitBtn!.trigger('click')

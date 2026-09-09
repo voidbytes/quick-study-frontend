@@ -89,16 +89,16 @@
 
           <!-- 作答区 -->
           <div>
-            <!-- 单选题 -->
+            <!-- 单选题（按 option_id 选择，字母为展示序号） -->
             <template v-if="currentQuestion && currentQuestion.type === 'SINGLE'">
               <QuestionOption
                 v-for="(opt, idx) in parsedOptions"
-                :key="idx"
-                :marker="String.fromCharCode(65 + idx)"
-                :selected="currentAnswers[currentQuestion.id] === String.fromCharCode(65 + idx)"
-                @select="selectAnswer(String.fromCharCode(65 + idx))"
+                :key="opt.id"
+                :marker="optionMarker(idx)"
+                :selected="currentAnswers[currentQuestion.id] === opt.id"
+                @select="selectAnswer(opt.id)"
               >
-                <RichText :content="opt" />
+                <RichText :content="opt.text" />
               </QuestionOption>
             </template>
 
@@ -106,29 +106,29 @@
             <template v-if="currentQuestion && currentQuestion.type === 'MULTIPLE'">
               <QuestionOption
                 v-for="(opt, idx) in parsedOptions"
-                :key="idx"
-                :marker="String.fromCharCode(65 + idx)"
-                :selected="isMultipleSelected(String.fromCharCode(65 + idx))"
-                @select="toggleMultipleAnswer(String.fromCharCode(65 + idx))"
+                :key="opt.id"
+                :marker="optionMarker(idx)"
+                :selected="isMultipleSelected(opt.id)"
+                @select="toggleMultipleAnswer(opt.id)"
               >
-                <RichText :content="opt" />
+                <RichText :content="opt.text" />
               </QuestionOption>
             </template>
 
-            <!-- 判断题：答案值与题目标准答案(true/false)对齐 -->
+            <!-- 判断题：id 模型 0=正确 / 1=错误 -->
             <template v-if="currentQuestion && currentQuestion.type === 'TRUE_FALSE'">
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-3">
                 <QuestionOption
                   marker="√"
-                  :selected="currentAnswers[currentQuestion.id] === 'true'"
-                  @select="selectAnswer('true')"
+                  :selected="currentAnswers[currentQuestion.id] === TRUE_FALSE_TRUE_ID"
+                  @select="selectAnswer(TRUE_FALSE_TRUE_ID)"
                 >
                   正确
                 </QuestionOption>
                 <QuestionOption
                   marker="×"
-                  :selected="currentAnswers[currentQuestion.id] === 'false'"
-                  @select="selectAnswer('false')"
+                  :selected="currentAnswers[currentQuestion.id] === TRUE_FALSE_FALSE_ID"
+                  @select="selectAnswer(TRUE_FALSE_FALSE_ID)"
                 >
                   错误
                 </QuestionOption>
@@ -208,6 +208,15 @@ import { useRoute, useRouter } from 'vue-router'
 import { useMessage } from 'naive-ui'
 import { startSession, getSession, saveAnswers, submitSession, reportCheat } from '@/api/exam'
 import type { QuestionItem, AnswerItem } from '@/api/exam'
+import type { OptionItem } from '@/types'
+import {
+  parseOptionList,
+  parseAnswerIds,
+  formatAnswerIds,
+  optionMarker,
+  TRUE_FALSE_TRUE_ID,
+  TRUE_FALSE_FALSE_ID
+} from '@/utils/answer'
 import { QUESTION_TYPE_MAP } from '@/utils/constants'
 import { useConfirm } from '@/composables/useConfirm'
 import type { QuestionNavStatus } from '@/components/common/questionNav'
@@ -237,7 +246,6 @@ interface ProgAnswer {
 }
 const questions = ref<ExamQuestion[]>([])
 const currentIndex = ref(0)
-const currentAnswers = reactive<Record<number, string>>({})
 const fillAnswers = reactive<Record<number, string>>({})
 const progAnswers = reactive<Record<number, ProgAnswer>>({})
 const markedForReview = ref<Set<number>>(new Set())
@@ -248,20 +256,16 @@ const cheatCount = ref(0)
 
 const difficultyLabels: Record<string, string> = { EASY: '简单', MEDIUM: '中等', HARD: '困难' }
 
+/** 作答状态：客观题存 option_id（单选/判断）或 id 数组（多选），提交时统一序列化 */
+const currentAnswers = reactive<Record<number, number | number[]>>({})
+
 const currentQuestion = computed(() => questions.value[currentIndex.value] || null)
 
-/** 解析 options JSON 字符串为数组 */
-const parsedOptions = computed<string[]>(() => {
+/** options 已由后端下发为 OptionItem 对象数组（成卷快照，乱序后顺序） */
+const parsedOptions = computed<OptionItem[]>(() => {
   const q = currentQuestion.value
   if (!q || !q.options) return []
-  const options = q.options
-  if (Array.isArray(options)) return (options as unknown as string[]).map((o) => String(o))
-  try {
-    const parsed: unknown = JSON.parse(options)
-    return Array.isArray(parsed) ? parsed.map((o: unknown) => String(o)) : []
-  } catch {
-    return []
-  }
+  return parseOptionList(q.options)
 })
 
 /** 解析 content JSON 字符串，提取 content 字段 */
@@ -304,7 +308,7 @@ const formattedTime = computed(() => {
 
 function hasAnswer(q: ExamQuestion): boolean {
   if (q.type === 'PROGRAMMING') return !!progAnswers[q.id]?.code?.trim()
-  if (q.type === 'MULTIPLE') return !!currentAnswers[q.id]?.length
+  if (q.type === 'MULTIPLE') return ((currentAnswers[q.id] as number[] | undefined)?.length ?? 0) > 0
   if (q.type === 'FILL_BLANK') return !!fillAnswers[q.id]?.trim()
   if (q.type === 'SHORT_ANSWER') {
     const ans = fillAnswers[q.id]
@@ -313,7 +317,8 @@ function hasAnswer(q: ExamQuestion): boolean {
     if (ans.includes('<img')) return true
     return !!ans.replace(/<[^>]+>/g, '').trim()
   }
-  return !!currentAnswers[q.id]
+  // 单选/判断：option_id（0 是合法值，不能真值判断）
+  return currentAnswers[q.id] != null
 }
 
 function typeLabel(type?: string): string {
@@ -338,30 +343,28 @@ function goToQuestion(index: number) {
   currentIndex.value = index
 }
 
-function selectAnswer(value: string) {
+function selectAnswer(id: number) {
   const q = currentQuestion.value
   if (!q) return
-  currentAnswers[q.id] = value
+  currentAnswers[q.id] = id
   saveToLocal()
   autoSave()
 }
 
-function isMultipleSelected(value: string) {
+function isMultipleSelected(id: number) {
   const q = currentQuestion.value
   if (!q) return false
-  const ans = currentAnswers[q.id] || ''
-  return ans.split(',').includes(value)
+  return ((currentAnswers[q.id] as number[] | undefined) || []).includes(id)
 }
 
-function toggleMultipleAnswer(value: string) {
+function toggleMultipleAnswer(id: number) {
   const q = currentQuestion.value
   if (!q) return
-  const ans = currentAnswers[q.id] || ''
-  const arr = ans ? ans.split(',') : []
-  const idx = arr.indexOf(value)
+  const arr = (currentAnswers[q.id] as number[] | undefined) || []
+  const idx = arr.indexOf(id)
   if (idx >= 0) arr.splice(idx, 1)
-  else arr.push(value)
-  currentAnswers[q.id] = arr.join(',')
+  else arr.push(id)
+  currentAnswers[q.id] = arr
   saveToLocal()
   autoSave()
 }
@@ -445,11 +448,19 @@ function buildAnswerPayload() {
         languageId: prog?.languageId ?? null
       }
     }
-    const answer = hasAnswer(q)
-      ? (q.type === 'MULTIPLE' || q.type === 'FILL_BLANK' || q.type === 'SHORT_ANSWER'
-          ? fillAnswers[q.id] || currentAnswers[q.id] || ''
-          : currentAnswers[q.id] || '')
-      : ''
+    let answer = ''
+    if (hasAnswer(q)) {
+      if (q.type === 'MULTIPLE') {
+        // 多选：id 数组升序 JSON（与后端落库归一格式一致）
+        answer = formatAnswerIds((currentAnswers[q.id] as number[]) || [])
+      } else if (q.type === 'SINGLE' || q.type === 'TRUE_FALSE') {
+        // 单选/判断：单 id JSON 数组（判断题 [0]=正确 / [1]=错误）
+        answer = formatAnswerIds([currentAnswers[q.id] as number])
+      } else {
+        // 填空/简答：文本
+        answer = fillAnswers[q.id] || ''
+      }
+    }
     return { paperQuestionId: q.id, answer }
   })
 }
@@ -576,7 +587,9 @@ async function restoreSession() {
           } else if (q.type === 'FILL_BLANK' || q.type === 'SHORT_ANSWER') {
             fillAnswers[q.id] = a.userAnswer
           } else {
-            currentAnswers[q.id] = a.userAnswer
+            // 客观题：后端返回的 userAnswer 为 id JSON 数组字符串，还原内存态
+            const ids = parseAnswerIds(a.userAnswer)
+            currentAnswers[q.id] = q.type === 'MULTIPLE' ? ids : (ids[0] ?? null)
           }
         }
       })

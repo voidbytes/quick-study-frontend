@@ -18,8 +18,10 @@ export interface ReviewResponse {
   status: string
   question: {
     content: string
-    options?: string[]
-    answer?: string
+    /** OptionItem JSON 字符串（option_id 模型） */
+    options?: string | null
+    /** 选择题=id JSON 数组；填空/简答=文本 */
+    answer?: string | null
     analysis?: string
   }
   createdAt: string
