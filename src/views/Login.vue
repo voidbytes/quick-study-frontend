@@ -61,6 +61,11 @@
     >
       登录
     </n-button>
+
+    <div class="text-center text-sm text-neutral-500 mt-4">
+      还没有账号？
+      <router-link to="/register" class="text-brand hover:underline">注册</router-link>
+    </div>
   </n-form>
 </template>
 

@@ -13,6 +13,7 @@ declare module 'vue' {
     FilterBar: typeof import('./src/components/common/FilterBar.vue')['default']
     ImportResultPanel: typeof import('./src/components/importExport/ImportResultPanel.vue')['default']
     LoadError: typeof import('./src/components/LoadError.vue')['default']
+    LoginModal: typeof import('./src/components/auth/LoginModal.vue')['default']
     MarkdownEditor: typeof import('./src/components/MarkdownEditor.vue')['default']
     NAlert: typeof import('naive-ui')['NAlert']
     NBadge: typeof import('naive-ui')['NBadge']
