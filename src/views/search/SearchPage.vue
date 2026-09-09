@@ -193,8 +193,12 @@ function typeMeta(type: string): SearchTypeMeta {
   return TYPE_META[type] || DEFAULT_META
 }
 
-/** 仅保留原有可跳转类型（题库/试卷）的导航；题目保持不可点，避免运行时行为改变 */
+/** 各类型命中项的跳转路径；空串=不可跳（理论上仅剩无 bankId 的异常题目数据） */
 function resultPath(item: SearchResultItem): string {
+  if (item.type === 'question') {
+    // 题目命中跳所属题库的题目详情（列表类尽量可点——用户原则）
+    return item.bankId ? `/banks/${item.bankId}/questions/${item.id}` : ''
+  }
   if (item.type === 'bank') return `/banks/${item.id}`
   if (item.type === 'paper') return `/papers/${item.id}`
   if (item.type === 'note') return '/notes'

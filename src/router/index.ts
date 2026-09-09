@@ -63,13 +63,26 @@ const routes: RouteRecordRaw[] = [
         meta: { requiresAuth: false }
       },
       {
+        // 可分享的题目筛选列表页：筛选状态全量落 URL query（tags/difficulty/type/status/keyword/page），
+        // 复制地址栏即可让他人看到同一筛选结果。原「跨库题目管理」页迁移至 /questions/manage。
         path: 'questions',
+        name: 'QuestionExplorer',
+        component: () => import('@/views/question/QuestionExplorer.vue'),
+        meta: { requiresAuth: false }
+      },
+      {
+        path: 'questions/manage',
         name: 'QuestionManage',
         component: () => import('@/views/question/QuestionManage.vue'),
         meta: { requiresAuth: false }
       },
       {
         path: 'banks/:bankId/questions/:questionId',
+        // 双形态并存：短 URL /questions/:questionId 与长 URL 渲染同一页面（组件从详情接口取 bankId，
+        // 不依赖 URL 参数）。旧长链接（收藏/搜索结果/分享）与短链接永久有效，无重定向丢参风险。
+        // 注意与上方 QuestionExplorer 的精确路径 'questions' 不冲突：精确匹配优先于本 alias 动态段，
+        // /questions 落列表页，/questions/:questionId 落详情页，静态段 /questions/manage 优先级最高。
+        alias: 'questions/:questionId',
         name: 'QuestionDetail',
         component: () => import('@/views/question/QuestionDetail.vue'),
         meta: { requiresAuth: false }
@@ -210,6 +223,13 @@ const routes: RouteRecordRaw[] = [
         name: 'AdminInviteCodeList',
         component: () => import('@/views/admin/InviteCodeList.vue'),
         meta: { requiresAdmin: true }
+      },
+      {
+        // 404 兜底：MainLayout 内渲染（保留导航），必须放 children 最后
+        path: ':pathMatch(.*)*',
+        name: 'NotFound',
+        component: () => import('@/views/NotFound.vue'),
+        meta: { requiresAuth: false }
       }
     ]
   }

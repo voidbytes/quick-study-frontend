@@ -12,6 +12,11 @@ export function getTagList() {
   return request.get<ApiResponse<Tag[]>>('/tags')
 }
 
+/** 题库内实际使用的标签（题库详情页筛选下拉专用；后端按 tag_rel 反查 DISTINCT） */
+export function getTagListByBank(bankId: number | string) {
+  return request.get<ApiResponse<Tag[]>>(`/tags/bank/${bankId}`)
+}
+
 export function list() {
   return request.get<ApiResponse<Tag[]>>('/tags')
 }

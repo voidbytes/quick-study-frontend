@@ -246,7 +246,8 @@ const router = useRouter()
 const authStore = useAuthStore()
 const message = useMessage()
 
-const bankId = route.params.bankId as string
+/** 题库 ID：长 URL 从路由取；短 URL（alias /questions/:questionId）路由无此参数，加载详情后回填 */
+const bankId = ref((route.params.bankId as string) || '')
 const questionId = route.params.questionId as string
 
 // ==================== 题目笔记 ====================
@@ -422,6 +423,10 @@ async function fetchDetail() {
   try {
     const res = await getQuestionDetail(questionId)
     question.value = res.data
+    // 短 URL 形态：bankId 只能从详情接口回填（返回题库/编辑跳转依赖它）
+    if (!bankId.value && res.data?.bankId) {
+      bankId.value = String(res.data.bankId)
+    }
   } catch (err: any) {
     loadError.value = err?.response?.data?.message || err?.message || '加载题目详情失败'
   } finally {

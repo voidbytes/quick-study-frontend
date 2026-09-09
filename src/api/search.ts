@@ -14,6 +14,8 @@ export interface SearchResultItem {
   title: string
   description: string
   matchField: string
+  /** QUESTION 命中：所属题库 ID（构造题目详情跳转用）；其他类型 null */
+  bankId?: number | null
 }
 
 export function search(params: SearchParams) {

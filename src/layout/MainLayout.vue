@@ -185,7 +185,8 @@ import {
   ChevronForwardOutline,
   StarOutline,
   BookOutline,
-  TicketOutline
+  TicketOutline,
+  SettingsOutline
 } from '@vicons/ionicons5'
 
 interface MenuItem {
@@ -259,6 +260,7 @@ const menuGroups = computed<MenuGroup[]>(() => {
       label: '管理',
       items: [
         { label: '用户管理', key: '/admin/users', icon: PeopleOutline },
+        { label: '题目管理', key: '/questions/manage', icon: SettingsOutline },
         { label: '审核列表', key: '/admin/reviews', icon: CheckmarkDoneOutline },
         { label: '邀请码', key: '/admin/invite-codes', icon: TicketOutline }
       ]
@@ -276,6 +278,7 @@ const userMenuOptions = computed(() => [
 const MENU_TITLES: Record<string, string> = {
   '/': '首页',
   '/banks': '题库',
+  '/questions/manage': '题目管理',
   '/questions': '题目',
   '/papers': '试卷',
   '/practice': '练习',

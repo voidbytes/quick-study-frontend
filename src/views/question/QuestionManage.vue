@@ -1,8 +1,9 @@
 <template>
   <div>
     <!-- 页头 -->
-    <PageHeader title="题目" subtitle="跨题库管理所有题目，支持按题型、难度、标签筛选">
+    <PageHeader title="题目管理" subtitle="跨题库管理所有题目（批量导入/导出、删除），浏览与筛选请用题目页">
       <template #actions>
+        <n-button @click="router.push('/questions')">返回浏览</n-button>
         <n-button v-if="authStore.isAdmin" @click="showTagManage = true">标签管理</n-button>
         <n-button v-if="authStore.isAdmin" type="primary" disabled @click="handleCreateHint">
           创建题目
