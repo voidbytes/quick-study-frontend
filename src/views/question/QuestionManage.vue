@@ -63,7 +63,7 @@
         />
         <div class="flex items-center gap-2 ml-auto">
           <n-button
-            v-if="authStore.isAuthenticated"
+            v-if="authStore.isAdmin"
             :disabled="exporting"
             @click="handleExport"
           >
@@ -76,8 +76,8 @@
       </div>
     </div>
 
-    <!-- 批量操作条 -->
-    <div v-if="questionList.length > 0" class="flex items-center gap-2 mb-3 px-1">
+    <!-- 批量操作条（管理员可见：勾选是为导出服务，普通用户不展示） -->
+    <div v-if="authStore.isAdmin && questionList.length > 0" class="flex items-center gap-2 mb-3 px-1">
       <n-checkbox :checked="allCurrentPageSelected" @update:checked="toggleSelectAll">全选本页</n-checkbox>
       <span class="text-xs text-neutral-400">已选 {{ selectedIds.length }} 题</span>
       <span v-if="selectedIds.length === 0" class="text-xs text-neutral-400">
@@ -105,6 +105,7 @@
       >
         <!-- 多选 -->
         <n-checkbox
+          v-if="authStore.isAdmin"
           :checked="selectedIds.includes(q.id)"
           class="mt-1 flex-shrink-0"
           @update:checked="(v: boolean) => toggleSelect(q.id, v)"
