@@ -32,7 +32,15 @@
           :maxlength="6"
           class="flex-1"
         />
+        <img
+          v-if="captchaImage"
+          :src="captchaImage"
+          class="w-28 h-10 object-cover bg-brand-soft border border-dashed border-primary-300 rounded-md cursor-pointer select-none flex-shrink-0"
+          title="点击刷新验证码"
+          @click="refreshCaptcha"
+        />
         <div
+          v-else
           class="w-28 h-10 flex items-center justify-center bg-brand-soft border border-dashed border-primary-300 rounded-md font-mono text-xl font-bold tracking-widest text-brand cursor-pointer select-none flex-shrink-0"
           title="点击刷新验证码"
           @click="refreshCaptcha"
@@ -62,7 +70,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useMessage } from 'naive-ui'
 import type { FormInst, FormRules } from 'naive-ui'
-import { getCaptcha } from '@/api/auth'
+import { getCaptcha, getRegisterConfig } from '@/api/auth'
 
 const router = useRouter()
 const route = useRoute()
@@ -85,7 +93,8 @@ const form = reactive({
 // 验证码占位（本地环境验证码被禁用时为提示文本）
 const captchaPlaceholder = computed(() => (captchaImage.value ? 'ABCD' : '已关闭'))
 
-const rules: FormRules = {
+// rules 需随 captchaEnabled 响应式变化（拉配置前 captchaEnabled=false，静态对象无法感知）
+const rules = computed<FormRules>(() => ({
   username: [
     { required: true, message: '请输入用户名', trigger: 'blur' },
     { min: 3, max: 50, message: '用户名长度在 3-50 字符之间', trigger: 'blur' }
@@ -97,7 +106,7 @@ const rules: FormRules = {
   captchaCode: captchaEnabled.value
     ? [{ required: true, message: '请输入验证码', trigger: 'blur' }]
     : []
-}
+}))
 
 async function refreshCaptcha() {
   try {
@@ -154,7 +163,15 @@ async function handleLogin() {
   }
 }
 
-onMounted(() => {
-  // 验证码本地开发环境已禁用
+onMounted(async () => {
+  try {
+    const res = await getRegisterConfig()
+    captchaEnabled.value = !!res.data.captchaEnabled
+    if (captchaEnabled.value) {
+      refreshCaptcha()
+    }
+  } catch {
+    // 配置接口失败按默认（关闭）处理，后端仍会兜底校验
+  }
 })
 </script>

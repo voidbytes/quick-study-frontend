@@ -4,6 +4,14 @@
 
     <!-- 筛选 -->
     <FilterBar>
+      <n-input
+        v-model:value="filterKeyword"
+        placeholder="搜索题目内容"
+        clearable
+        style="width: 220px"
+        @keyup.enter="handleSearch"
+        @clear="handleSearch"
+      />
       <n-select
         v-model:value="filterBankId"
         :options="bankOptions"
@@ -126,6 +134,7 @@ const { confirmDanger } = useConfirm()
 
 const loading = ref(false)
 const filterBankId = ref<number | null>(null)
+const filterKeyword = ref('')
 const filterTagId = ref<number | null>(null)
 const wrongList = ref<WrongRow[]>([])
 const bankOptions = ref<{ label: string; value: number }[]>([])
@@ -241,6 +250,7 @@ async function fetchList() {
     const res = await getWrongQuestionList({
       page: pagination.page,
       size: pagination.pageSize,
+      keyword: filterKeyword.value.trim() || undefined,
       bankId: filterBankId.value ?? undefined,
       tagId: filterTagId.value ?? undefined
     })

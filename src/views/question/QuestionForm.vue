@@ -26,7 +26,7 @@
             <MarkdownEditor v-model="form.content" />
           </n-form-item>
 
-          <!-- 选项（单选 / 多选） -->
+          <!-- 选项（单选 / 多选）：整题替换模型，提交时按展示顺序重编号 id -->
           <template v-if="form.type === 'SINGLE' || form.type === 'MULTIPLE'">
             <n-form-item label="选项">
               <div class="w-full space-y-2">
@@ -59,6 +59,9 @@
                   </n-button>
                 </div>
                 <n-button size="small" @click="addOption">添加选项</n-button>
+                <div class="text-xs text-neutral-400">
+                  选项拖拽排序仅调整展示顺序；保存后按当前顺序重新编号，答案引用将自动对齐。
+                </div>
               </div>
             </n-form-item>
           </template>
@@ -195,42 +198,37 @@
             <n-divider />
           </template>
 
-          <!-- 正确答案（编程题无此字段） -->
-          <n-form-item v-if="form.type !== 'PROGRAMMING'" label="正确答案" path="answer">
+          <!-- 正确答案（编程题无此字段）：选择题选 option_id，判断题 [0]/[1]，填空/简答为文本（简答参考答案并入此字段） -->
+          <n-form-item v-if="form.type !== 'PROGRAMMING'" :label="form.type === 'SHORT_ANSWER' ? '参考答案' : '正确答案'" path="answer">
             <template v-if="form.type === 'SINGLE'">
               <n-select
-                v-model:value="form.answer"
+                v-model:value="form.answerIds"
                 :options="answerOptions"
                 placeholder="选择正确答案"
               />
             </template>
             <template v-else-if="form.type === 'MULTIPLE'">
               <n-select
-                v-model:value="form.answer"
+                v-model:value="form.answerIds"
                 :options="answerOptions"
                 multiple
                 placeholder="选择正确答案（可多选）"
               />
             </template>
             <template v-else-if="form.type === 'TRUE_FALSE'">
-              <n-radio-group v-model:value="form.answer">
-                <n-radio value="true">正确</n-radio>
-                <n-radio value="false">错误</n-radio>
+              <n-radio-group v-model:value="form.tfAnswer">
+                <n-radio :value="TRUE_FALSE_TRUE_ID">正确</n-radio>
+                <n-radio :value="TRUE_FALSE_FALSE_ID">错误</n-radio>
               </n-radio-group>
             </template>
             <template v-else>
               <n-input
                 v-model:value="form.answer"
                 type="textarea"
-                placeholder="输入答案"
+                :placeholder="form.type === 'SHORT_ANSWER' ? '输入参考答案（批改时供评分人对照）' : '输入答案'"
                 :rows="6"
               />
             </template>
-          </n-form-item>
-
-          <!-- 参考答案（编程题的"参考实现"已在编程题配置内） -->
-          <n-form-item v-if="form.type !== 'PROGRAMMING'" label="参考答案">
-            <MarkdownEditor v-model="form.referenceAnswer" />
           </n-form-item>
 
           <!-- 解析 -->
@@ -292,9 +290,10 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useMessage } from 'naive-ui'
 import type { FormInst, FormRules, SelectOption } from 'naive-ui'
-import type { QuestionType, Difficulty, QuestionOption } from '@/types'
+import type { QuestionType, Difficulty, OptionItem } from '@/types'
 import { createQuestion, updateQuestion, getQuestionDetail } from '@/api/question'
 import type { UpdateQuestionParams, ProgrammingQuestionConfig } from '@/api/question'
+import { parseOptionList, parseAnswerIds, formatAnswerIds, TRUE_FALSE_TRUE_ID, TRUE_FALSE_FALSE_ID } from '@/utils/answer'
 import { getProgrammingLanguages } from '@/api/judge'
 import type { ProgrammingLanguage } from '@/api/judge'
 import { getTagList } from '@/api/tag'
@@ -328,9 +327,14 @@ const languageMap = ref<Record<string, string>>({})
 const form = reactive({
   type: 'SINGLE' as QuestionType,
   content: '',
+  /** 选项纯文本数组（展示顺序即提交顺序，保存时重编号 id） */
   options: ['', ''] as string[],
+  /** 选择题：已选 option_id（随选项增删自动重映射）；填空/简答：答案文本 */
+  answerIds: [] as number[],
+  /** 判断题：0=正确 / 1=错误 */
+  tfAnswer: TRUE_FALSE_TRUE_ID as number,
+  /** 填空题答案 / 简答题参考答案文本 */
   answer: '',
-  referenceAnswer: '',
   analysis: '',
   difficulty: 'MEDIUM' as Difficulty,
   tagIds: [] as number[],
@@ -346,10 +350,11 @@ const isChoiceType = computed(() => form.type === 'SINGLE' || form.type === 'MUL
 /** 状态枚举由全局字典派生（表单不提供待审核选项） */
 const statusOptions = QUESTION_STATUS_OPTIONS.filter((o) => o.value !== 'PENDING_REVIEW')
 
+/** 答案下拉：value 为 option_id（展示顺序即保存后的 id 编号） */
 const answerOptions = computed(() =>
   form.options.map((opt, i) => ({
     label: `${String.fromCharCode(65 + i)}. ${opt.substring(0, 30)}`,
-    value: String.fromCharCode(65 + i)
+    value: i
   }))
 )
 
@@ -416,6 +421,8 @@ function handleTypeChange(_value: string) {
   } else {
     form.programming = null
   }
+  form.answerIds = []
+  form.tfAnswer = TRUE_FALSE_TRUE_ID
   form.answer = ''
 }
 
@@ -426,6 +433,10 @@ function addOption() {
 function removeOption(index: number) {
   if (form.options.length <= 2) return
   form.options.splice(index, 1)
+  // 整题替换模型：删除选项后重映射答案引用，防止 id 漂移错位
+  form.answerIds = form.answerIds
+    .filter((id) => id !== index)
+    .map((id) => (id > index ? id - 1 : id))
 }
 
 function addTestCase() {
@@ -489,7 +500,7 @@ async function loadTags() {
   }
 }
 
-/** 详情接口运行时字段（Question 声明滞后，本地按后端 QuestionDetailResponse 建模） */
+/** 详情接口运行时字段（Question 声明滞后，本地按后端 QuestionDetailResponse 建模，option_id 模型） */
 interface QuestionDetailData {
   id: number
   bankId: number
@@ -497,9 +508,9 @@ interface QuestionDetailData {
   type: QuestionType
   difficulty: Difficulty
   content: string
-  options?: string | QuestionOption[] | null
-  answer: string
-  referenceAnswer?: string | null
+  options?: string | OptionItem[] | null
+  /** 选择题=id JSON 数组；填空/简答=文本；编程=null */
+  answer?: string | null
   analysis?: string | null
   status: string
   tags?: { id: number; name: string }[]
@@ -526,18 +537,9 @@ interface QuestionDetailData {
   } | null
 }
 
-/** 详情接口 options 运行时为 JSON 字符串（类型声明滞后），此处做本地收敛 */
-function parseOptions(raw: string | QuestionOption[] | null | undefined): string[] {
-  if (!raw) return []
-  if (typeof raw === 'string') {
-    try {
-      const parsed = JSON.parse(raw)
-      return Array.isArray(parsed) ? parsed.filter((o: unknown): o is string => typeof o === 'string') : []
-    } catch {
-      return []
-    }
-  }
-  return raw.map((o) => (typeof o === 'string' ? o : o?.content ?? ''))
+/** 详情 options 收敛为 OptionItem[]（对象数组/JSON 字符串统一处理） */
+function parseOptions(raw: string | OptionItem[] | null | undefined): OptionItem[] {
+  return parseOptionList(raw)
 }
 
 async function loadQuestion() {
@@ -549,9 +551,21 @@ async function loadQuestion() {
     form.type = q.type
     form.content = q.content
     const parsed = parseOptions(q.options)
-    form.options = parsed.length >= 2 ? parsed : ['', '']
-    form.answer = q.answer
-    form.referenceAnswer = q.referenceAnswer || ''
+    form.options = parsed.length >= 2 ? parsed.map((o) => o.text) : ['', '']
+    // 回显答案：选择题按 id 还原选中项；填空/简答为文本；编程无答案
+    if (q.type === 'SINGLE' || q.type === 'MULTIPLE') {
+      form.answerIds = parseAnswerIds(q.answer)
+      form.tfAnswer = TRUE_FALSE_TRUE_ID
+      form.answer = ''
+    } else if (q.type === 'TRUE_FALSE') {
+      form.answerIds = []
+      form.tfAnswer = parseAnswerIds(q.answer)[0] ?? TRUE_FALSE_TRUE_ID
+      form.answer = ''
+    } else {
+      form.answerIds = []
+      form.tfAnswer = TRUE_FALSE_TRUE_ID
+      form.answer = q.answer || ''
+    }
     form.analysis = q.analysis || ''
     form.difficulty = q.difficulty || 'MEDIUM'
     form.tagIds = q.tagIds || []
@@ -607,14 +621,26 @@ async function handleSave() {
 
   saving.value = true
   try {
+    // 整题替换模型：options 按当前展示顺序重编号 id（0..n-1），answer 与 options 成对原子提交
+    const options = isChoiceType.value
+      ? form.options.map((text, id) => ({ id, text: text.trim() }))
+      : undefined
+    let answer: string | undefined
+    if (form.type === 'SINGLE') {
+      answer = form.answerIds.length ? formatAnswerIds([form.answerIds[0]]) : undefined
+    } else if (form.type === 'MULTIPLE') {
+      answer = form.answerIds.length ? formatAnswerIds(form.answerIds) : undefined
+    } else if (form.type === 'TRUE_FALSE') {
+      answer = formatAnswerIds([form.tfAnswer])
+    } else {
+      answer = form.answer || undefined
+    }
+
     const payload: Record<string, unknown> = {
       type: form.type,
       content: form.content,
-      options: form.type === 'SINGLE' || form.type === 'MULTIPLE'
-        ? JSON.stringify(form.options)
-        : undefined,
-      answer: form.type === 'PROGRAMMING' ? undefined : form.answer,
-      referenceAnswer: form.type === 'PROGRAMMING' ? undefined : form.referenceAnswer || undefined,
+      options,
+      answer,
       analysis: form.analysis || undefined,
       difficulty: form.difficulty,
       tagIds: form.tagIds.length > 0 ? form.tagIds : undefined,

@@ -107,34 +107,34 @@
               <RichText :content="currentQuestion?.content" />
             </div>
 
-            <!-- 客观题选项 -->
+            <!-- 客观题选项（按 option_id 选择，字母为展示序号） -->
             <template v-if="isSingleChoice">
               <QuestionOption
                 v-for="(opt, idx) in parsedOptions"
-                :key="idx"
-                :marker="String.fromCharCode(65 + idx)"
-                :selected="!answered && selectedAnswer === String.fromCharCode(65 + idx)"
-                :correct="answered && isCorrectOption(String.fromCharCode(65 + idx))"
-                :wrong="answered && optionWrong(String.fromCharCode(65 + idx))"
-                :disabled="optionDisabled(String.fromCharCode(65 + idx))"
-                @select="selectAnswer(String.fromCharCode(65 + idx))"
+                :key="opt.id"
+                :marker="optionMarker(idx)"
+                :selected="!answered && selectedId === opt.id"
+                :correct="answered && isCorrectOption(idx)"
+                :wrong="answered && optionWrong(idx)"
+                :disabled="optionDisabled(idx)"
+                @select="selectAnswer(opt.id)"
               >
-                <RichText :content="opt" />
+                <RichText :content="opt.text" />
               </QuestionOption>
             </template>
 
             <template v-else-if="currentQuestion?.type === 'MULTIPLE'">
               <QuestionOption
                 v-for="(opt, idx) in parsedOptions"
-                :key="idx"
-                :marker="String.fromCharCode(65 + idx)"
-                :selected="!answered && multipleSelected.includes(String.fromCharCode(65 + idx))"
-                :correct="answered && isCorrectOption(String.fromCharCode(65 + idx))"
-                :wrong="answered && optionWrong(String.fromCharCode(65 + idx))"
-                :disabled="optionDisabled(String.fromCharCode(65 + idx))"
-                @select="toggleMultiple(String.fromCharCode(65 + idx))"
+                :key="opt.id"
+                :marker="optionMarker(idx)"
+                :selected="!answered && selectedIds.includes(opt.id)"
+                :correct="answered && isCorrectOption(idx)"
+                :wrong="answered && optionWrong(idx)"
+                :disabled="optionDisabled(idx)"
+                @select="toggleMultiple(opt.id)"
               >
-                <RichText :content="opt" />
+                <RichText :content="opt.text" />
               </QuestionOption>
             </template>
 
@@ -403,7 +403,17 @@ import { getPracticeSession, submitPracticeAnswer, completePractice } from '@/ap
 import { getNote, saveNote, deleteNote, NOTE_IMAGE_PATTERN } from '@/api/note'
 import ProgrammingAnswerPanel from '@/components/programming/ProgrammingAnswerPanel.vue'
 import type { ProgrammingAnswerView } from '@/components/programming/ProgrammingAnswerPanel.vue'
-import type { PracticeQuestion } from '@/types'
+import type { PracticeQuestion, OptionItem } from '@/types'
+import {
+  parseOptionList,
+  parseAnswerIds,
+  formatAnswerIds,
+  formatAnswerView,
+  sameIdSet,
+  optionMarker,
+  TRUE_FALSE_TRUE_ID,
+  TRUE_FALSE_FALSE_ID
+} from '@/utils/answer'
 import { QUESTION_TYPE_MAP, DIFFICULTY_MAP } from '@/utils/constants'
 import { useConfirm } from '@/composables/useConfirm'
 import QuestionOption from '@/components/common/QuestionOption.vue'
@@ -450,8 +460,10 @@ interface ResultView {
 const sessionId = route.params.id as string
 const questions = ref<QuestionRow[]>([])
 const currentIndex = ref(0)
-const selectedAnswer = ref('')
-const multipleSelected = ref<string[]>([])
+/** 单选/判断：当前选中的 option_id（未选为 null） */
+const selectedId = ref<number | null>(null)
+/** 多选：已选 option_id 集合 */
+const selectedIds = ref<number[]>([])
 const answered = ref(false)
 const submitting = ref(false)
 const loading = ref(true)
@@ -539,19 +551,20 @@ const progressPercent = computed(() => {
   return Math.min(100, Math.round((answeredCount.value / n) * 100))
 })
 
-/** 解析 options JSON 字符串为数组（去除数据自带的 "A. " 前缀，前缀统一由组件渲染） */
-const parsedOptions = computed<string[]>(() => {
+/** 解析 options 为 OptionItem[]（对象数组/JSON 字符串统一收敛）；判断题缺 options 时兜底 正确/错误 */
+const parsedOptions = computed<OptionItem[]>(() => {
   const q = currentQuestion.value
   if (!q) return []
-  // 判断题老数据可能没有 options，兜底给出 正确/错误 两项（对应 A/B）
-  if (q.type === 'TRUE_FALSE' && !q.options) return ['正确', '错误']
-  if (!q.options) return []
-  try {
-    const opts: unknown = JSON.parse(q.options)
-    return Array.isArray(opts) ? opts.map((o) => String(o).replace(/^[A-Za-z][.、．]\s*/, '')) : []
-  } catch {
-    return []
+  const list = parseOptionList(q.options)
+  if (list.length) return list
+  // 判断题后端固定物化 {id:0 正确, id:1 错误}；老快照缺 options 时前端兜底同款
+  if (q.type === 'TRUE_FALSE') {
+    return [
+      { id: TRUE_FALSE_TRUE_ID, text: '正确' },
+      { id: TRUE_FALSE_FALSE_ID, text: '错误' }
+    ]
   }
+  return []
 })
 
 /** 解析条件描述 */
@@ -618,11 +631,7 @@ function accuracyTextClass(): string {
 
 function formatAnswer(answer?: string | null, type?: string): string {
   if (!answer) return '未作答'
-  if (type === 'TRUE_FALSE') {
-    // 兼容历史数据混用的 A/B 与 true/false 两种格式
-    return answer === 'A' || answer === 'true' ? '正确' : '错误'
-  }
-  return answer
+  return formatAnswerView(answer, type, parsedOptions.value) || answer
 }
 
 function formatDuration(seconds?: number): string {
@@ -633,31 +642,32 @@ function formatDuration(seconds?: number): string {
   return s > 0 ? `${m} 分 ${s} 秒` : `${m} 分钟`
 }
 
-/** 该字母是否命中标准答案 */
-function isCorrectOption(letter: string): boolean {
+/** 该展示位是否命中标准答案（按 option_id 集合比较，与展示顺序无关） */
+function isCorrectOption(index: number): boolean {
   const q = currentQuestion.value
   if (!q) return false
-  if (q.type === 'MULTIPLE') return q.answer.includes(letter)
-  return q.answer === letter
+  const opt = parsedOptions.value[index]
+  if (!opt) return false
+  return parseAnswerIds(q.answer).includes(opt.id)
 }
 
-function optionSelected(letter: string): boolean {
-  const q = currentQuestion.value
-  if (!q) return false
-  return q.type === 'MULTIPLE'
-    ? multipleSelected.value.includes(letter)
-    : selectedAnswer.value === letter
+function optionSelected(index: number): boolean {
+  const opt = parsedOptions.value[index]
+  if (!opt) return false
+  return currentQuestion.value?.type === 'MULTIPLE'
+    ? selectedIds.value.includes(opt.id)
+    : selectedId.value === opt.id
 }
 
 /** 提交后：用户选中但选错的选项标红 */
-function optionWrong(letter: string): boolean {
-  return answered.value && optionSelected(letter) && !isCorrectOption(letter)
+function optionWrong(index: number): boolean {
+  return answered.value && optionSelected(index) && !isCorrectOption(index)
 }
 
 /** 提交后：非正确且非选错的选项变灰不可点（其余半透明） */
-function optionDisabled(letter: string): boolean {
+function optionDisabled(index: number): boolean {
   if (!answered.value) return false
-  return !isCorrectOption(letter) && !optionWrong(letter)
+  return !isCorrectOption(index) && !optionWrong(index)
 }
 
 function resultBoxClass(isCorrect: boolean | null | undefined): string {
@@ -672,28 +682,33 @@ function resultTextClass(isCorrect: boolean | null | undefined): string {
   return 'text-neutral-500'
 }
 
-function selectAnswer(value: string) {
+function selectAnswer(id: number) {
   if (answered.value) return
-  selectedAnswer.value = value
-  multipleSelected.value = []
+  selectedId.value = id
+  selectedIds.value = []
 }
 
-function toggleMultiple(value: string) {
+function toggleMultiple(id: number) {
   if (answered.value) return
-  const idx = multipleSelected.value.indexOf(value)
-  if (idx >= 0) multipleSelected.value.splice(idx, 1)
-  else multipleSelected.value.push(value)
+  const idx = selectedIds.value.indexOf(id)
+  if (idx >= 0) selectedIds.value.splice(idx, 1)
+  else selectedIds.value.push(id)
 }
 
 async function submitAnswer() {
   const q = currentQuestion.value
   if (!q) return
-  const answer = q.type === 'MULTIPLE' ? multipleSelected.value.join(',') : selectedAnswer.value
-  if (!answer) {
+  const isMultiple = q.type === 'MULTIPLE'
+  if (!isMultiple && selectedId.value == null) {
     message.warning('请先选择答案')
     return
   }
-
+  if (isMultiple && selectedIds.value.length === 0) {
+    message.warning('请先选择答案')
+    return
+  }
+  // 统一 option_id JSON 数组提交（单选 [id]、多选升序 [id,id]），与后端 toIdSet 判分对齐
+  const answer = isMultiple ? formatAnswerIds(selectedIds.value) : formatAnswerIds([selectedId.value!])
 
   submitting.value = true
   try {
@@ -702,11 +717,13 @@ async function submitAnswer() {
       answer
     })
     answered.value = true
-    // 以后端判分结果为准（多选题选项顺序、判断题 A/B 与 true/false 归一都在后端处理）
+    // 以后端判分结果为准（id 集合比对，与提交顺序无关）
     const target = questions.value[currentIndex.value]
     if (target) {
       target.userAnswer = answer
-      target.isCorrect = typeof res.data === 'boolean' ? res.data : target.answer === answer
+      target.isCorrect = typeof res.data === 'boolean'
+        ? res.data
+        : sameIdSet(parseAnswerIds(answer), parseAnswerIds(target.answer))
     }
   } catch {
     message.error('提交答案失败')
@@ -761,17 +778,17 @@ function nextQuestion() {
 }
 
 function resetAnswer() {
-  selectedAnswer.value = ''
-  multipleSelected.value = []
+  selectedId.value = null
+  selectedIds.value = []
   answered.value = false
-  // 恢复已答题目的状态
+  // 恢复已答题目的状态（userAnswer 为 option_id JSON 数组字符串）
   const q = questions.value[currentIndex.value]
   if (q && q.userAnswer) {
     if (q.type === 'MULTIPLE') {
-      multipleSelected.value = String(q.userAnswer).split(',').filter(Boolean)
+      selectedIds.value = parseAnswerIds(q.userAnswer)
     } else if (q.type !== 'PROGRAMMING') {
       // 编程题：代码与语言由面板内部状态承载，此处仅标记已作答
-      selectedAnswer.value = String(q.userAnswer)
+      selectedId.value = parseAnswerIds(q.userAnswer)[0] ?? null
     }
     answered.value = true
   }

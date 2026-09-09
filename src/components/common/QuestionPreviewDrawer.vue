@@ -26,18 +26,18 @@
             <div class="space-y-2">
               <div
                 v-for="(opt, index) in parsedOptions"
-                :key="index"
+                :key="opt.id"
                 class="flex items-start gap-3 p-3 border rounded-lg transition-colors"
-                :class="isCorrectOption(opt) ? 'border-success-500 bg-success-50' : 'border-neutral-200'"
+                :class="isCorrectOption(index) ? 'border-success-500 bg-success-50' : 'border-neutral-200'"
               >
                 <div
                   class="w-6 h-6 rounded-full flex items-center justify-center text-sm font-semibold flex-shrink-0 mt-0.5"
-                  :class="isCorrectOption(opt) ? 'bg-success-500 text-white' : 'bg-neutral-100 text-neutral-600'"
+                  :class="isCorrectOption(index) ? 'bg-success-500 text-white' : 'bg-neutral-100 text-neutral-600'"
                 >
                   {{ String.fromCharCode(65 + index) }}
                 </div>
                 <div class="flex-1 min-w-0 text-sm text-neutral-900 leading-relaxed pt-0.5">
-                  <RichText :content="opt" />
+                  <RichText :content="opt.text" />
                 </div>
               </div>
             </div>
@@ -46,22 +46,14 @@
           <!-- 正确答案 -->
           <section v-if="detail.type === 'TRUE_FALSE' && detail.answer">
             <h3 class="text-sm font-medium text-neutral-500 mb-2">正确答案</h3>
-            <n-tag :type="detail.answer === 'true' ? 'success' : 'error'" round>
-              {{ detail.answer === 'true' ? '正确' : '错误' }}
+            <n-tag :type="isTrueFalseTrue ? 'success' : 'error'" round>
+              {{ isTrueFalseTrue ? '正确' : '错误' }}
             </n-tag>
           </section>
           <section v-else-if="detail.answer">
             <h3 class="text-sm font-medium text-neutral-500 mb-2">正确答案</h3>
             <div class="bg-success-50 border border-success-100 rounded-lg p-4 font-medium">
-              <RichText :content="detail.answer" />
-            </div>
-          </section>
-
-          <!-- 参考答案 -->
-          <section v-if="detail.referenceAnswer">
-            <h3 class="text-sm font-medium text-neutral-500 mb-2">参考答案</h3>
-            <div class="bg-neutral-50 border border-neutral-200 rounded-lg p-4">
-              <RichText :content="detail.referenceAnswer" />
+              <RichText :content="answerLabel" />
             </div>
           </section>
 
@@ -88,9 +80,10 @@ export interface PreviewQuestion {
   type?: string | null
   difficulty?: string | null
   content?: string | null
+  /** OptionItem 对象数组或 JSON 字符串（option_id 模型） */
   options?: unknown
+  /** 选择题=id JSON 数组；填空/简答=文本；编程=null */
   answer?: string | null
-  referenceAnswer?: string | null
   analysis?: string | null
   bankName?: string | null
 }
@@ -100,6 +93,8 @@ export interface PreviewQuestion {
 import { ref, computed, watch } from 'vue'
 import { getQuestionDetail } from '@/api/question'
 import { QUESTION_TYPE_MAP, DIFFICULTY_MAP } from '@/utils/constants'
+import { parseOptionList, parseAnswerIds, answerIdsToLabel, TRUE_FALSE_TRUE_ID } from '@/utils/answer'
+import type { OptionItem } from '@/types'
 import type { QuestionType, Difficulty } from '@/types'
 import RichText from '@/components/common/RichText.vue'
 
@@ -155,36 +150,28 @@ function difficultyTagType(difficulty?: string | null): TagColor {
 
 const showOptions = computed(() => detail.value?.type === 'SINGLE' || detail.value?.type === 'MULTIPLE')
 
-const parsedOptions = computed<string[]>(() => {
-  const raw = detail.value?.options
-  if (!raw) return []
-  if (typeof raw === 'string') {
-    try {
-      const parsed = JSON.parse(raw)
-      return Array.isArray(parsed) ? parsed.filter((o): o is string => typeof o === 'string') : []
-    } catch {
-      return []
-    }
-  }
-  if (Array.isArray(raw)) {
-    return raw.map((o) => (typeof o === 'string' ? o : o?.content ?? ''))
-  }
-  return []
-})
+const parsedOptions = computed<OptionItem[]>(() => parseOptionList(detail.value?.options))
 
-function isCorrectOption(opt: string): boolean {
-  const answer = detail.value?.answer
-  if (!answer) return false
-  const idx = parsedOptions.value.indexOf(opt)
-  if (idx < 0) return false
-  if (detail.value?.type === 'SINGLE') {
-    return answer === String.fromCharCode(65 + idx)
-  }
-  if (detail.value?.type === 'MULTIPLE') {
-    return answer.split(',').includes(String.fromCharCode(65 + idx))
-  }
-  return false
+/** 判断题答案是否为"正确"（id=0） */
+const isTrueFalseTrue = computed(() => parseAnswerIds(detail.value?.answer)[0] === TRUE_FALSE_TRUE_ID)
+
+/** 展示位是否命中标准答案（按 option_id 集合比较） */
+function isCorrectOption(index: number): boolean {
+  const opt = parsedOptions.value[index]
+  if (!opt) return false
+  return parseAnswerIds(detail.value?.answer).includes(opt.id)
 }
+
+/** 选择题答案 → 展示字母+内容；其余题型原样 */
+const answerLabel = computed(() => {
+  const answer = detail.value?.answer
+  if (!answer) return ''
+  const type = detail.value?.type
+  if (type === 'SINGLE' || type === 'MULTIPLE') {
+    return answerIdsToLabel(parsedOptions.value, answer)
+  }
+  return answer
+})
 
 watch(
   () => props.question,

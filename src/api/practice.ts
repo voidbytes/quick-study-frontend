@@ -17,6 +17,7 @@ export interface PracticeListParams {
   size?: number
   pageSize?: number
   status?: string
+  keyword?: string
 }
 
 export interface SaveAnswerParams {

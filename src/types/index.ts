@@ -75,8 +75,14 @@ export interface Question {
   type: QuestionType
   difficulty: Difficulty
   content: string
-  options: QuestionOption[]
-  answer: string
+  /** 选项对象数组（id 为稳定标识，从 0 起；answer 引用 id） */
+  options: OptionItem[]
+  /**
+   * 答案（option_id 模型，按题型分治）：
+   * 选择题 = id JSON 数组字符串（"[1]"/"[0,2]"，判断题 "[0]"正确/"[1]"错误）；
+   * 填空/简答 = 文本（简答参考答案并入本字段）；编程题 = null
+   */
+  answer: string | null
   analysis: string
   score: number
   sort: number
@@ -87,25 +93,24 @@ export interface Question {
   updatedAt: string
 }
 
-export interface QuestionOption {
-  label: string
-  value: string
-  content: string
+/** 选项值对象（与后端 OptionItem 一致）：id 稳定标识（0 起），text 纯文本无字母前缀 */
+export interface OptionItem {
+  id: number
+  text: string
 }
 
 // ============ 导入导出（题库/题目）============
 
 /**
- * 单题交换结构（与后端 importexport 模块 QuestionExportItem 对应）。
- * options 必须是 JSON 字符串（如 "[{\"key\":\"A\",\"content\":\"...\"}]"），不能是对象数组
- * （后端用 JsonNode 接收，能容忍数组，但导出的规范格式是字符串）。
+ * 单题交换结构（与后端 importexport 模块 QuestionExportItem 对应，option_id 模型）。
+ * options 为 JSON 字符串 "[{\"id\":0,\"text\":\"...\"}]"；answer：选择题=id JSON 数组
+ * （"[1]"/"[0,2]"）、判断题="[0]"/"[1]"、填空=文本、简答=参考答案文本、编程=null。
  */
 export interface QuestionExportItem {
   type: QuestionType
   content: string
   options?: string | null
-  answer: string
-  referenceAnswer?: string | null
+  answer: string | null
   analysis?: string | null
   difficulty: Difficulty
   status: string
@@ -237,8 +242,10 @@ export interface PracticeQuestion {
   id?: number | string
   type: string
   content: string
-  options: string
-  answer: string
+  /** OptionItem JSON 字符串或对象数组（成卷快照，乱序后顺序） */
+  options: string | OptionItem[] | null
+  /** 选择题=id JSON 数组字符串（"[1]"/"[0,2]"，判断题 "[0]"/"[1]"）；填空/简答=文本；编程=null */
+  answer: string | null
   analysis: string
   difficulty: string
 }
@@ -262,6 +269,8 @@ export interface PracticeSessionSummary {
   sessionId: string
   status: string
   totalCount: number
+  /** 会话标题（后端创建时拼装落库；旧数据可能为空，为空时降级前端拼装） */
+  title?: string | null
   /** 命名摘要：题库/标签名称与题型（后端解析 filterParams） */
   bankNames?: string[]
   tagNames?: string[]
@@ -314,14 +323,16 @@ export interface WrongQuestion {
   createdAt: string
 }
 
-/** questionSnapshot / question_snapshot JSON 字符串展开后的结构（后端将原题序列化为 JSON 存储） */
+/** questionSnapshot / question_snapshot JSON 字符串展开后的结构（成卷快照，option_id 模型） */
 export interface QuestionSnapshot {
   id?: number
   bankId?: number
   type?: QuestionType
   content?: string
-  options?: string
-  answer?: string
+  /** OptionItem JSON 字符串或对象数组 */
+  options?: string | OptionItem[] | null
+  /** 选择题=id JSON 数组字符串；填空/简答=文本；编程=null */
+  answer?: string | null
   analysis?: string
   difficulty?: Difficulty
 }

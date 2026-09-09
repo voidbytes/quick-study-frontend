@@ -56,24 +56,24 @@
             <div class="space-y-2">
               <div
                 v-for="(opt, index) in parsedOptions"
-                :key="index"
+                :key="opt.id"
                 class="flex items-start gap-3 p-4 border rounded-lg transition-colors"
-                :class="isCorrectOption(opt)
+                :class="isCorrectOption(index)
                   ? 'border-success-500 bg-success-50'
                   : 'border-neutral-200 bg-white'"
               >
                 <div
                   class="w-6 h-6 rounded-full flex items-center justify-center text-sm font-semibold flex-shrink-0 mt-0.5"
-                  :class="isCorrectOption(opt)
+                  :class="isCorrectOption(index)
                     ? 'bg-success-500 text-white'
                     : 'bg-neutral-100 text-neutral-600'"
                 >
                   {{ String.fromCharCode(65 + index) }}
                 </div>
                 <div class="flex-1 min-w-0 text-sm text-neutral-900 leading-relaxed pt-0.5">
-                  <RichText :content="opt" />
+                  <RichText :content="opt.text" />
                 </div>
-                <n-icon v-if="isCorrectOption(opt)" color="#22B570" size="18" class="flex-shrink-0 mt-1">
+                <n-icon v-if="isCorrectOption(index)" color="#22B570" size="18" class="flex-shrink-0 mt-1">
                   <CheckmarkOutline />
                 </n-icon>
               </div>
@@ -81,11 +81,11 @@
           </section>
 
           <!-- 判断题答案 -->
-          <section v-if="question.type === 'TRUE_FALSE'">
+          <section v-if="question.type === 'TRUE_FALSE' && question.answer">
             <h3 class="text-sm font-medium text-neutral-500 mb-2">正确答案</h3>
             <div>
-              <n-tag :type="question.answer === 'true' ? 'success' : 'error'" size="medium" round>
-                {{ question.answer === 'true' ? '正确' : '错误' }}
+              <n-tag :type="isTrueFalseTrue ? 'success' : 'error'" size="medium" round>
+                {{ isTrueFalseTrue ? '正确' : '错误' }}
               </n-tag>
             </div>
           </section>
@@ -95,14 +95,6 @@
             <h3 class="text-sm font-medium text-neutral-500 mb-2">正确答案</h3>
             <div class="bg-success-50 border border-success-100 rounded-lg p-4">
               <RichText :content="answerLabel" />
-            </div>
-          </section>
-
-          <!-- 参考答案 -->
-          <section v-if="question.referenceAnswer">
-            <h3 class="text-sm font-medium text-neutral-500 mb-2">参考答案</h3>
-            <div class="bg-neutral-50 border border-neutral-200 rounded-lg p-4">
-              <RichText :content="question.referenceAnswer" />
             </div>
           </section>
 
@@ -231,8 +223,9 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import type { QuestionType, Difficulty, Question, QuestionOption } from '@/types'
+import type { QuestionType, Difficulty, Question, OptionItem } from '@/types'
 import { getQuestionDetail } from '@/api/question'
+import { parseOptionList, parseAnswerIds, idToIndex, TRUE_FALSE_TRUE_ID } from '@/utils/answer'
 import { getNote, saveNote, deleteNote, NOTE_IMAGE_PATTERN } from '@/api/note'
 import { useAuthStore } from '@/stores/auth'
 import { QUESTION_TYPE_MAP, DIFFICULTY_MAP, QUESTION_STATUS_OPTIONS } from '@/utils/constants'
@@ -307,10 +300,11 @@ async function handleDeleteNote() {
 const loading = ref(false)
 const loadError = ref('')
 
-/** 后端运行时 options 为 JSON 字符串（Question 类型声明滞后），本地收敛为联合类型 */
-interface QuestionDetailData extends Omit<Question, 'options'> {
-  options?: string | QuestionOption[] | null
-  referenceAnswer?: string | null
+/** 后端运行时（QuestionDetailResponse，option_id 模型）：options 为 OptionItem 数组 */
+interface QuestionDetailData extends Omit<Question, 'options' | 'answer'> {
+  options?: string | OptionItem[] | null
+  /** 选择题=id JSON 数组；填空/简答=文本（简答参考答案并入）；编程=null */
+  answer?: string | null
   /** 编程题配置（type=PROGRAMMING 时存在） */
   programming?: {
     timeLimitMs: number
@@ -382,60 +376,35 @@ const showOptions = computed(
 /** 编程题允许语言列表（空 = 不限制） */
 const programmingLangList = computed<string[]>(() => question.value?.programming?.allowedLanguages || [])
 
-const parsedOptions = computed<string[]>(() => {
-  const raw = question.value?.options
-  if (!raw) return []
-  if (typeof raw === 'string') {
-    try {
-      const parsed = JSON.parse(raw)
-      return Array.isArray(parsed) ? parsed.filter((o): o is string => typeof o === 'string') : []
-    } catch {
-      return []
-    }
-  }
-  if (Array.isArray(raw)) {
-    return raw.map((o) => (typeof o === 'string' ? o : o?.content ?? ''))
-  }
-  return []
-})
+const parsedOptions = computed<OptionItem[]>(() => parseOptionList(question.value?.options))
 
-const isCorrectOption = (opt: string): boolean => {
-  if (!question.value?.answer) return false
-  const answer = question.value.answer
-  const idx = parsedOptions.value.indexOf(opt)
-  if (idx < 0) return false
-  if (question.value.type === 'SINGLE') {
-    // 单选答案如 "A"、"B"
-    return answer === String.fromCharCode(65 + idx)
-  }
-  if (question.value.type === 'MULTIPLE') {
-    return answer.split(',').includes(String.fromCharCode(65 + idx))
-  }
-  return false
+/** 判断题答案是否为"正确"（id=0；无法识别时回退 false） */
+const isTrueFalseTrue = computed(() => parseAnswerIds(question.value?.answer)[0] === TRUE_FALSE_TRUE_ID)
+
+/** 展示位是否命中标准答案（按 option_id 集合比较） */
+const isCorrectOption = (index: number): boolean => {
+  const opt = parsedOptions.value[index]
+  if (!opt || !question.value?.answer) return false
+  return parseAnswerIds(question.value.answer).includes(opt.id)
 }
 
 const answerLabel = computed(() => {
-  if (!question.value?.answer) return ''
-  if (question.value.type === 'SINGLE') {
-    const idx = question.value.answer.charCodeAt(0) - 65
-    if (idx >= 0 && idx < parsedOptions.value.length) {
-      return `${question.value.answer}. ${parsedOptions.value[idx]}`
-    }
-    return question.value.answer
-  }
-  if (question.value.type === 'MULTIPLE') {
-    const answers = question.value.answer.split(',')
-    return answers
-      .map((a: string) => {
-        const idx = a.trim().charCodeAt(0) - 65
-        if (idx >= 0 && idx < parsedOptions.value.length) {
-          return `${a.trim()}. ${parsedOptions.value[idx]}`
-        }
-        return a.trim()
+  const answer = question.value?.answer
+  if (!answer) return ''
+  const type = question.value?.type
+  if (type === 'SINGLE' || type === 'MULTIPLE') {
+    const ids = parseAnswerIds(answer)
+    if (!ids.length) return answer
+    return ids
+      .map((id) => {
+        const idx = idToIndex(parsedOptions.value, id)
+        const marker = idx >= 0 ? String.fromCharCode(65 + idx) : String(id)
+        const text = idx >= 0 ? parsedOptions.value[idx].text : ''
+        return text ? `${marker}. ${text}` : marker
       })
       .join('；')
   }
-  return question.value.answer
+  return answer
 })
 
 function formatTime(time?: string) {
