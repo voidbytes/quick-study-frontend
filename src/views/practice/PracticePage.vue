@@ -406,6 +406,7 @@ import type { ProgrammingAnswerView } from '@/components/programming/Programming
 import type { PracticeQuestion, OptionItem } from '@/types'
 import {
   parseOptionList,
+  sortOptionsById,
   parseAnswerIds,
   formatAnswerIds,
   formatAnswerView,
@@ -441,7 +442,7 @@ interface FilterParams {
   sourceType?: string
   bankIds?: number[]
   types?: string[]
-  tagIds?: number[]
+  tagIds?: string[]
   correctRateMin?: number
   correctRateMax?: number
   priorUnanswered?: boolean
@@ -556,15 +557,16 @@ const parsedOptions = computed<OptionItem[]>(() => {
   const q = currentQuestion.value
   if (!q) return []
   const list = parseOptionList(q.options)
-  if (list.length) return list
-  // 判断题后端固定物化 {id:0 正确, id:1 错误}；老快照缺 options 时前端兜底同款
-  if (q.type === 'TRUE_FALSE') {
+  if (!list.length && q.type === 'TRUE_FALSE') {
+    // 判断题后端固定物化 {id:0 正确, id:1 错误}；老快照缺 options 时前端兜底同款
     return [
       { id: TRUE_FALSE_TRUE_ID, text: '正确' },
       { id: TRUE_FALSE_FALSE_ID, text: '错误' }
     ]
   }
-  return []
+  // 作答态保持快照乱序（防背题）；提交反馈后回落 id 升序（题库原序），
+  // 使展示字母与解析文本按存库字母（id 0=A）书写的引用对齐
+  return answered.value ? sortOptionsById(list) : list
 })
 
 /** 解析条件描述 */
@@ -738,7 +740,7 @@ async function submitAnswer() {
 let progSaveTimer: ReturnType<typeof setTimeout> | null = null
 
 /** 编辑触发：防抖保存草稿（saveAnswer 编程题分支只存代码不判题，isCorrect=null） */
-function onProgrammingChange(payload: { code: string; languageId: number | null }) {
+function onProgrammingChange(payload: { code: string; languageId: string | null }) {
   if (progSaveTimer) clearTimeout(progSaveTimer)
   progSaveTimer = setTimeout(async () => {
     const target = questions.value[currentIndex.value]
@@ -753,7 +755,7 @@ function onProgrammingChange(payload: { code: string; languageId: number | null 
 }
 
 /** 提交判题成功：锁定本题，回填 userAnswer（判题结果由面板内展示） */
-function onProgrammingAnswered(payload: { code: string; languageId: number; submissionId: number }) {
+function onProgrammingAnswered(payload: { code: string; languageId: string; submissionId: string }) {
   if (progSaveTimer) clearTimeout(progSaveTimer)
   answered.value = true
   const target = questions.value[currentIndex.value]

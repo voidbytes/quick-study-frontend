@@ -35,16 +35,36 @@ export function exportBank(bankId: number | string): Promise<Blob> {
 }
 
 /**
+ * 导出整个题库为 Markdown（人读交付物，仅管理员及以上）。
+ * @param bankId 题库 ID
+ * @param params 可选：withAnswer（默认 true）/ typeFilter / tagIds
+ */
+export interface MarkdownExportParams {
+  withAnswer?: boolean
+  typeFilter?: string[]
+  tagIds?: string[]
+}
+
+export function exportBankMarkdown(
+  bankId: number | string,
+  params: MarkdownExportParams = {}
+): Promise<Blob> {
+  return ensureBlob(
+    request.post<Blob>(`/banks/${bankId}/export/markdown`, params, { responseType: 'blob' })
+  )
+}
+
+/**
  * 批量导出题目：传 questionIds 按显式 ID 导出；
  * 传 bankId/type/difficulty/status/tagIds/keyword 按筛选条件导出全部。
  */
 export interface ExportQuestionsParams {
-  questionIds?: number[]
+  questionIds?: string[]
   bankId?: number | string
   type?: string
   difficulty?: string
   status?: string
-  tagIds?: number[]
+  tagIds?: string[]
   keyword?: string
 }
 

@@ -8,7 +8,7 @@ export interface StartSessionResponse {
 }
 
 export interface QuestionItem {
-  id: number
+  id: string
   type: string
   content: string
   /** 选项对象数组（成卷快照，乱序后顺序） */
@@ -35,17 +35,17 @@ export interface SessionResponse {
 }
 
 export interface AnswerItem {
-  paperQuestionId: number
+  paperQuestionId: string
   userAnswer: string
   /** 编程题作答语言ID（断点恢复时前端据此回显语言选择） */
-  languageId?: number | null
+  languageId?: string | null
 }
 
 export interface SaveAnswerItem {
-  paperQuestionId: number
+  paperQuestionId: string
   answer: string
   /** 编程题作答语言ID（交卷判题时后端据此选择语言） */
-  languageId?: number | null
+  languageId?: string | null
 }
 
 export interface SaveAnswersPayload {
@@ -62,7 +62,7 @@ export interface SessionResultResponse {
 }
 
 export interface QuestionResultItem {
-  paperQuestionId: number
+  paperQuestionId: string
   content: string
   type: string
   /** 选项对象数组（成卷快照，乱序后顺序） */

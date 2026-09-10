@@ -61,10 +61,11 @@ request.interceptors.request.use(
   }
 )
 
-// 401 且无法刷新时跳登录页，携带当前位置以便登录后跳回
+// 401 且无法刷新时跳登录页，携带当前位置以便登录后跳回。
+// 用 location.replace：不往 history 压栈，避免登录后浏览器返回键退回过期页面（用户反馈：返回时偶见回到登录页）。
 function redirectToLogin() {
   const current = window.location.pathname + window.location.search
-  window.location.href = '/login?redirect=' + encodeURIComponent(current)
+  window.location.replace('/login?redirect=' + encodeURIComponent(current))
 }
 
 function clearAuthAndRedirect() {

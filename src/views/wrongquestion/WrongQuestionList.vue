@@ -133,12 +133,12 @@ const message = useMessage()
 const { confirmDanger } = useConfirm()
 
 const loading = ref(false)
-const filterBankId = ref<number | null>(null)
+const filterBankId = ref<string | null>(null)
 const filterKeyword = ref('')
 const filterTagId = ref<number | null>(null)
 const wrongList = ref<WrongRow[]>([])
-const bankOptions = ref<{ label: string; value: number }[]>([])
-const tagOptions = ref<{ label: string; value: number }[]>([])
+const bankOptions = ref<{ label: string; value: string }[]>([])
+const tagOptions = ref<{ label: string; value: string }[]>([])
 
 const pagination = reactive({
   page: 1,

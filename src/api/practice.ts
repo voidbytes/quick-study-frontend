@@ -3,9 +3,9 @@ import type { ApiResponse, PageResult, PracticeSession, PracticeResult, Practice
 
 export interface CreateSessionParams {
   count: number
-  bankIds?: number[]
+  bankIds?: string[]
   types?: string[]
-  tagIds?: number[]
+  tagIds?: string[]
   correctRateMin?: number
   correctRateMax?: number
   priorUnanswered?: boolean

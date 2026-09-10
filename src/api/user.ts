@@ -23,7 +23,7 @@ export function getProfile() {
 
 /** 用户搜索结果项（批改人选择等远程搜索场景，最小字段集） */
 export interface UserSearchItem {
-  id: number
+  id: string
   username: string
   nickname?: string | null
 }

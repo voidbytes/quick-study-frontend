@@ -104,14 +104,14 @@ const message = useMessage()
 
 const formRef = ref<FormInst | null>(null)
 const loading = ref(false)
-const bankOptions = ref<{ label: string; value: number }[]>([])
-const tagOptions = ref<{ label: string; value: number }[]>([])
+const bankOptions = ref<{ label: string; value: string }[]>([])
+const tagOptions = ref<{ label: string; value: string }[]>([])
 
 const form = reactive({
   count: 10,
-  bankIds: [] as number[],
+  bankIds: [] as string[],
   types: [] as string[],
-  tagIds: [] as number[],
+  tagIds: [] as string[],
   correctRateMin: undefined as number | undefined,
   correctRateMax: undefined as number | undefined,
   priorUnanswered: false,

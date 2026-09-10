@@ -181,7 +181,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getResult } from '@/api/exam'
 import type { SessionResultResponse, QuestionResultItem } from '@/api/exam'
-import { formatAnswerView, parseOptionList } from '@/utils/answer'
+import { formatAnswerView, parseOptionList, sortOptionsById } from '@/utils/answer'
 import { QUESTION_TYPE_MAP } from '@/utils/constants'
 import PageHeader from '@/components/common/PageHeader.vue'
 import StatCard from '@/components/common/StatCard.vue'
@@ -219,10 +219,11 @@ function typeLabel(type?: string): string {
   return (type && QUESTION_TYPE_MAP[type as keyof typeof QUESTION_TYPE_MAP]) || type || '未知'
 }
 
-// 判断题答案显示为中文；选择题 id 数组映射为展示字母（需快照 options，缺失回退原文）
+// 判断题答案显示为中文；选择题 id 数组映射为展示字母（需快照 options，缺失回退原文）。
+// options 按 id 升序（题库原序）：解析文本按存库字母书写，回顾态须与原序对齐
 function formatAnswer(q: QuestionResultItem, answer: string | null): string {
   if (answer == null || answer === '') return '未作答'
-  return formatAnswerView(answer, q.type, parseOptionList(q.options)) || answer
+  return formatAnswerView(answer, q.type, sortOptionsById(parseOptionList(q.options))) || answer
 }
 
 /** 判题结果是否已终态（FINISHED/ERROR） */

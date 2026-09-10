@@ -1,5 +1,12 @@
 <template>
   <div>
+    <!-- 页头 -->
+    <PageHeader title="题目" subtitle="跨题库浏览与筛选所有题目，筛选状态在地址栏中，可直接分享链接">
+      <template #actions>
+        <n-button v-if="authStore.isAdmin" @click="router.push('/questions/manage')">管理模式</n-button>
+      </template>
+    </PageHeader>
+
     <!-- 筛选栏 -->
     <FilterBar>
       <n-input
@@ -47,40 +54,14 @@
         style="width: 220px"
         @update:value="handleSearch"
       />
-      <div class="ml-auto flex items-center gap-2">
-        <n-dropdown
-          v-if="authStore.isAdmin && questionList.length > 0"
-          trigger="click"
-          :options="questionExportOptions"
-          @select="handleQuestionExportSelect"
-        >
-          <n-button :disabled="exporting">
-            {{ selectedIds.length > 0 ? `导出选中（${selectedIds.length}）` : '导出' }}
-          </n-button>
-        </n-dropdown>
-        <n-button v-if="authStore.isAdmin" @click="showImportDialog = true">导入题目</n-button>
-        <n-button v-if="authStore.isAdmin" type="primary" @click="router.push(`/banks/${bankId}/questions/create`)">
-          创建题目
-        </n-button>
-      </div>
     </FilterBar>
-
-    <!-- 批量操作条（登录用户可见：勾选是为导出服务，未登录不展示） -->
-    <div v-if="authStore.isAuthenticated && questionList.length > 0" class="flex items-center gap-2 mb-3 px-1">
-      <n-checkbox :checked="allCurrentPageSelected" @update:checked="toggleSelectAll">全选本页</n-checkbox>
-      <span class="text-xs text-neutral-400">已选 {{ selectedIds.length }} 题</span>
-      <span v-if="selectedIds.length === 0" class="text-xs text-neutral-400">
-        未勾选时点「导出」可选择导出全部题目或当前筛选结果
-      </span>
-      <span v-else class="text-xs text-primary-500">仅导出勾选的题目</span>
-    </div>
 
     <!-- 题目卡片列表 -->
     <SkeletonList v-if="loading" :count="5" :cols="1" />
     <EmptyState
       v-else-if="questionList.length === 0"
       title="暂无题目"
-      description="当前筛选条件下没有题目"
+      description="当前筛选条件下没有题目，试试调整筛选条件"
       :icon="DocumentTextOutline"
     />
     <div
@@ -92,23 +73,16 @@
         :key="q.id"
         class="flex items-start gap-3 px-4 py-4 hover:bg-neutral-50 transition-colors"
       >
-        <!-- 多选（登录用户可见：勾选为导出服务，未登录不展示） -->
-        <n-checkbox
-          v-if="authStore.isAuthenticated"
-          :checked="selectedIds.includes(q.id)"
-          class="mt-1 flex-shrink-0"
-          @update:checked="(v: boolean) => toggleSelect(q.id, v)"
-        />
         <!-- 题号 -->
         <span class="text-sm font-mono text-neutral-400 w-10 flex-shrink-0 pt-0.5">
           #{{ String((pagination.page - 1) * pagination.pageSize + index + 1).padStart(3, '0') }}
         </span>
 
-        <!-- 题干与元信息（题干可点进详情，与题目管理页一致） -->
+        <!-- 题干与元信息（题干可点进详情） -->
         <div class="flex-1 min-w-0">
           <div
             class="text-sm font-medium text-neutral-900 hover:text-primary-500 cursor-pointer"
-            @click="router.push(`/banks/${bankId}/questions/${q.id}`)"
+            @click="goDetail(q)"
           >
             <RichText :content="q.content" class="question-stem-ellipsis" />
           </div>
@@ -118,6 +92,7 @@
               {{ difficultyLabel(q.difficulty) }}
             </n-tag>
             <n-tag size="small" round :type="statusTagType(q.status)">{{ statusLabel(q.status) }}</n-tag>
+            <span class="text-xs text-neutral-400">{{ q.bankName }}</span>
             <span v-for="tag in q.tags" :key="tag.id" class="tag-chip">{{ tag.name }}</span>
           </div>
         </div>
@@ -125,67 +100,33 @@
         <!-- 时间与操作 -->
         <div class="flex flex-col items-end gap-2 flex-shrink-0">
           <span class="text-xs text-neutral-400">{{ formatTime(q.createdAt) }}</span>
-          <div class="flex items-center gap-1">
-            <n-button
-              size="tiny"
-              quaternary
-              type="primary"
-              @click="router.push(`/banks/${bankId}/questions/${q.id}`)"
-            >
-              查看
-            </n-button>
-            <n-button
-              v-if="authStore.isAdmin"
-              size="tiny"
-              quaternary
-              @click="router.push(`/banks/${bankId}/questions/${q.id}/edit`)"
-            >
-              编辑
-            </n-button>
-            <n-button
-              v-if="authStore.isAdmin"
-              size="tiny"
-              quaternary
-              type="error"
-              @click="handleDelete(q)"
-            >
-              删除
-            </n-button>
-          </div>
+          <n-button size="tiny" quaternary type="primary" @click="goDetail(q)">查看</n-button>
         </div>
       </div>
     </div>
 
     <!-- 分页 -->
-    <div v-if="pagination.itemCount > pagination.pageSize" class="flex justify-end mt-4">
+    <div v-if="pagination.itemCount > 0" class="flex justify-end mt-4 items-center gap-4">
       <n-pagination
         :page="pagination.page"
         :item-count="pagination.itemCount"
         :page-size="pagination.pageSize"
         @update:page="handlePageChange"
       />
+      <span class="text-sm text-neutral-400">共 {{ pagination.itemCount }} 道</span>
     </div>
-
-    <!-- 导入题目弹窗（目标题库固定为当前题库） -->
-    <QuestionImportDialog
-      v-model:show="showImportDialog"
-      :bank-id="bankId"
-      :bank-name="bankName"
-      @imported="handleImportDone"
-    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted, watch } from 'vue'
+import { ref, reactive, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useMessage } from 'naive-ui'
 import type { SelectOption } from 'naive-ui'
 import type { Question, QuestionType, Difficulty } from '@/types'
-import { getQuestionList, deleteQuestion } from '@/api/question'
-import { getTagListByBank } from '@/api/tag'
-import { exportQuestions, type ExportQuestionsParams } from '@/api/importExport'
-import { triggerBlobDownload, nowStamp } from '@/utils/download'
+import { getAllQuestions } from '@/api/question'
+import { getTagList } from '@/api/tag'
+import { buildGroupedTagOptions } from '@/utils/tagOptions'
 import {
   QUESTION_TYPE_MAP,
   QUESTION_TYPE_OPTIONS,
@@ -194,30 +135,17 @@ import {
   QUESTION_STATUS_OPTIONS
 } from '@/utils/constants'
 import { useAuthStore } from '@/stores/auth'
-import { useConfirm } from '@/composables/useConfirm'
+import PageHeader from '@/components/common/PageHeader.vue'
 import FilterBar from '@/components/common/FilterBar.vue'
 import RichText from '@/components/common/RichText.vue'
 import SkeletonList from '@/components/common/SkeletonList.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
 import { SearchOutline, DocumentTextOutline } from '@vicons/ionicons5'
 import dayjs from 'dayjs'
-import QuestionImportDialog from '@/components/importExport/QuestionImportDialog.vue'
-
-const props = defineProps<{
-  bankId: string
-  /** 所属题库名称（透传给导入弹窗展示，可选） */
-  bankName?: string
-}>()
-
-const emit = defineEmits<{
-  /** 导入题目成功后通知父级刷新题库统计 */
-  imported: []
-}>()
 
 const router = useRouter()
 const route = useRoute()
 const message = useMessage()
-const { confirmDanger } = useConfirm()
 const authStore = useAuthStore()
 
 const loading = ref(false)
@@ -225,18 +153,10 @@ const searchKeyword = ref('')
 const filterType = ref<QuestionType | null>(null)
 const filterDifficulty = ref<Difficulty | null>(null)
 const filterStatus = ref<string | null>(null)
-// 标签 id 是雪花 long（后端 Jackson 序列化为字符串），全链路用 string 承载，禁止 Number() 转换（超 2^53 丢精度）
+/** 标签多选（跨库场景用全局 GET /tags 下拉）；雪花 long 超出 2^53，值按原始数字字符串传递 */
 const filterTagIds = ref<string[]>([])
 const tagOptions = ref<SelectOption[]>([])
 const questionList = ref<Question[]>([])
-
-/** 勾选（仅当前页范围） */
-const selectedIds = ref<string[]>([])
-const exporting = ref(false)
-const showImportDialog = ref(false)
-const allCurrentPageSelected = computed(() => {
-  return questionList.value.length > 0 && questionList.value.every((q) => selectedIds.value.includes(q.id))
-})
 
 // 选项统一取自 @/utils/constants（全站唯一字典）
 const typeOptions = QUESTION_TYPE_OPTIONS
@@ -296,19 +216,18 @@ function statusTagType(status: string): TagColor {
   return STATUS_TAG[status] || 'default'
 }
 
-function stripHtml(html: string | undefined): string {
-  if (!html) return ''
-  return html.replace(/<[^>]+>/g, '')
-}
-
 function formatTime(time: string | undefined) {
   return time ? dayjs(time).format('YYYY-MM-DD') : '-'
+}
+
+function goDetail(q: Question) {
+  router.push(`/banks/${q.bankId}/questions/${q.id}`)
 }
 
 async function fetchList() {
   loading.value = true
   try {
-    const res = await getQuestionList(props.bankId, {
+    const res = await getAllQuestions({
       page: pagination.page,
       size: pagination.pageSize,
       type: filterType.value ?? undefined,
@@ -328,12 +247,9 @@ async function fetchList() {
 
 async function fetchTagOptions() {
   try {
-    // 只拉当前题库实际用到的标签（全局池太大且多数与本库无关）
-    const res = await getTagListByBank(props.bankId)
-    tagOptions.value = (res.data || []).map((t) => ({
-      label: t.name,
-      value: String(t.id) // 雪花 long 超 2^53，n-select 的 value 必须字符串承载
-    }))
+    // 跨库浏览：标签下拉用全局标签池（GET /tags），不限定单题库
+    const res = await getTagList()
+    tagOptions.value = buildGroupedTagOptions(res.data || [])
   } catch {
     // 忽略错误
   }
@@ -341,106 +257,24 @@ async function fetchTagOptions() {
 
 function handleSearch() {
   pagination.page = 1
-  selectedIds.value = []
   syncStateToQuery()
   fetchList()
 }
 
 function handlePageChange(page: number) {
   pagination.page = page
-  selectedIds.value = []
   syncStateToQuery()
   fetchList()
 }
 
-function handleDelete(q: Question) {
-  confirmDanger({
-    title: '确认删除',
-    content: `确定要删除该题目吗？题干：${stripHtml(q.content).slice(0, 30)}...`,
-    positiveText: '确定删除',
-    onPositiveClick: async () => {
-      try {
-        await deleteQuestion(props.bankId, q.id)
-        message.success('删除成功')
-        fetchList()
-      } catch {
-        message.error('删除失败')
-      }
-    }
-  })
-}
-
-function toggleSelect(id: string, checked: boolean) {
-  if (checked) {
-    if (!selectedIds.value.includes(id)) selectedIds.value.push(id)
-  } else {
-    selectedIds.value = selectedIds.value.filter((sid) => sid !== id)
-  }
-}
-
-function toggleSelectAll(checked: boolean) {
-  const currentIds = questionList.value.map((q) => q.id)
-  if (checked) {
-    selectedIds.value = Array.from(new Set([...selectedIds.value, ...currentIds]))
-  } else {
-    const remain = new Set(selectedIds.value.filter((id) => !currentIds.includes(id)))
-    selectedIds.value = Array.from(remain)
-  }
-}
-
-/**
- * 导出下拉项：勾选时仅「导出选中」；未勾选时区分「全部题目」与「当前筛选结果」，
- * 明确"能否全部导出"的语义，避免误导出空文件。
- */
-const questionExportOptions = computed(() => {
-  if (selectedIds.value.length > 0) {
-    return [{ label: `导出选中 ${selectedIds.value.length} 题（JSON）`, key: 'selected' }]
-  }
-  return [
-    { label: '导出全部题目（JSON）', key: 'all' },
-    { label: '导出当前筛选结果（JSON）', key: 'filter' }
-  ]
-})
-
-function buildExportParams(key: string): ExportQuestionsParams {
-  const params: ExportQuestionsParams = { bankId: props.bankId }
-  if (key === 'filter') {
-    params.type = filterType.value ?? undefined
-    params.difficulty = filterDifficulty.value || undefined
-    params.status = filterStatus.value || undefined
-    params.tagIds = filterTagIds.value.length ? filterTagIds.value : undefined
-    params.keyword = searchKeyword.value || undefined
-  }
-  return params
-}
-
-async function handleQuestionExportSelect(key: string) {
-  exporting.value = true
-  try {
-    const params: ExportQuestionsParams =
-      key === 'selected' ? { questionIds: selectedIds.value } : buildExportParams(key)
-    const blob = await exportQuestions(params)
-    triggerBlobDownload(blob, `题目导出_${nowStamp()}.json`)
-    message.success('导出成功')
-  } catch (err: any) {
-    message.error(err?.message || '导出失败')
-  } finally {
-    exporting.value = false
-  }
-}
-
-function handleImportDone() {
-  fetchList()
-  emit('imported')
-}
-
 // ==================== 列表状态 ↔ URL query 同步 ====================
-// 分页/筛选状态落 URL：从列表进详情再返回时（router.back 或浏览器返回），
-// 组件重新挂载后从 query 恢复页码与筛选，不再重置回第 1 页。
+// 可分享性核心：全部筛选状态（tags/difficulty/type/status/keyword/page）落在 URL query，
+// 复制地址栏即可让他人直达同一筛选结果；非法值一律忽略走默认。
 
 /**
- * 解析 tags=1,2,3（容忍重复键数组形态），仅保留纯数字段并保持字符串原样。
- * 雪花 long 超出 JS Number 安全整数（2^53），禁止 Number() 转换（会精度失真成错误 id）。
+ * 解析 tags=1,2,3（容忍重复键数组形态），仅保留纯数字段、保持字符串原样。
+ * 注意：id 是后端雪花 long，超出 JS Number 安全整数（2^53），必须按原始数字字符串
+ * 传递，禁止 Number() 转换（会精度失真成错误 id）。与 n-select 的 string value 及 axios 序列化一致。
  */
 function parseTagIds(raw: unknown): string[] {
   const str = Array.isArray(raw) ? raw.join(',') : raw
@@ -463,11 +297,12 @@ function restoreStateFromQuery() {
     filterStatus.value = q.status
   }
   if (typeof q.keyword === 'string') searchKeyword.value = q.keyword
-  filterTagIds.value = parseTagIds(q.tags)
+  const tagIds = parseTagIds(q.tags)
+  if (tagIds.length) filterTagIds.value = tagIds
 }
 
-/** 当前状态写回 route.query（page=1 且无筛选时清掉参数，保持 URL 干净） */
-function syncStateToQuery() {
+/** 由当前状态构建目标 query（page=1 且无筛选时清掉参数，保持 URL 干净） */
+function buildQueryFromState(): Record<string, string> {
   const query: Record<string, string> = {}
   if (pagination.page > 1) query.page = String(pagination.page)
   if (filterType.value) query.type = filterType.value
@@ -475,8 +310,33 @@ function syncStateToQuery() {
   if (filterStatus.value) query.status = filterStatus.value
   if (searchKeyword.value) query.keyword = searchKeyword.value
   if (filterTagIds.value.length) query.tags = filterTagIds.value.join(',')
-  router.replace({ query })
+  return query
 }
+
+/** 当前状态写回 route.query */
+function syncStateToQuery() {
+  router.replace({ query: buildQueryFromState() })
+}
+
+// 同记录下的 query 变化（手动改地址栏 / 已在本页时打开分享链接）组件不会重挂载，
+// 监听并恢复状态重新拉列表；自身 sync 引发的 replace 与目标一致，直接跳过避免双请求。
+watch(
+  () => route.query,
+  (q) => {
+    const target = buildQueryFromState()
+    const incoming = q as Record<string, unknown>
+    const keys = new Set([...Object.keys(incoming), ...Object.keys(target)])
+    for (const k of keys) {
+      const av = Array.isArray(incoming[k]) ? (incoming[k] as unknown[]).join(',') : incoming[k] ?? ''
+      const bv = target[k] ?? ''
+      if (av !== bv) {
+        restoreStateFromQuery()
+        fetchList()
+        return
+      }
+    }
+  }
+)
 
 onMounted(() => {
   restoreStateFromQuery()

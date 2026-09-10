@@ -1,6 +1,6 @@
 <template>
   <div class="max-w-content mx-auto w-full">
-    <PageHeader :title="paperTitle" :subtitle="subtitle" showBack>
+    <PageHeader :title="paperTitle" :subtitle="subtitle" showBack back-to="/grading">
       <template #actions>
         <n-button
           type="primary"

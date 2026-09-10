@@ -217,16 +217,18 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
 import { useMessage } from 'naive-ui'
 import type { FormInst, FormRules } from 'naive-ui'
 import { getProfile, updateProfile, changePassword, getAiKey, setAiKey, deleteAiKey, deactivateAccount } from '@/api/user'
+import { useAuthStore } from '@/stores/auth'
+import { useUiStore } from '@/stores/ui'
 import { useConfirm } from '@/composables/useConfirm'
 import { TrashOutline, InformationCircleOutline, CloseCircleOutline } from '@vicons/ionicons5'
 import dayjs from 'dayjs'
 
-const router = useRouter()
 const message = useMessage()
+const authStore = useAuthStore()
+const uiStore = useUiStore()
 const { confirmDanger } = useConfirm()
 
 const loading = ref(false)
@@ -395,8 +397,10 @@ function handleDeactivate() {
     onPositiveClick: async () => {
       try {
         await deactivateAccount()
+        authStore.logout()
         message.success('账号已注销')
-        router.push('/login')
+        // 留在当前页并打开全局登录模态框（不再跳 /login）
+        uiStore.openLoginModal()
       } catch (err: any) {
         const code = err?.response?.data?.code
         if (code === 20501) {

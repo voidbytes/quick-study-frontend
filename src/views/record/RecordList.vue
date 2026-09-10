@@ -241,13 +241,13 @@ const activeTab = ref<'practice' | 'exam'>('practice')
 
 /* ---------- 练习记录（原有逻辑） ---------- */
 const loading = ref(false)
-const filterBankId = ref<number | null>(null)
+const filterBankId = ref<string | null>(null)
 const filterSourceType = ref<string | null>(null)
 const filterKeyword = ref('')
 const examKeyword = ref('')
 const dateRange = ref<[number, number] | null>(null)
 const recordList = ref<RecordRow[]>([])
-const bankOptions = ref<{ label: string; value: number }[]>([])
+const bankOptions = ref<{ label: string; value: string }[]>([])
 
 const sourceTypeOptions = [
   { label: '练习', value: 'PRACTICE_SESSION' },

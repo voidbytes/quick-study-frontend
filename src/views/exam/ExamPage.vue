@@ -242,12 +242,12 @@ interface ExamQuestion extends QuestionItem {
 /** 编程题答案（id → 代码 + 语言），语言为 null 表示尚未选择/不可用 */
 interface ProgAnswer {
   code: string
-  languageId: number | null
+  languageId: string | null
 }
 const questions = ref<ExamQuestion[]>([])
 const currentIndex = ref(0)
-const fillAnswers = reactive<Record<number, string>>({})
-const progAnswers = reactive<Record<number, ProgAnswer>>({})
+const fillAnswers = reactive<Record<string, string>>({})
+const progAnswers = reactive<Record<string, ProgAnswer>>({})
 const markedForReview = ref<Set<number>>(new Set())
 const timeRemaining = ref(0)
 const timerHandle = ref<ReturnType<typeof setInterval> | null>(null)
@@ -257,7 +257,7 @@ const cheatCount = ref(0)
 const difficultyLabels: Record<string, string> = { EASY: '简单', MEDIUM: '中等', HARD: '困难' }
 
 /** 作答状态：客观题存 option_id（单选/判断）或 id 数组（多选），提交时统一序列化 */
-const currentAnswers = reactive<Record<number, number | number[]>>({})
+const currentAnswers = reactive<Record<string, number | number[]>>({})
 
 const currentQuestion = computed(() => questions.value[currentIndex.value] || null)
 
@@ -396,7 +396,7 @@ function handleShortAnswerChange(v: string) {
 let progSaveTimer: ReturnType<typeof setTimeout> | null = null
 
 /** 编程题编辑：同步内存态 + 本地草稿，防抖自动保存（含语言ID，交卷判题用） */
-function onProgrammingChange(payload: { code: string; languageId: number | null }) {
+function onProgrammingChange(payload: { code: string; languageId: string | null }) {
   const q = currentQuestion.value
   if (!q) return
   progAnswers[q.id] = { code: payload.code, languageId: payload.languageId }

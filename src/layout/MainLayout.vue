@@ -145,7 +145,7 @@
             </n-dropdown>
           </template>
           <template v-else>
-            <n-button size="small" type="primary" @click="router.push('/login')">登录</n-button>
+            <n-button size="small" type="primary" @click="uiStore.openLoginModal()">登录</n-button>
           </template>
         </div>
       </header>
@@ -162,6 +162,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { useUiStore } from '@/stores/ui'
 import { useMessage } from 'naive-ui'
 import * as notificationApi from '@/api/notification'
 import {
@@ -184,7 +185,8 @@ import {
   ChevronForwardOutline,
   StarOutline,
   BookOutline,
-  TicketOutline
+  TicketOutline,
+  SettingsOutline
 } from '@vicons/ionicons5'
 
 interface MenuItem {
@@ -200,6 +202,7 @@ interface MenuGroup {
 const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
+const uiStore = useUiStore()
 const message = useMessage()
 
 const COLLAPSED_KEY = 'sidebar_collapsed'
@@ -257,6 +260,7 @@ const menuGroups = computed<MenuGroup[]>(() => {
       label: '管理',
       items: [
         { label: '用户管理', key: '/admin/users', icon: PeopleOutline },
+        { label: '题目管理', key: '/questions/manage', icon: SettingsOutline },
         { label: '审核列表', key: '/admin/reviews', icon: CheckmarkDoneOutline },
         { label: '邀请码', key: '/admin/invite-codes', icon: TicketOutline }
       ]
@@ -274,6 +278,7 @@ const userMenuOptions = computed(() => [
 const MENU_TITLES: Record<string, string> = {
   '/': '首页',
   '/banks': '题库',
+  '/questions/manage': '题目管理',
   '/questions': '题目',
   '/papers': '试卷',
   '/practice': '练习',
@@ -324,7 +329,8 @@ function handleHeaderSearch() {
 function handleLogout() {
   authStore.logout()
   message.success('已退出登录')
-  router.push('/login')
+  // 留在当前页并打开全局登录模态框（不再路由跳走）
+  uiStore.openLoginModal()
 }
 
 async function fetchUnreadCount() {

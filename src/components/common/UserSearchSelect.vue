@@ -22,15 +22,15 @@ import { searchUsers, type UserSearchItem } from '@/api/user'
  * 用于批改人指定等场景：输入关键字即搜，选项展示「昵称 (username)」。
  */
 const props = defineProps<{
-  modelValue: number | null
+  modelValue: string | null
   placeholder?: string
 }>()
 
 const emit = defineEmits<{
-  'update:modelValue': [value: number | null]
+  'update:modelValue': [value: string | null]
 }>()
 
-const options = ref<{ label: string; value: number }[]>([])
+const options = ref<{ label: string; value: string }[]>([])
 const searching = ref(false)
 let searchTimer: ReturnType<typeof setTimeout> | null = null
 
@@ -65,7 +65,7 @@ function handleSearch(keyword: string) {
   searchTimer = setTimeout(() => doSearch(keyword), 300)
 }
 
-function handleUpdate(value: number | null) {
+function handleUpdate(value: string | null) {
   emit('update:modelValue', value)
 }
 
@@ -76,7 +76,7 @@ function handleClear() {
 /**
  * 预置选中项（编辑场景：已知 id 与展示名，无需再搜索）。
  */
-function preset(id: number, label: string) {
+function preset(id: string, label: string) {
   if (!options.value.some((o) => o.value === id)) {
     options.value = [{ label, value: id }, ...options.value]
   }

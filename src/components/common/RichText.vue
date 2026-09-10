@@ -1,6 +1,7 @@
 <template>
   <!-- 富文本安全渲染：所有 v-html 都应改用它，统一过 DOMPurify 净化，防 XSS。
-       $...$ / $$...$$ 等数学公式由 KaTeX 自动渲染（auto-render）。 -->
+       $...$ / $$...$$ 等数学公式由 KaTeX 自动渲染（auto-render）。
+       format=markdown（默认）时先经 markdown-it 编译（代码块 hljs 高亮），HTML 内容透传（html:true）后同样净化。 -->
   <div ref="root" class="markdown-body" v-html="sanitized" />
 </template>
 
@@ -9,28 +10,20 @@ import { computed, ref, watch, nextTick } from 'vue'
 import DOMPurify from 'dompurify'
 import renderMathInElement from 'katex/dist/contrib/auto-render.mjs'
 import 'katex/dist/katex.min.css'
+import 'highlight.js/styles/github.css'
+import { renderRichTextContent, type ContentFormat } from '@/utils/richText'
 
 const props = withDefaults(
   defineProps<{
-    /** 原始 HTML / Markdown 富文本内容 */
+    /** 原始 HTML / Markdown / 纯文本富文本内容 */
     content?: string | null
+    /** 内容格式：markdown（默认，兼容纯文本与内嵌 HTML）/ html（原样净化）/ plain（纯文本转义） */
+    format?: ContentFormat
   }>(),
-  { content: '' }
+  { content: '', format: 'markdown' }
 )
 
-/** 存量纯文本内容（如旧版纯文本答案）无换行渲染，按纯文本转义并保留换行。
- *  外层包 <p>：DOMPurify 对"裸文本+标签"混合串会丢弃首个标签前的文本（jsdom/浏览器解析差异） */
-const normalized = computed(() => {
-  const raw = props.content ?? ''
-  if (!raw) return ''
-  const hasTag = /<[a-z][^>]*>/i.test(raw)
-  if (hasTag) return raw
-  return `<p>${raw
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/\n/g, '<br>')}</p>`
-})
+const normalized = computed(() => renderRichTextContent(props.content ?? '', props.format))
 
 const sanitized = computed(() =>
   DOMPurify.sanitize(normalized.value, {
@@ -64,3 +57,11 @@ function renderMath() {
 watch(sanitized, () => nextTick(renderMath))
 watch(root, () => nextTick(renderMath))
 </script>
+
+<style>
+/* hljs github-light 主题自带 .hljs 背景（#fff），覆盖为透明，与容器背景保持一致 */
+.markdown-body pre code.hljs {
+  background: transparent;
+  padding: 0;
+}
+</style>

@@ -170,13 +170,13 @@ const { confirmDanger } = useConfirm()
 
 const loading = ref(false)
 const exporting = ref(false)
-const filterBankId = ref<number | null>(null)
-const filterTagId = ref<number | null>(null)
+const filterBankId = ref<string | null>(null)
+const filterTagId = ref<string | null>(null)
 const filterType = ref<QuestionType | null>(null)
 const sortBy = ref<string>('favoritedAt_desc')
 const favList = ref<FavRow[]>([])
-const bankOptions = ref<{ label: string; value: number }[]>([])
-const tagOptions = ref<{ label: string; value: number }[]>([])
+const bankOptions = ref<{ label: string; value: string }[]>([])
+const tagOptions = ref<{ label: string; value: string }[]>([])
 
 const stats = reactive({ total: 0, thisWeekNew: 0, thisMonthPractice: 0 })
 

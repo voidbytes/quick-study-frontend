@@ -23,6 +23,15 @@ export function optionMarker(index: number): string {
 }
 
 /**
+ * 选项按 id 升序排列（题库原序）：快照乱序仅用于作答态防背题，
+ * 反馈/解析态必须回落原序——解析文本按存库字母（id 0=A, 1=B…）书写，
+ * 乱序展示会让「解析说 A」与眼前 A 选项错位。
+ */
+export function sortOptionsById(options: OptionItem[]): OptionItem[] {
+  return [...options].sort((a, b) => a.id - b.id)
+}
+
+/**
  * 解析 options 为 OptionItem[]（宽容三形态：对象数组 / JSON 字符串 / null）。
  * 同时兼容 text（新模型）与 content/value（历史字段名）作为文本来源。
  */

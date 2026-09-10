@@ -42,7 +42,7 @@ export function getCollaborators(bankId: number | string) {
   return request.get<ApiResponse<BankCollaborator[]>>(`/banks/${bankId}/collaborators`)
 }
 
-export function transferBank(id: number | string, targetUserId: number) {
+export function transferBank(id: number | string, targetUserId: string) {
   return request.post<ApiResponse<null>>(`/banks/${id}/transfer`, { targetUserId })
 }
 
@@ -50,22 +50,22 @@ export function updateBank(id: number | string, data: UpdateBankParams) {
   return request.put<ApiResponse<QuestionBank>>(`/banks/${id}`, data)
 }
 
-export function deleteBank(id: number) {
+export function deleteBank(id: string) {
   return request.delete<ApiResponse<null>>(`/banks/${id}`)
 }
 
-export function toggleVisibility(id: number, isPublic: boolean) {
+export function toggleVisibility(id: string, isPublic: boolean) {
   return request.put<ApiResponse<QuestionBank>>(`/banks/${id}/visibility?isPublic=${isPublic}`)
 }
 
-export function transfer(id: number, targetUserId: number) {
+export function transfer(id: string, targetUserId: string) {
   return request.post<ApiResponse<null>>(`/banks/${id}/transfer`, { targetUserId })
 }
 
-export function addCollaborator(bankId: number | string, userId: number) {
+export function addCollaborator(bankId: number | string, userId: string) {
   return request.post<ApiResponse<null>>(`/banks/${bankId}/collaborators`, { userId })
 }
 
-export function removeCollaborator(bankId: number | string, userId: number) {
+export function removeCollaborator(bankId: number | string, userId: string) {
   return request.delete<ApiResponse<null>>(`/banks/${bankId}/collaborators/${userId}`)
 }

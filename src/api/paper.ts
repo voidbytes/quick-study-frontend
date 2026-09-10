@@ -12,8 +12,8 @@ export interface CreatePaperParams {
   attemptType?: string
   multipleChoicePartial?: string
   fillBlankAutoSplit?: boolean
-  questionItems: { questionId: number; score: number }[]
-  graderId?: number
+  questionItems: { questionId: string; score: number }[]
+  graderId?: string
   shareType: string
   password?: string
   cheatEnabled?: boolean
@@ -31,7 +31,7 @@ export interface UpdatePaperParams {
   attemptType?: string
   multipleChoicePartial?: string
   fillBlankAutoSplit?: boolean
-  graderId?: number
+  graderId?: string
   shareType?: string
   password?: string
   cheatEnabled?: boolean
@@ -94,7 +94,7 @@ export function publish(id: string | number) {
   return request.post<ApiResponse<ExamPaper>>(`/papers/${id}/publish`)
 }
 
-export function updateGrader(id: string | number, graderId: number) {
+export function updateGrader(id: string | number, graderId: string) {
   return request.put<ApiResponse<null>>(`/papers/${id}/grader`, { graderId })
 }
 

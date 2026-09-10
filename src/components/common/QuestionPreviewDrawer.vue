@@ -76,7 +76,8 @@
  * 传入项缺少答案等字段时（组卷编辑回填场景），组件内部自动拉取题目详情补全。
  */
 export interface PreviewQuestion {
-  id: number
+  /** 题目雪花 id（字符串序列化） */
+  id: string
   type?: string | null
   difficulty?: string | null
   content?: string | null

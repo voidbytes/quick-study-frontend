@@ -4,6 +4,7 @@
       title="错题详情"
       :subtitle="wrongQuestion ? `${wrongQuestion.bankName || '未知题库'} · 错 ${wrongQuestion.errorCount} 次 · 最近做错于 ${formatTime(wrongQuestion.lastWrongTime)}` : ''"
       showBack
+      back-to="/wrongquestions"
     />
 
     <n-spin v-if="!loadError" :show="loading">
@@ -97,7 +98,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useMessage } from 'naive-ui'
 import { getWrongQuestionById } from '@/api/wrongQuestion'
 import type { WrongQuestion, QuestionType, Difficulty, OptionItem } from '@/types'
-import { parseOptionList, parseAnswerIds, answerIdsToLabel, TRUE_FALSE_TRUE_ID } from '@/utils/answer'
+import { parseOptionList, parseAnswerIds, answerIdsToLabel, sortOptionsById, TRUE_FALSE_TRUE_ID } from '@/utils/answer'
 import { QUESTION_TYPE_MAP, DIFFICULTY_MAP } from '@/utils/constants'
 import PageHeader from '@/components/common/PageHeader.vue'
 import RichText from '@/components/common/RichText.vue'
@@ -172,7 +173,9 @@ const showOptions = computed(
   () => snapshot.value?.type === 'SINGLE' || snapshot.value?.type === 'MULTIPLE'
 )
 
-const parsedOptions = computed<OptionItem[]>(() => parseOptionList(snapshot.value?.options))
+// 全页为解析/回顾态：选项按 id 升序（题库原序），展示字母与解析文本按存库字母
+//（id 0=A）书写的引用对齐；快照里的乱序仅作答时有意义
+const parsedOptions = computed<OptionItem[]>(() => sortOptionsById(parseOptionList(snapshot.value?.options)))
 
 /** 判断题答案是否为"正确"（id=0） */
 const isTrueFalseTrue = computed(() => parseAnswerIds(snapshot.value?.answer)[0] === TRUE_FALSE_TRUE_ID)

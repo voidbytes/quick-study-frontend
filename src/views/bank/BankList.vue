@@ -102,7 +102,7 @@
               {{ formatDate(bank.createdAt) }}
             </span>
           </div>
-          <div v-if="authStore.isAdmin || isCreator(bank)" class="flex items-center gap-4 mt-2" @click.stop>
+          <div v-if="authStore.isAdmin" class="flex items-center gap-4 mt-2" @click.stop>
             <a
               v-if="authStore.isAdmin"
               class="text-xs text-primary-500 hover:text-primary-600 font-medium cursor-pointer select-none"
@@ -110,12 +110,15 @@
             >
               {{ bank.isPublic ? '设为私有' : '设为公开' }}
             </a>
-            <a
-              class="text-xs text-primary-500 hover:text-primary-600 font-medium cursor-pointer select-none"
-              @click="handleExport(bank)"
+            <n-dropdown
+              trigger="click"
+              :options="bankExportOptions"
+              @select="(key: string) => handleExport(bank, key)"
             >
-              导出
-            </a>
+              <a class="text-xs text-primary-500 hover:text-primary-600 font-medium cursor-pointer select-none">
+                导出
+              </a>
+            </n-dropdown>
             <a
               v-if="authStore.isAdmin"
               class="text-xs text-error-500 hover:text-error-600 font-medium cursor-pointer select-none"
@@ -154,7 +157,7 @@ import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useMessage } from 'naive-ui'
 import { getBankList, deleteBank, toggleVisibility } from '@/api/bank'
-import { exportBank } from '@/api/importExport'
+import { exportBank, exportBankMarkdown } from '@/api/importExport'
 import { triggerBlobDownload, nowStamp } from '@/utils/download'
 import type { QuestionBank } from '@/types'
 import { useAuthStore } from '@/stores/auth'
@@ -219,11 +222,11 @@ function formatDate(time: string | undefined) {
   return time ? dayjs(time).format('YYYY-MM-DD') : '-'
 }
 
-function isCreator(bank: BankItem): boolean {
-  const me = authStore.userInfo?.id
-  if (!me || bank.creatorId === undefined || bank.creatorId === null) return false
-  return String(bank.creatorId) === String(me)
-}
+/** 行内「导出」下拉项：JSON 题库导出 / Markdown 导出 */
+const bankExportOptions = [
+  { label: '导出 JSON', key: 'json' },
+  { label: '导出 Markdown', key: 'markdown' }
+]
 
 function handleBankImported() {
   fetchList()
@@ -290,11 +293,12 @@ function handleDelete(row: BankItem) {
   })
 }
 
-async function handleExport(row: BankItem) {
+async function handleExport(row: BankItem, format: string) {
   try {
     message.info('正在生成导出文件…')
-    const blob = await exportBank(row.id)
-    triggerBlobDownload(blob, `${row.name || '题库'}_${nowStamp()}.json`)
+    const isMd = format === 'markdown'
+    const blob = isMd ? await exportBankMarkdown(row.id) : await exportBank(row.id)
+    triggerBlobDownload(blob, `${row.name || '题库'}_${nowStamp()}.${isMd ? 'md' : 'json'}`)
     message.success('导出成功')
   } catch (err: any) {
     message.error(err?.message || '导出失败')

@@ -1,5 +1,8 @@
 <template>
   <div class="stat-card">
+    <div v-if="$slots.actions" class="stat-actions">
+      <slot name="actions" />
+    </div>
     <div class="stat-label">{{ label }}</div>
     <div class="stat-value" :style="{ color: valueColor }">
       <slot>{{ value }}</slot>
@@ -35,6 +38,7 @@ const valueColor = computed(() => TONE_COLORS[props.tone] || TONE_COLORS.default
 
 <style scoped>
 .stat-card {
+  position: relative;
   background: var(--bg-card);
   border: 1px solid var(--border-default);
   border-radius: var(--radius-lg);
@@ -52,6 +56,11 @@ const valueColor = computed(() => TONE_COLORS[props.tone] || TONE_COLORS.default
   font-size: var(--text-3xl);
   font-weight: var(--font-bold);
   line-height: 1.2;
+}
+.stat-actions {
+  position: absolute;
+  top: var(--space-4);
+  right: var(--space-4);
 }
 .stat-suffix {
   font-size: var(--text-sm);

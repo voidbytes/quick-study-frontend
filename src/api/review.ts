@@ -12,7 +12,7 @@ export interface ReviewActionRequest {
 }
 
 export interface ReviewResponse {
-  id: number
+  id: string
   bankName: string
   submitterName: string
   status: string
@@ -31,14 +31,14 @@ export function getReviewList(params?: ReviewListParams) {
   return request.get<ApiResponse<PageResult<ReviewResponse>>>('/reviews', { params })
 }
 
-export function getReviewDetail(id: number) {
+export function getReviewDetail(id: string) {
   return request.get<ApiResponse<ReviewResponse>>(`/reviews/${id}`)
 }
 
-export function approveReview(id: number, data?: ReviewActionRequest) {
+export function approveReview(id: string, data?: ReviewActionRequest) {
   return request.post<ApiResponse<null>>(`/reviews/${id}/approve`, data)
 }
 
-export function rejectReview(id: number, data?: ReviewActionRequest) {
+export function rejectReview(id: string, data?: ReviewActionRequest) {
   return request.post<ApiResponse<null>>(`/reviews/${id}/reject`, data)
 }

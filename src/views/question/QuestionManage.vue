@@ -1,8 +1,9 @@
 <template>
   <div>
     <!-- 页头 -->
-    <PageHeader title="题目" subtitle="跨题库管理所有题目，支持按题型、难度、标签筛选">
+    <PageHeader title="题目管理" subtitle="跨题库管理所有题目（批量导入/导出、删除），浏览与筛选请用题目页">
       <template #actions>
+        <n-button @click="router.push('/questions')">返回浏览</n-button>
         <n-button v-if="authStore.isAdmin" @click="showTagManage = true">标签管理</n-button>
         <n-button v-if="authStore.isAdmin" type="primary" disabled @click="handleCreateHint">
           创建题目
@@ -63,7 +64,7 @@
         />
         <div class="flex items-center gap-2 ml-auto">
           <n-button
-            v-if="authStore.isAuthenticated"
+            v-if="authStore.isAdmin"
             :disabled="exporting"
             @click="handleExport"
           >
@@ -76,8 +77,8 @@
       </div>
     </div>
 
-    <!-- 批量操作条 -->
-    <div v-if="questionList.length > 0" class="flex items-center gap-2 mb-3 px-1">
+    <!-- 批量操作条（管理员可见：勾选是为导出服务，普通用户不展示） -->
+    <div v-if="authStore.isAdmin && questionList.length > 0" class="flex items-center gap-2 mb-3 px-1">
       <n-checkbox :checked="allCurrentPageSelected" @update:checked="toggleSelectAll">全选本页</n-checkbox>
       <span class="text-xs text-neutral-400">已选 {{ selectedIds.length }} 题</span>
       <span v-if="selectedIds.length === 0" class="text-xs text-neutral-400">
@@ -105,6 +106,7 @@
       >
         <!-- 多选 -->
         <n-checkbox
+          v-if="authStore.isAdmin"
           :checked="selectedIds.includes(q.id)"
           class="mt-1 flex-shrink-0"
           @update:checked="(v: boolean) => toggleSelect(q.id, v)"
@@ -230,7 +232,7 @@ const tagOptions = ref<SelectOption[]>([])
 const showTagManage = ref(false)
 
 /** 勾选（仅当前页范围） */
-const selectedIds = ref<number[]>([])
+const selectedIds = ref<string[]>([])
 const exporting = ref(false)
 const showImportDialog = ref(false)
 const allCurrentPageSelected = computed(() => {
@@ -238,11 +240,12 @@ const allCurrentPageSelected = computed(() => {
 })
 
 const filter = reactive({
-  bankId: null as number | null,
+  bankId: null as string | null,
   type: null as QuestionType | null,
   difficulty: null as Difficulty | null,
   status: null as string | null,
-  tagIds: [] as number[],
+  // 标签 id 雪花 long 超 2^53，字符串承载（n-select value 与后端 Jackson 序列化一致）
+  tagIds: [] as string[],
   keyword: ''
 })
 
@@ -393,7 +396,7 @@ function handlePageSizeChange(pageSize: number) {
   fetchList()
 }
 
-function toggleSelect(id: number, checked: boolean) {
+function toggleSelect(id: string, checked: boolean) {
   if (checked) {
     if (!selectedIds.value.includes(id)) selectedIds.value.push(id)
   } else {

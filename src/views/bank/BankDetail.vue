@@ -3,9 +3,16 @@
     <!-- 页头：返回 + 题库名称 + 管理员操作 -->
     <PageHeader :title="bank?.name || '题库详情'" :subtitle="bank?.description || undefined" showBack>
       <template #actions>
-        <n-button v-if="authStore.isAuthenticated && bank" size="small" :loading="exporting" @click="handleExportBank">
-          导出题库
-        </n-button>
+        <n-dropdown
+          v-if="authStore.isAdmin && bank"
+          trigger="click"
+          :options="bankExportOptions"
+          @select="handleBankExportSelect"
+        >
+          <n-button size="small" :loading="exporting || exportingMarkdown">
+            导出
+          </n-button>
+        </n-dropdown>
         <n-button v-if="authStore.isAdmin && bank" size="small" @click="handleEdit">编辑</n-button>
         <n-button v-if="authStore.isAdmin && bank" size="small" @click="showTransfer = true">转让</n-button>
       </template>
@@ -41,9 +48,8 @@
           <StatCard label="题目数" :value="bank.questionCount ?? 0" tone="brand" />
           <StatCard label="练习次数" :value="bank.practiceCount ?? 0" />
           <!-- 协作人：创建者/管理员可查看与管理；其他用户不展示该卡（接口无权访问） -->
-          <div v-if="canManageCollaborators" class="stat-card relative">
-            <div class="flex items-start justify-between">
-              <div class="stat-label">协作人</div>
+          <StatCard v-if="canManageCollaborators" label="协作人" :value="collaborators.length">
+            <template #actions>
               <n-button
                 size="tiny"
                 type="primary"
@@ -52,9 +58,8 @@
               >
                 管理
               </n-button>
-            </div>
-            <div class="stat-value">{{ collaborators.length }}</div>
-          </div>
+            </template>
+          </StatCard>
           <StatCard label="创建时间" :value="formatDate(bank.createdAt)" />
         </div>
 
@@ -123,6 +128,30 @@
       </n-form>
     </n-modal>
 
+    <!-- 导出 Markdown 弹窗（管理员） -->
+    <n-modal v-model:show="showMarkdownExportDialog" preset="card" title="导出 Markdown" style="width: 420px">
+      <n-form label-placement="top">
+        <n-form-item label="包含答案与解析">
+          <n-switch v-model:value="markdownExportForm.withAnswer">
+            <template #checked>含答案</template>
+            <template #unchecked>练习题版（无答案）</template>
+          </n-switch>
+        </n-form-item>
+        <n-form-item label="题型筛选（可多选，留空=全部）">
+          <n-select
+            v-model:value="markdownExportForm.typeFilter"
+            :options="markdownTypeOptions"
+            multiple
+            clearable
+            placeholder="不选=全部题型"
+          />
+        </n-form-item>
+        <n-button type="primary" block :loading="exportingMarkdown" @click="handleExportMarkdown">
+          导出
+        </n-button>
+      </n-form>
+    </n-modal>
+
     <!-- 编辑题库弹窗 -->
     <n-modal v-model:show="showEditDialog" preset="card" title="编辑题库" style="width: 480px">
       <n-form ref="editFormRef" :model="editForm" :rules="editRules" label-placement="top">
@@ -153,8 +182,9 @@ import { useRoute, useRouter } from 'vue-router'
 import { useMessage, type FormRules, type FormInst } from 'naive-ui'
 import type { QuestionBank, BankCollaborator } from '@/types'
 import { getBankDetail, getCollaborators, addCollaborator, removeCollaborator, transferBank, updateBank } from '@/api/bank'
-import { exportBank } from '@/api/importExport'
+import { exportBank, exportBankMarkdown, type MarkdownExportParams } from '@/api/importExport'
 import { triggerBlobDownload, nowStamp } from '@/utils/download'
+import { QUESTION_TYPE_OPTIONS } from '@/utils/constants'
 import { useAuthStore } from '@/stores/auth'
 import PageHeader from '@/components/common/PageHeader.vue'
 import StatCard from '@/components/common/StatCard.vue'
@@ -188,6 +218,25 @@ const canManageCollaborators = computed(() => {
   return uid != null && bank.value?.creatorId === uid
 })
 const exporting = ref(false)
+
+/** 页头「导出」下拉项：JSON 题库导出 / Markdown 导出 */
+const bankExportOptions = [
+  { label: '导出题库（JSON）', key: 'json' },
+  { label: '导出题库（Markdown）', key: 'markdown' }
+]
+
+function handleBankExportSelect(key: string) {
+  if (key === 'json') handleExportBank()
+  else showMarkdownExportDialog.value = true
+}
+
+const showMarkdownExportDialog = ref(false)
+const exportingMarkdown = ref(false)
+const markdownExportForm = reactive<MarkdownExportParams>({
+  withAnswer: true,
+  typeFilter: []
+})
+const markdownTypeOptions = QUESTION_TYPE_OPTIONS.map((o) => ({ label: o.label, value: o.value }))
 
 const showTransfer = ref(false)
 const transferUserId = ref('')
@@ -266,6 +315,10 @@ function openCollaboratorManager() {
 }
 
 async function handleExportBank() {
+  if (!bank.value?.questionCount) {
+    message.warning('题库暂无题目，无需导出')
+    return
+  }
   exporting.value = true
   try {
     const blob = await exportBank(bankId)
@@ -278,6 +331,28 @@ async function handleExportBank() {
   }
 }
 
+async function handleExportMarkdown() {
+  if (!bank.value?.questionCount) {
+    message.warning('题库暂无题目，无需导出')
+    return
+  }
+  exportingMarkdown.value = true
+  try {
+    const params: MarkdownExportParams = {
+      withAnswer: markdownExportForm.withAnswer,
+      typeFilter: markdownExportForm.typeFilter?.length ? markdownExportForm.typeFilter : undefined
+    }
+    const blob = await exportBankMarkdown(bankId, params)
+    triggerBlobDownload(blob, `${bank.value?.name || '题库'}_${nowStamp()}.md`)
+    message.success('导出成功')
+    showMarkdownExportDialog.value = false
+  } catch (err: any) {
+    message.error(err?.message || '导出失败')
+  } finally {
+    exportingMarkdown.value = false
+  }
+}
+
 async function handleTransfer() {
   if (!transferUserId.value) {
     message.warning('请输入目标用户ID')
@@ -285,7 +360,7 @@ async function handleTransfer() {
   }
   transferLoading.value = true
   try {
-    await transferBank(bankId, Number(transferUserId.value))
+    await transferBank(bankId, transferUserId.value)
     message.success('转让成功')
     showTransfer.value = false
   } catch {
@@ -303,7 +378,7 @@ async function handleAddCollaborator() {
   addColLoading.value = true
   try {
     // 当前 addCollaborator API 仅接收 userId，角色选择不再随请求提交
-    await addCollaborator(bankId, Number(newCollaboratorUserId.value))
+    await addCollaborator(bankId, newCollaboratorUserId.value)
     message.success('添加成功')
     newCollaboratorUserId.value = ''
     fetchCollaborators()
@@ -314,7 +389,7 @@ async function handleAddCollaborator() {
   }
 }
 
-async function handleRemoveCollaborator(userId: number) {
+async function handleRemoveCollaborator(userId: string) {
   try {
     await removeCollaborator(bankId, userId)
     message.success('移除成功')

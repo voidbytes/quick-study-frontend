@@ -383,7 +383,7 @@ const basicForm = reactive({
   endTime: null as number | null,
   attemptLimit: null as number | null,
   passPercent: 60 as number | null,
-  graderId: null as number | null,
+  graderId: null as string | null,
   shareType: 'PRIVATE',
   password: '',
   cheatEnabled: false
@@ -407,8 +407,8 @@ const shareTypeLabels: Record<string, string> = {
 
 // ===== 选题（第二步）=====
 /** 题库筛选哨兵值：0 = 全部题库（我可见的公开/官方/自己的题库） */
-const ALL_BANKS = 0
-const filterBankId = ref<number>(ALL_BANKS)
+const ALL_BANKS = '0'
+const filterBankId = ref<string>(ALL_BANKS)
 const filterType = ref<QuestionType | null>(null)
 const filterDifficulty = ref<Difficulty | null>(null)
 const searchKeyword = ref('')
@@ -419,7 +419,7 @@ const pagination = reactive({ page: 1, pageSize: 20, itemCount: 0 })
 interface SelectedQuestion extends PreviewQuestion {
   score?: number
 }
-const selectedMap = ref(new Map<number, SelectedQuestion>())
+const selectedMap = ref(new Map<string, SelectedQuestion>())
 const selectedList = computed(() => Array.from(selectedMap.value.values()))
 const selectedCount = computed(() => selectedMap.value.size)
 
@@ -432,7 +432,7 @@ const previewQuestion = ref<PreviewQuestion | null>(null)
 const typeOptions = QUESTION_TYPE_OPTIONS
 const difficultyOptions = DIFFICULTY_OPTIONS
 
-const bankOptions = ref<{ label: string; value: number }[]>([])
+const bankOptions = ref<{ label: string; value: string }[]>([])
 const bankFilterOptions = computed(() => [
   { label: '全部题库', value: ALL_BANKS },
   ...bankOptions.value
@@ -540,7 +540,7 @@ function handlePageSizeChange(size: number) {
   fetchCandidates()
 }
 
-function isSelected(id: number): boolean {
+function isSelected(id: string): boolean {
   return selectedMap.value.has(id)
 }
 
@@ -570,7 +570,7 @@ function toggleSelectPage(checked: boolean) {
   }
 }
 
-function removeSelected(id: number) {
+function removeSelected(id: string) {
   selectedMap.value.delete(id)
 }
 
