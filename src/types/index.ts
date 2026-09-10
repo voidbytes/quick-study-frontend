@@ -187,6 +187,10 @@ export interface ExamPaper {
   endTime?: string | null
   attemptType?: string
   attemptLimit?: number | null
+  /** 多选题漏选给分策略（HALF/ZERO） */
+  multipleChoicePartial?: string
+  /** 填空题部分命中给分策略（ALL_OR_NOTHING=全对才给分 / PER_BLANK=按空等分累加，默认） */
+  fillBlankPartial?: string
   cheatEnabled?: boolean
   shareType: PaperShareType
   password?: string

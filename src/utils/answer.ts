@@ -13,6 +13,165 @@ import type { OptionItem } from '@/types'
 
 export type { OptionItem } from '@/types'
 
+// ==================== 填空题多空（占位符【空N】+ 可接受答案组） ====================
+// 契约：quick-study/docs/计划/填空题多空扩展方案.md §3.1/§3.2/§3.3（与后端 FillAnswerUtil 同规则）。
+// 存储/编辑层用全角占位符【空N】（编号 1..N 连续、≤10），\【空N】 为转义字面量不拆空位；
+// answer 为 JSON 嵌套数组（每空一组可接受答案，任一命中即对，空数组=开放空）；
+// userAnswer 提交为 JSON 字符串数组（逐位对齐空位，未填存 ""）。
+
+/** 单题空位数上限（与后端 FillAnswerUtil.MAX_BLANKS 一致） */
+export const FILL_MAX_BLANKS = 10
+
+/** 题干空位（不含转义字面量）：编号 + 该空前的文本片段 */
+export interface FillBlankSegment {
+  /** 空位编号（题干中【空N】的 N，从 1 起） */
+  no: number
+  /** 紧邻该空之前的文本片段（首空前的题干开头等） */
+  text: string
+}
+
+export interface FillContentParts {
+  /** 依次交替的文本片段：parts[i] 与 blank i 相邻，最后一个元素为末空后的剩余文本 */
+  parts: string[]
+  /** 按出现顺序的空位编号（1..N） */
+  blanks: FillBlankSegment[]
+}
+
+/** 题干空位解析正则：前面无 \ 的【空N】才计入空位（\【空N】是转义字面量） */
+const FILL_BLANK_RE = /(?<!\\)【空(\d+)】/g
+
+/**
+ * 拆分题干为文本片段 + 空位序列（跳过 \【空N】 转义；转义符 \ 去除后保留原文）。
+ * 纯函数，作答态行内渲染与展示态横线替换共用同一事实源。
+ */
+export function parseFillBlanks(content: string | null | undefined): FillContentParts {
+  const parts: string[] = []
+  const blanks: FillBlankSegment[] = []
+  if (!content) return { parts: [''], blanks }
+  let last = 0
+  let m: RegExpExecArray | null
+  FILL_BLANK_RE.lastIndex = 0
+  while ((m = FILL_BLANK_RE.exec(content)) !== null) {
+    parts.push(unescapeFillLiteral(content.slice(last, m.index)))
+    blanks.push({ no: Number(m[1]), text: parts[parts.length - 1] })
+    last = m.index + m[0].length
+  }
+  parts.push(unescapeFillLiteral(content.slice(last)))
+  return { parts, blanks }
+}
+
+/** 去转义：\【空N】→ 字面量【空N】（仅展示用；切片中孤立的尾部 \ 原样保留） */
+function unescapeFillLiteral(text: string): string {
+  return text.replace(/\\(?=【空\d+】)/g, '')
+}
+
+/**
+ * 纯展示态渲染：【空N】替换为行内横线段。
+ * 横线用 <u>　　</u>（全角空格撑宽 + HTML 下划线）而非 ____ 文本：
+ * markdown-it 中单独成行的 ____ 会被误解析为 hr（实测验证），<u> 不会；
+ * html:true 管线透传 <u>，DOMPurify USE_PROFILES html 放行，无 XSS 面。
+ */
+export function renderFillContent(content: string | null | undefined): string {
+  if (!content) return ''
+  return parseFillBlanks(content).parts
+    .reduce((acc, part, i) => (i === 0 ? part : `${acc}<u>　　</u>${part}`), '')
+}
+
+/**
+ * 归一化 answer 为嵌套数组形态（三形态容错，与后端 FillAnswerUtil.parseAnswer 同规则）：
+ * - 嵌套数组（现状）→ 原样；
+ * - 单层数组（旧格式）→ 每空单答案 [["a"],["b"]]；
+ * - 纯文本 → 单空单答案 [["text"]]；null/非法 JSON → []（无空）。
+ */
+export function parseFillAnswer(answer: string | null | undefined): string[][] {
+  if (!answer) return []
+  const trimmed = answer.trim()
+  if (!trimmed.startsWith('[')) return trimmed ? [[trimmed]] : []
+  let parsed: unknown
+  try {
+    parsed = JSON.parse(trimmed)
+  } catch {
+    return [[trimmed]]
+  }
+  if (!Array.isArray(parsed)) return [[trimmed]]
+  if (parsed.length === 0) return []
+  // 单层数组（元素为字符串）→ 每空单答案；嵌套 → 原样（组内逐项取字符串）
+  if (parsed.every((item) => typeof item === 'string')) {
+    return (parsed as string[]).map((s) => [s])
+  }
+  return parsed.map((group) =>
+    Array.isArray(group)
+      ? group.filter((s): s is string => typeof s === 'string')
+      : typeof group === 'string'
+        ? [group]
+        : []
+  )
+}
+
+/**
+ * 答案组展示：① color/Color ② #fff ③（开放）。
+ * 组内用 / 连接（任一命中即对），空数组=开放空；answer 为空返回 ''（无答案）。
+ */
+export function formatFillAnswer(answer: string | null | undefined): string {
+  const groups = parseFillAnswer(answer)
+  if (!groups.length) return ''
+  return groups
+    .map((g, i) => `${'①②③④⑤⑥⑦⑧⑨⑩'[i] ?? `${i + 1}.`} ${g.length ? g.join('/') : '（开放）'}`)
+    .join(' ')
+}
+
+/**
+ * 匹配归一化（与后端 FillAnswerUtil.normalizeForMatch 同规则，仅前端本地预判展示用）：
+ * 全角空格→半角 → trim → 连续空白折叠为单空格；大小写不动（敏感是既定决策）。
+ */
+export function normalizeForMatch(s: string): string {
+  return s.replace(/\u3000/g, ' ').trim().replace(/\s+/g, ' ')
+}
+
+/** 组内任一答案命中（精确或空白归一化后相等）；空组=开放空，不在此裁决，恒 false */
+export function matchFillBlank(acceptedGroup: string[], userAnswer: string): boolean {
+  if (!acceptedGroup.length) return false
+  const input = normalizeForMatch(userAnswer)
+  return acceptedGroup.some((a) => a === userAnswer || normalizeForMatch(a) === input)
+}
+
+/**
+ * 逐空判分（本地预览用，权威判分在后端）：hit[i]=true 确定性命中；
+ * false=未命中或开放空。user 不足位数按 ''（未作答）计。
+ */
+export function gradeFillBlanks(correct: string[][], user: string[]): boolean[] {
+  return correct.map((group, i) => matchFillBlank(group, user[i] ?? ''))
+}
+
+/**
+ * 保存前结构校验（与后端 FillAnswerUtil.validate 同门禁，给即时反馈）：
+ * 编号必须 1..N 连续、N≤10、答案组数=空位数。返回首个错误的中文原因，null=通过。
+ */
+export function validateFillQuestion(
+  content: string | null | undefined,
+  answerGroups: string[][]
+): string | null {
+  const nos = parseFillBlanks(content).blanks.map((b) => b.no)
+  if (nos.length === 0) return '题干中未插入空位（【空N】）'
+  if (nos.length > FILL_MAX_BLANKS) return `空位数不能超过 ${FILL_MAX_BLANKS} 个`
+  for (let i = 0; i < nos.length; i++) {
+    if (nos[i] !== i + 1) {
+      return `空位编号必须从 1 起连续，当前为 ${nos.join('、')}`
+    }
+  }
+  if (answerGroups.length !== nos.length) {
+    return `空位数为 ${nos.length}，答案组为 ${answerGroups.length} 组，数量不一致`
+  }
+  return null
+}
+
+/** 序列化嵌套答案组 → JSON 字符串（建题/改题统一物化为嵌套数组落库） */
+export function formatFillAnswerJson(groups: string[][]): string {
+  return JSON.stringify(groups)
+}
+
+// ==================== 选项答案 id 模型 ====================
+
 /** 判断题固定选项 id：0=正确 / 1=错误（与后端 AnswerIdUtil 常量一致） */
 export const TRUE_FALSE_TRUE_ID = 0
 export const TRUE_FALSE_FALSE_ID = 1

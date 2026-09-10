@@ -47,11 +47,11 @@
         </div>
 
         <div class="px-6 py-6 space-y-6">
-          <!-- 题干 -->
+          <!-- 题干（填空题：占位符渲染为行内横线段） -->
           <section>
             <h3 class="text-sm font-medium text-neutral-500 mb-2">题干</h3>
             <div class="bg-neutral-50 border border-neutral-200 rounded-lg p-4">
-              <RichText :content="question.content" />
+              <RichText :content="stemContent" />
             </div>
           </section>
 
@@ -95,8 +95,19 @@
             </div>
           </section>
 
-          <!-- 正确答案（非判断题） -->
-          <section v-if="question.answer && question.type !== 'TRUE_FALSE'">
+          <!-- 填空题答案：答案组格式（① color/Color ② #fff ③（开放）） -->
+          <section v-else-if="question.type === 'FILL_BLANK' && question.answer">
+            <h3 class="text-sm font-medium text-neutral-500 mb-2">正确答案</h3>
+            <div class="bg-success-50 border border-success-100 rounded-lg p-4 font-medium">
+              {{ fillAnswerLabel }}
+            </div>
+            <div class="text-xs text-neutral-400 mt-1.5">
+              每空任一答案命中即该空正确；（开放）= 开放空，作答交 AI 辅助评估。
+            </div>
+          </section>
+
+          <!-- 正确答案（其他非判断题） -->
+          <section v-else-if="question.answer">
             <h3 class="text-sm font-medium text-neutral-500 mb-2">正确答案</h3>
             <div class="bg-success-50 border border-success-100 rounded-lg p-4">
               <RichText :content="answerLabel" />
@@ -230,7 +241,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import type { QuestionType, Difficulty, Question, OptionItem } from '@/types'
 import { getQuestionDetail } from '@/api/question'
-import { parseOptionList, parseAnswerIds, idToIndex, TRUE_FALSE_TRUE_ID } from '@/utils/answer'
+import { parseOptionList, parseAnswerIds, idToIndex, formatFillAnswer, renderFillContent, TRUE_FALSE_TRUE_ID } from '@/utils/answer'
 import { getNote, saveNote, deleteNote, NOTE_IMAGE_PATTERN } from '@/api/note'
 import { useAuthStore } from '@/stores/auth'
 import { QUESTION_TYPE_MAP, DIFFICULTY_MAP, QUESTION_STATUS_OPTIONS } from '@/utils/constants'
@@ -411,6 +422,20 @@ const answerLabel = computed(() => {
       .join('；')
   }
   return answer
+})
+
+/** 填空题干：【空N】渲染为行内横线段（进 markdown-it 前替换） */
+const stemContent = computed(() => {
+  const q = question.value
+  if (!q) return ''
+  return q.type === 'FILL_BLANK' ? renderFillContent(q.content) : q.content
+})
+
+/** 填空答案组展示：① color/Color ② #fff ③（开放）（三形态容错） */
+const fillAnswerLabel = computed(() => {
+  const answer = question.value?.answer
+  if (!answer) return ''
+  return formatFillAnswer(answer) || answer
 })
 
 function formatTime(time?: string) {

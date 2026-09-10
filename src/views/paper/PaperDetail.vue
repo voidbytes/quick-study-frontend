@@ -40,6 +40,12 @@
             {{ attemptLimitLabel(paper?.attemptType, paper?.attemptLimit) }}
             <n-tag v-if="paper?.cheatEnabled" size="tiny" type="warning" class="ml-2">防作弊开启</n-tag>
           </n-descriptions-item>
+          <n-descriptions-item label="多选漏选给分">
+            {{ multiplePartialLabel(paper?.multipleChoicePartial) }}
+          </n-descriptions-item>
+          <n-descriptions-item label="填空部分命中">
+            {{ fillPartialLabel(paper?.fillBlankPartial) }}
+          </n-descriptions-item>
         </n-descriptions>
       </div>
 
@@ -177,6 +183,18 @@ const shareTypeLabels: Record<string, string> = {
 
 function shareTypeLabel(shareType?: string): string {
   return shareType ? shareTypeLabels[shareType] || shareType : '-'
+}
+
+/** 多选漏选给分策略展示（历史数据/缺省回退 HALF，与后端默认一致） */
+function multiplePartialLabel(strategy?: string | null): string {
+  if (!strategy) return '漏选给一半分（HALF）'
+  return strategy === 'ZERO' ? '漏选不给分（ZERO）' : '漏选给一半分（HALF）'
+}
+
+/** 填空部分命中策略展示（未知值/缺省回退 PER_BLANK，与后端 FillAnswerUtil.defaultStrategy 一致） */
+function fillPartialLabel(strategy?: string | null): string {
+  if (!strategy) return '按空给分（命中空累加）'
+  return strategy === 'ALL_OR_NOTHING' ? '全对才给分' : '按空给分（命中空累加）'
 }
 
 function attemptLimitLabel(attemptType?: string, attemptLimit?: number | null): string {

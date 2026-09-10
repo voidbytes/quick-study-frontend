@@ -52,7 +52,7 @@
             </div>
 
             <div class="px-5 py-4 space-y-4">
-              <!-- 题干 -->
+              <!-- 题干（填空题：占位符渲染为行内横线段） -->
               <section>
                 <h3 class="text-sm font-medium text-neutral-500 mb-2">题干</h3>
                 <div class="bg-neutral-50 border border-neutral-200 rounded-lg p-4">
@@ -60,8 +60,47 @@
                 </div>
               </section>
 
-              <!-- 用户答案 / 参考答案 -->
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <!-- 填空题：逐空对照表（参考组 / 学生作答 / 开放标注） -->
+              <section v-if="isFillBlank(answer)">
+                <h3 class="text-sm font-medium text-neutral-500 mb-2">逐空对照</h3>
+                <div class="overflow-x-auto border border-neutral-200 rounded-lg">
+                  <table class="w-full text-sm">
+                    <thead>
+                      <tr class="bg-neutral-50 text-neutral-500 text-xs">
+                        <th class="px-3 py-2 text-left font-medium w-16">空位</th>
+                        <th class="px-3 py-2 text-left font-medium">参考答案</th>
+                        <th class="px-3 py-2 text-left font-medium">学生作答</th>
+                        <th class="px-3 py-2 text-left font-medium w-24">状态</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr
+                        v-for="row in fillGradingRows(answer)"
+                        :key="row.no"
+                        class="border-t border-neutral-100"
+                      >
+                        <td class="px-3 py-2 font-medium text-neutral-700">空{{ row.no }}</td>
+                        <td class="px-3 py-2 text-success-700">
+                          {{ row.correct }}
+                          <span v-if="row.open" class="ml-1 text-xs text-warning-600">开放空</span>
+                        </td>
+                        <td class="px-3 py-2 text-neutral-900">{{ row.user || '未作答' }}</td>
+                        <td class="px-3 py-2">
+                          <n-tag v-if="row.hit" size="small" round type="success">已命中</n-tag>
+                          <n-tag v-else-if="row.open" size="small" round type="warning">待评估</n-tag>
+                          <n-tag v-else size="small" round type="error">未命中</n-tag>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                <div class="text-xs text-neutral-400 mt-1.5">
+                  AI 建议的逐空理由见下方「建议理由」；命中空已按等分预锁分数，终审可整体改判。
+                </div>
+              </section>
+
+              <!-- 用户答案 / 参考答案（非填空题） -->
+              <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <section>
                   <h3 class="text-sm font-medium text-neutral-500 mb-2">用户答案</h3>
                   <div class="bg-neutral-50 border border-neutral-200 rounded-lg p-4 min-h-[56px]">
@@ -189,6 +228,7 @@ import { PersonOutline, DocumentTextOutline } from '@vicons/ionicons5'
 import { getGradingSession, saveScore, completeGrading, aiSuggest, keywordSuggest } from '@/api/grading'
 import type { GradingAnswerDetail, GradingSessionDetail } from '@/api/grading'
 import { QUESTION_TYPE_MAP } from '@/utils/constants'
+import { parseFillAnswer, parseFillBlanks, gradeFillBlanks } from '@/utils/answer'
 import type { QuestionType } from '@/types'
 import PageHeader from '@/components/common/PageHeader.vue'
 import RichText from '@/components/common/RichText.vue'
@@ -269,6 +309,58 @@ function questionContent(answer: GradingAnswerDetail): string {
     // 非 JSON，走原样
   }
   return raw
+}
+
+// ==================== 填空题逐空对照 ====================
+
+function isFillBlank(answer: GradingAnswerDetail): boolean {
+  return answer.type === 'FILL_BLANK'
+}
+
+interface FillGradingRow {
+  no: number
+  correct: string
+  user: string
+  hit: boolean
+  open: boolean
+}
+
+/**
+ * 批改逐空行：参考组（/ 连接）/ 学生作答 / 确定性命中状态。
+ * 命中=确定性匹配通过；未命中与开放空待 AI 建议/批改人终审改判。
+ */
+function fillGradingRows(answer: GradingAnswerDetail): FillGradingRow[] {
+  const blankCount = parseFillBlanks(questionContent(answer)).blanks.length
+  const groups = parseFillAnswer(answer.referenceAnswer)
+  const user = parseFillUserAnswerList(answer.userAnswer)
+  const n = Math.max(blankCount, groups.length, user.length)
+  const rows: FillGradingRow[] = []
+  for (let i = 0; i < n; i++) {
+    const group = groups[i] || []
+    const u = user[i] ?? ''
+    const open = group.length === 0
+    const hit = open ? false : gradeFillBlanks([group], [u])[0]
+    rows.push({
+      no: i + 1,
+      correct: group.length ? group.join(' / ') : '（开放）',
+      user: u,
+      hit,
+      open
+    })
+  }
+  return rows
+}
+
+/** userAnswer（JSON 字符串数组）→ string[]；旧格式纯文本按单空容错 */
+function parseFillUserAnswerList(raw: string | null): string[] {
+  if (!raw) return []
+  try {
+    const parsed: unknown = JSON.parse(raw)
+    if (Array.isArray(parsed)) return parsed.map((v) => (typeof v === 'string' ? v : ''))
+  } catch {
+    // 旧格式纯文本按单空
+  }
+  return [raw]
 }
 
 async function fetchDetail() {
