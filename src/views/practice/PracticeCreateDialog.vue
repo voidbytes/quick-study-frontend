@@ -121,7 +121,9 @@ const form = reactive({
 const typeOptions = [
   { label: '单选题', value: 'SINGLE' },
   { label: '多选题', value: 'MULTIPLE' },
-  { label: '判断题', value: 'TRUE_FALSE' }
+  { label: '判断题', value: 'TRUE_FALSE' },
+  { label: '填空题', value: 'FILL_BLANK' },
+  { label: '简答题', value: 'SHORT_ANSWER' }
 ]
 
 async function loadOptions() {

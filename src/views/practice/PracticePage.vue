@@ -163,6 +163,24 @@
               </div>
             </template>
 
+            <!-- 简答题：富媒体作答（富文本 + 图片，与考试侧同款编辑器） -->
+            <template v-else-if="currentQuestion?.type === 'SHORT_ANSWER'">
+              <label class="block text-sm font-medium text-neutral-700 mb-2">
+                请作答（支持文字、图片与公式）
+              </label>
+              <MarkdownEditor
+                :key="`short-${currentIndex}`"
+                :model-value="shortAnswerDraft"
+                mode="edit"
+                height="240px"
+                placeholder="输入文字作答，可通过工具栏插入图片（最多 9 张）"
+                :max-images="9"
+                :disabled-menus="shortDisabledMenus"
+                :disabled="answered"
+                @update:model-value="(v: string) => (shortAnswerDraft = v)"
+              />
+            </template>
+
             <!-- 编程题作答（语言选择 / 运行样例 / 提交判题均在面板内） -->
             <template v-else-if="currentQuestion?.type === 'PROGRAMMING'">
               <ProgrammingAnswerPanel
@@ -563,6 +581,8 @@ const selectedId = ref<number | null>(null)
 const selectedIds = ref<number[]>([])
 /** 填空：当前题逐空作答（与【空N】顺序对齐） */
 const fillBlankAnswers = ref<string[]>([])
+/** 简答：当前题富文本草稿 */
+const shortAnswerDraft = ref('')
 const answered = ref(false)
 const submitting = ref(false)
 const loading = ref(true)
@@ -813,8 +833,15 @@ const fillPending = computed(() =>
   isFillAnswered.value && currentQuestion.value?.isCorrect == null && fillDetailRows.value.some((r) => !r.hit)
 )
 
-/** AI 给分建议按钮显隐：填空已答且有未判定空；后端 AI 未配置/调用失败后降级隐藏 */
-const showAiSuggest = computed(() => fillPending.value && aiSuggestAvailable.value)
+/** AI 给分建议按钮显隐：填空已答且有未判定空；或简答题已作答（主观题一律待 AI/自评） */
+const isShortAnswered = computed(
+  () => currentQuestion.value?.type === 'SHORT_ANSWER' && Boolean(currentQuestion.value?.userAnswer)
+)
+const showAiSuggest = computed(
+  () => aiSuggestAvailable.value && (fillPending.value || isShortAnswered.value)
+)
+/** 简答作答工具栏禁用项（与考试侧 answerDisabledMenus 同口径） */
+const shortDisabledMenus = ['title', 'quote', 'code', 'table', 'hr', 'link', 'clear', 'sub', 'sup']
 
 const aiSuggestShow = ref(false)
 const aiSuggestLoading = ref(false)
@@ -899,7 +926,7 @@ async function submitAnswer() {
   const q = currentQuestion.value
   if (!q) return
   const isMultiple = q.type === 'MULTIPLE'
-  if (!isMultiple && selectedId.value == null && q.type !== 'FILL_BLANK') {
+  if (!isMultiple && selectedId.value == null && q.type !== 'FILL_BLANK' && q.type !== 'SHORT_ANSWER') {
     message.warning('请先选择答案')
     return
   }
@@ -924,6 +951,23 @@ async function submitAnswer() {
         answer: JSON.stringify(payload)
       })
       applyFillAnswerResult(q, JSON.stringify(payload), res.data)
+    } else if (q.type === 'SHORT_ANSWER') {
+      // 简答：富文本串原样提交，isCorrect=null（主观题交自评/AI 建议）
+      const content = shortAnswerDraft.value.trim()
+      if (!content) {
+        message.warning('请先作答')
+        return
+      }
+      const res = await submitPracticeAnswer(sessionId, {
+        index: currentIndex.value,
+        answer: content
+      })
+      answered.value = true
+      const target = questions.value[currentIndex.value]
+      if (target) {
+        target.userAnswer = content
+        target.isCorrect = res.data ?? null
+      }
     } else {
       const res = await submitPracticeAnswer(sessionId, {
         index: currentIndex.value,
@@ -1015,18 +1059,21 @@ function resetAnswer() {
   selectedId.value = null
   selectedIds.value = []
   fillBlankAnswers.value = []
+  shortAnswerDraft.value = ''
   answered.value = false
   // 重置 AI 建议状态（每题独立；切换后按当前题重新判定按钮显隐）
   aiSuggestShow.value = false
   aiSuggestResult.value = null
   aiSuggestAvailable.value = true
-  // 恢复已答题目的状态（userAnswer 为 option_id JSON 数组字符串 / 填空 JSON 字符串数组）
+  // 恢复已答题目的状态（userAnswer 为 option_id JSON 数组字符串 / 填空 JSON 字符串数组 / 简答富文本）
   const q = questions.value[currentIndex.value]
   if (q && q.userAnswer) {
     if (q.type === 'MULTIPLE') {
       selectedIds.value = parseAnswerIds(q.userAnswer)
     } else if (q.type === 'FILL_BLANK') {
       fillBlankAnswers.value = parseFillUserAnswerList(q.userAnswer)
+    } else if (q.type === 'SHORT_ANSWER') {
+      shortAnswerDraft.value = q.userAnswer
     } else if (q.type !== 'PROGRAMMING') {
       // 编程题：代码与语言由面板内部状态承载，此处仅标记已作答
       selectedId.value = parseAnswerIds(q.userAnswer)[0] ?? null

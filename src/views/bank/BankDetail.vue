@@ -3,6 +3,9 @@
     <!-- 页头：返回 + 题库名称 + 管理员操作 -->
     <PageHeader :title="bank?.name || '题库详情'" :subtitle="bank?.description || undefined" showBack>
       <template #actions>
+        <n-button size="small" @click="router.push({ path: '/records', query: { bankId: String(route.params.id) } })">
+          答卷记录
+        </n-button>
         <n-dropdown
           v-if="authStore.isAdmin && bank"
           trigger="click"

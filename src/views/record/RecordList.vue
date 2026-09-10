@@ -210,7 +210,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useMessage } from 'naive-ui'
 import {
   CheckmarkDoneOutline,
@@ -235,6 +235,7 @@ import SkeletonList from '@/components/common/SkeletonList.vue'
 import dayjs from 'dayjs'
 
 const router = useRouter()
+const route = useRoute()
 const message = useMessage()
 
 const activeTab = ref<'practice' | 'exam'>('practice')
@@ -447,6 +448,11 @@ function handleExamPageChange(page: number) {
 }
 
 onMounted(() => {
+  // 支持 /records?bankId=xx 直达筛选(题库详情页「答卷记录」入口)
+  const qBankId = route.query.bankId
+  if (qBankId && typeof qBankId === 'string') {
+    filterBankId.value = qBankId
+  }
   loadOptions()
   fetchList()
 })
