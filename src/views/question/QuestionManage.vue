@@ -232,7 +232,7 @@ const tagOptions = ref<SelectOption[]>([])
 const showTagManage = ref(false)
 
 /** 勾选（仅当前页范围） */
-const selectedIds = ref<number[]>([])
+const selectedIds = ref<string[]>([])
 const exporting = ref(false)
 const showImportDialog = ref(false)
 const allCurrentPageSelected = computed(() => {
@@ -240,7 +240,7 @@ const allCurrentPageSelected = computed(() => {
 })
 
 const filter = reactive({
-  bankId: null as number | null,
+  bankId: null as string | null,
   type: null as QuestionType | null,
   difficulty: null as Difficulty | null,
   status: null as string | null,
@@ -396,7 +396,7 @@ function handlePageSizeChange(pageSize: number) {
   fetchList()
 }
 
-function toggleSelect(id: number, checked: boolean) {
+function toggleSelect(id: string, checked: boolean) {
   if (checked) {
     if (!selectedIds.value.includes(id)) selectedIds.value.push(id)
   } else {

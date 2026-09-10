@@ -59,7 +59,7 @@ export function exportBankMarkdown(
  * 传 bankId/type/difficulty/status/tagIds/keyword 按筛选条件导出全部。
  */
 export interface ExportQuestionsParams {
-  questionIds?: number[]
+  questionIds?: string[]
   bankId?: number | string
   type?: string
   difficulty?: string

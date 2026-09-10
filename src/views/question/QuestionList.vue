@@ -231,7 +231,7 @@ const tagOptions = ref<SelectOption[]>([])
 const questionList = ref<Question[]>([])
 
 /** 勾选（仅当前页范围） */
-const selectedIds = ref<number[]>([])
+const selectedIds = ref<string[]>([])
 const exporting = ref(false)
 const showImportDialog = ref(false)
 const allCurrentPageSelected = computed(() => {
@@ -370,7 +370,7 @@ function handleDelete(q: Question) {
   })
 }
 
-function toggleSelect(id: number, checked: boolean) {
+function toggleSelect(id: string, checked: boolean) {
   if (checked) {
     if (!selectedIds.value.includes(id)) selectedIds.value.push(id)
   } else {

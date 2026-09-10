@@ -740,7 +740,7 @@ async function submitAnswer() {
 let progSaveTimer: ReturnType<typeof setTimeout> | null = null
 
 /** 编辑触发：防抖保存草稿（saveAnswer 编程题分支只存代码不判题，isCorrect=null） */
-function onProgrammingChange(payload: { code: string; languageId: number | null }) {
+function onProgrammingChange(payload: { code: string; languageId: string | null }) {
   if (progSaveTimer) clearTimeout(progSaveTimer)
   progSaveTimer = setTimeout(async () => {
     const target = questions.value[currentIndex.value]
@@ -755,7 +755,7 @@ function onProgrammingChange(payload: { code: string; languageId: number | null 
 }
 
 /** 提交判题成功：锁定本题，回填 userAnswer（判题结果由面板内展示） */
-function onProgrammingAnswered(payload: { code: string; languageId: number; submissionId: number }) {
+function onProgrammingAnswered(payload: { code: string; languageId: string; submissionId: string }) {
   if (progSaveTimer) clearTimeout(progSaveTimer)
   answered.value = true
   const target = questions.value[currentIndex.value]

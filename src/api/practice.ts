@@ -3,7 +3,7 @@ import type { ApiResponse, PageResult, PracticeSession, PracticeResult, Practice
 
 export interface CreateSessionParams {
   count: number
-  bankIds?: number[]
+  bankIds?: string[]
   types?: string[]
   tagIds?: string[]
   correctRateMin?: number

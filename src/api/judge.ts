@@ -10,7 +10,7 @@ export interface PlaygroundLanguage {
 
 /** 判题语言（programming_language 表启用项；出题时用于语言限制与模板编辑） */
 export interface ProgrammingLanguage {
-  id: number
+  id: string
   code: string
   name: string
   highlightName: string
@@ -96,16 +96,16 @@ export function runSampleInPractice(sessionId: number | string, questionIndex: n
 }
 
 export interface SubmitCodePayload {
-  languageId: number
+  languageId: string
   code: string
 }
 
 export interface SubmissionResponseData {
-  id: number
+  id: string
   sourceType: string
-  questionId: number
-  userId: number
-  languageId: number
+  questionId: string
+  userId: string
+  languageId: string
   languageName: string
   timeLimitMs: number
   memoryLimitKb: number

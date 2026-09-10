@@ -360,7 +360,7 @@ async function handleTransfer() {
   }
   transferLoading.value = true
   try {
-    await transferBank(bankId, Number(transferUserId.value))
+    await transferBank(bankId, transferUserId.value)
     message.success('转让成功')
     showTransfer.value = false
   } catch {
@@ -378,7 +378,7 @@ async function handleAddCollaborator() {
   addColLoading.value = true
   try {
     // 当前 addCollaborator API 仅接收 userId，角色选择不再随请求提交
-    await addCollaborator(bankId, Number(newCollaboratorUserId.value))
+    await addCollaborator(bankId, newCollaboratorUserId.value)
     message.success('添加成功')
     newCollaboratorUserId.value = ''
     fetchCollaborators()
@@ -389,7 +389,7 @@ async function handleAddCollaborator() {
   }
 }
 
-async function handleRemoveCollaborator(userId: number) {
+async function handleRemoveCollaborator(userId: string) {
   try {
     await removeCollaborator(bankId, userId)
     message.success('移除成功')

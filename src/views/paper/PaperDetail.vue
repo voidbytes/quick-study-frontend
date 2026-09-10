@@ -159,7 +159,7 @@ interface SessionRow extends GradingSession {
 const sessions = ref<SessionRow[]>([])
 const sessionsLoading = ref(false)
 const sessionStats = ref<any>(null)
-const newGraderId = ref<number | null>(null)
+const newGraderId = ref<string | null>(null)
 const graderSelectRef = ref<InstanceType<typeof UserSearchSelect> | null>(null)
 
 const paperTitle = computed(() => paper.value?.title || '试卷详情')

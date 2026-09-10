@@ -6,7 +6,7 @@ export interface RecordListParams {
   size?: number
   keyword?: string
   sourceType?: string
-  bankId?: number
+  bankId?: string
   type?: string
   startDate?: string
   endDate?: string
@@ -20,6 +20,6 @@ export function list(params?: RecordListParams) {
   return request.get<ApiResponse<PageResult<PracticeRecord>>>('/records', { params })
 }
 
-export function getById(id: number) {
+export function getById(id: string) {
   return request.get<ApiResponse<PracticeRecord>>(`/records/${id}`)
 }

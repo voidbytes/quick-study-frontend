@@ -10,7 +10,7 @@ export interface SearchParams {
 
 export interface SearchResultItem {
   type: string
-  id: number
+  id: string
   title: string
   description: string
   matchField: string

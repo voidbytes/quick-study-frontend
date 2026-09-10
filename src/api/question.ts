@@ -62,7 +62,7 @@ export interface QuestionListParams {
   page?: number
   pageSize?: number
   size?: number
-  bankId?: number
+  bankId?: string
   type?: string
   difficulty?: string
   keyword?: string
