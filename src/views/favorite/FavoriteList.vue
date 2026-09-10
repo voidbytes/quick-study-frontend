@@ -176,7 +176,7 @@ const filterType = ref<QuestionType | null>(null)
 const sortBy = ref<string>('favoritedAt_desc')
 const favList = ref<FavRow[]>([])
 const bankOptions = ref<{ label: string; value: number }[]>([])
-const tagOptions = ref<{ label: string; value: number }[]>([])
+const tagOptions = ref<{ label: string; value: string }[]>([])
 
 const stats = reactive({ total: 0, thisWeekNew: 0, thisMonthPractice: 0 })
 

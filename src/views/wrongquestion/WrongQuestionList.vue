@@ -138,7 +138,7 @@ const filterKeyword = ref('')
 const filterTagId = ref<number | null>(null)
 const wrongList = ref<WrongRow[]>([])
 const bankOptions = ref<{ label: string; value: number }[]>([])
-const tagOptions = ref<{ label: string; value: number }[]>([])
+const tagOptions = ref<{ label: string; value: string }[]>([])
 
 const pagination = reactive({
   page: 1,

@@ -351,7 +351,7 @@ const form = reactive({
   answer: '',
   analysis: '',
   difficulty: 'MEDIUM' as Difficulty,
-  tagIds: [] as number[],
+  tagIds: [] as string[],
   status: 'DRAFT',
   /** 选项是否可乱序（仅选择题型；含"以上都是"类位置敏感选项时关闭） */
   optionsShufflable: true,
@@ -528,7 +528,7 @@ interface QuestionDetailData {
   analysis?: string | null
   status: string
   tags?: { id: number; name: string }[]
-  tagIds: number[]
+  tagIds: string[]
   /** 选项是否可乱序（后端默认 true） */
   optionsShufflable?: boolean
   createdAt?: string

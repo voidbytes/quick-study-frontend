@@ -441,7 +441,7 @@ interface FilterParams {
   sourceType?: string
   bankIds?: number[]
   types?: string[]
-  tagIds?: number[]
+  tagIds?: string[]
   correctRateMin?: number
   correctRateMax?: number
   priorUnanswered?: boolean

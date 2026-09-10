@@ -26,12 +26,12 @@ export function create(data: CreateTagParams) {
 }
 
 /** 设置/清除标签分组（仅管理员）；groupName 传空清除分组 */
-export function updateTagGroup(id: number, groupName?: string) {
+export function updateTagGroup(id: string, groupName?: string) {
   return request.put<ApiResponse<null>>(`/tags/${id}/group`, null, {
     params: { groupName: groupName || undefined }
   })
 }
 
-export function deleteTag(id: number) {
+export function deleteTag(id: string) {
   return request.delete<ApiResponse<null>>(`/tags/${id}`)
 }

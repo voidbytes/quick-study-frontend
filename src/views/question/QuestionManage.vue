@@ -244,7 +244,8 @@ const filter = reactive({
   type: null as QuestionType | null,
   difficulty: null as Difficulty | null,
   status: null as string | null,
-  tagIds: [] as number[],
+  // 标签 id 雪花 long 超 2^53，字符串承载（n-select value 与后端 Jackson 序列化一致）
+  tagIds: [] as string[],
   keyword: ''
 })
 

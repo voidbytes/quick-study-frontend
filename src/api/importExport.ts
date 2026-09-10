@@ -42,7 +42,7 @@ export function exportBank(bankId: number | string): Promise<Blob> {
 export interface MarkdownExportParams {
   withAnswer?: boolean
   typeFilter?: string[]
-  tagIds?: number[]
+  tagIds?: string[]
 }
 
 export function exportBankMarkdown(
@@ -64,7 +64,7 @@ export interface ExportQuestionsParams {
   type?: string
   difficulty?: string
   status?: string
-  tagIds?: number[]
+  tagIds?: string[]
   keyword?: string
 }
 

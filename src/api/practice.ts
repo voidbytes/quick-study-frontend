@@ -5,7 +5,7 @@ export interface CreateSessionParams {
   count: number
   bankIds?: number[]
   types?: string[]
-  tagIds?: number[]
+  tagIds?: string[]
   correctRateMin?: number
   correctRateMax?: number
   priorUnanswered?: boolean

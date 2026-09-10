@@ -84,7 +84,7 @@ const creating = ref(false)
 const saving = ref(false)
 const newName = ref('')
 const newGroup = ref('')
-const editingId = ref<number | null>(null)
+const editingId = ref<string | null>(null)
 const editingGroup = ref('')
 
 const filteredTags = computed(() => {

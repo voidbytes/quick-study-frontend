@@ -14,7 +14,7 @@ export interface CreateQuestionParams {
    */
   answer?: string
   analysis?: string
-  tagIds?: number[]
+  tagIds?: string[]
   status?: string
   /** 选项是否可乱序（仅选择题型） */
   optionsShufflable?: boolean
@@ -32,7 +32,7 @@ export interface UpdateQuestionParams {
   analysis?: string
   tags?: number[]
   status?: string
-  tagIds?: number[]
+  tagIds?: string[]
   optionsShufflable?: boolean
   /** 编程题配置（type=PROGRAMMING 时全量回传，未传则后端保留原配置） */
   programming?: ProgrammingQuestionConfig
@@ -66,7 +66,8 @@ export interface QuestionListParams {
   type?: string
   difficulty?: string
   keyword?: string
-  tagIds?: number[]
+  /** 标签 id（雪花 long，字符串承载防 2^53 精度丢失） */
+  tagIds?: string[]
   status?: string
   sortBy?: string
   sortOrder?: string

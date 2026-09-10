@@ -154,7 +154,7 @@ const filterType = ref<QuestionType | null>(null)
 const filterDifficulty = ref<Difficulty | null>(null)
 const filterStatus = ref<string | null>(null)
 /** 标签多选（跨库场景用全局 GET /tags 下拉）；雪花 long 超出 2^53，值按原始数字字符串传递 */
-const filterTagIds = ref<number[]>([])
+const filterTagIds = ref<string[]>([])
 const tagOptions = ref<SelectOption[]>([])
 const questionList = ref<Question[]>([])
 
@@ -272,17 +272,14 @@ function handlePageChange(page: number) {
 // 复制地址栏即可让他人直达同一筛选结果；非法值一律忽略走默认。
 
 /**
- * 解析 tags=1,2,3（容忍重复键数组形态），仅保留纯数字段。
+ * 解析 tags=1,2,3（容忍重复键数组形态），仅保留纯数字段、保持字符串原样。
  * 注意：id 是后端雪花 long，超出 JS Number 安全整数（2^53），必须按原始数字字符串
- * 传递，禁止 Number() 转换（会精度失真成错误 id）。运行时与 n-select 的 string value
- * 及 axios 序列化一致，故以 number[] 类型承载 string 值（与全站 Question.id 处理一致）。
+ * 传递，禁止 Number() 转换（会精度失真成错误 id）。与 n-select 的 string value 及 axios 序列化一致。
  */
-function parseTagIds(raw: unknown): number[] {
+function parseTagIds(raw: unknown): string[] {
   const str = Array.isArray(raw) ? raw.join(',') : raw
   if (typeof str !== 'string' || !str) return []
-  return str
-    .split(',')
-    .filter((v) => /^\d+$/.test(v)) as unknown as number[]
+  return str.split(',').filter((v) => /^\d+$/.test(v))
 }
 
 /** 从 route.query 恢复状态（非法值忽略走默认） */

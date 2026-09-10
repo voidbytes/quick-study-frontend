@@ -53,7 +53,8 @@ export interface BankCollaborator {
 
 // 标签
 export interface Tag {
-  id: number
+  /** 雪花 long：后端 Jackson 序列化为字符串，前端禁止 Number() 转换（超 2^53 丢精度） */
+  id: string
   name: string
   /** 标签分组名（可空，仅展示层聚合导航用，不参与筛选语义） */
   groupName?: string | null
@@ -88,7 +89,7 @@ export interface Question {
   sort: number
   status: string
   tags: Tag[]
-  tagIds: number[]
+  tagIds: string[]
   createdAt: string
   updatedAt: string
 }

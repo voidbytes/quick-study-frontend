@@ -183,7 +183,7 @@ import { useMessage } from 'naive-ui'
 import type { SelectOption } from 'naive-ui'
 import type { Question, QuestionType, Difficulty } from '@/types'
 import { getQuestionList, deleteQuestion } from '@/api/question'
-import { getTagList } from '@/api/tag'
+import { getTagListByBank } from '@/api/tag'
 import { exportQuestions, type ExportQuestionsParams } from '@/api/importExport'
 import { triggerBlobDownload, nowStamp } from '@/utils/download'
 import {
@@ -225,7 +225,8 @@ const searchKeyword = ref('')
 const filterType = ref<QuestionType | null>(null)
 const filterDifficulty = ref<Difficulty | null>(null)
 const filterStatus = ref<string | null>(null)
-const filterTagIds = ref<number[]>([])
+// 标签 id 是雪花 long（后端 Jackson 序列化为字符串），全链路用 string 承载，禁止 Number() 转换（超 2^53 丢精度）
+const filterTagIds = ref<string[]>([])
 const tagOptions = ref<SelectOption[]>([])
 const questionList = ref<Question[]>([])
 
@@ -327,10 +328,11 @@ async function fetchList() {
 
 async function fetchTagOptions() {
   try {
-    const res = await getTagList()
+    // 只拉当前题库实际用到的标签（全局池太大且多数与本库无关）
+    const res = await getTagListByBank(props.bankId)
     tagOptions.value = (res.data || []).map((t) => ({
       label: t.name,
-      value: t.id
+      value: String(t.id) // 雪花 long 超 2^53，n-select 的 value 必须字符串承载
     }))
   } catch {
     // 忽略错误
@@ -436,6 +438,16 @@ function handleImportDone() {
 // 分页/筛选状态落 URL：从列表进详情再返回时（router.back 或浏览器返回），
 // 组件重新挂载后从 query 恢复页码与筛选，不再重置回第 1 页。
 
+/**
+ * 解析 tags=1,2,3（容忍重复键数组形态），仅保留纯数字段并保持字符串原样。
+ * 雪花 long 超出 JS Number 安全整数（2^53），禁止 Number() 转换（会精度失真成错误 id）。
+ */
+function parseTagIds(raw: unknown): string[] {
+  const str = Array.isArray(raw) ? raw.join(',') : raw
+  if (typeof str !== 'string' || !str) return []
+  return str.split(',').filter((v) => /^\d+$/.test(v))
+}
+
 /** 从 route.query 恢复状态（非法值忽略走默认） */
 function restoreStateFromQuery() {
   const q = route.query
@@ -451,12 +463,7 @@ function restoreStateFromQuery() {
     filterStatus.value = q.status
   }
   if (typeof q.keyword === 'string') searchKeyword.value = q.keyword
-  if (typeof q.tags === 'string' && q.tags) {
-    filterTagIds.value = q.tags
-      .split(',')
-      .map((v) => Number(v))
-      .filter((v) => Number.isInteger(v) && v > 0)
-  }
+  filterTagIds.value = parseTagIds(q.tags)
 }
 
 /** 当前状态写回 route.query（page=1 且无筛选时清掉参数，保持 URL 干净） */
