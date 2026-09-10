@@ -8,6 +8,7 @@ import {
   sameIdSet,
   optionMarker,
   idToMarker,
+  sortOptionsById,
   TRUE_FALSE_TRUE_ID,
   TRUE_FALSE_FALSE_ID
 } from '../answer'
@@ -135,6 +136,32 @@ describe('formatAnswerView', () => {
   it('文本题型原样', () => {
     expect(formatAnswerView('TCP 是面向连接的', 'FILL_BLANK')).toBe('TCP 是面向连接的')
     expect(formatAnswerView('要点一；要点二', 'SHORT_ANSWER')).toBe('要点一；要点二')
+  })
+})
+
+describe('sortOptionsById', () => {
+  it('按 id 升序回落题库原序（解析文本按存库字母书写，字母须与之一致）', () => {
+    const shuffled: OptionItem[] = [
+      { id: 2, text: 'C内容' },
+      { id: 0, text: 'A内容' },
+      { id: 1, text: 'B内容' }
+    ]
+    expect(sortOptionsById(shuffled)).toEqual([
+      { id: 0, text: 'A内容' },
+      { id: 1, text: 'B内容' },
+      { id: 2, text: 'C内容' }
+    ])
+  })
+
+  it('不改动入参数组（纯函数）', () => {
+    const shuffled: OptionItem[] = [{ id: 1, text: 'x' }, { id: 0, text: 'y' }]
+    sortOptionsById(shuffled)
+    expect(shuffled.map((o) => o.id)).toEqual([1, 0])
+  })
+
+  it('空数组与已序数组原样', () => {
+    expect(sortOptionsById([])).toEqual([])
+    expect(sortOptionsById([{ id: 0, text: 'a' }])).toEqual([{ id: 0, text: 'a' }])
   })
 })
 

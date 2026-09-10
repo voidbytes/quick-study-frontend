@@ -406,6 +406,7 @@ import type { ProgrammingAnswerView } from '@/components/programming/Programming
 import type { PracticeQuestion, OptionItem } from '@/types'
 import {
   parseOptionList,
+  sortOptionsById,
   parseAnswerIds,
   formatAnswerIds,
   formatAnswerView,
@@ -556,15 +557,16 @@ const parsedOptions = computed<OptionItem[]>(() => {
   const q = currentQuestion.value
   if (!q) return []
   const list = parseOptionList(q.options)
-  if (list.length) return list
-  // 判断题后端固定物化 {id:0 正确, id:1 错误}；老快照缺 options 时前端兜底同款
-  if (q.type === 'TRUE_FALSE') {
+  if (!list.length && q.type === 'TRUE_FALSE') {
+    // 判断题后端固定物化 {id:0 正确, id:1 错误}；老快照缺 options 时前端兜底同款
     return [
       { id: TRUE_FALSE_TRUE_ID, text: '正确' },
       { id: TRUE_FALSE_FALSE_ID, text: '错误' }
     ]
   }
-  return []
+  // 作答态保持快照乱序（防背题）；提交反馈后回落 id 升序（题库原序），
+  // 使展示字母与解析文本按存库字母（id 0=A）书写的引用对齐
+  return answered.value ? sortOptionsById(list) : list
 })
 
 /** 解析条件描述 */
