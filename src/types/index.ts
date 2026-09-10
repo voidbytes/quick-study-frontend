@@ -39,6 +39,8 @@ export interface QuestionBank {
   cover: string
   /** 创建者ID（后端 BankResponse 字段名） */
   creatorId?: string
+  /** 当前用户在题库中的角色：OWNER/EDITOR/VIEWER，无成员关系为空 */
+  myRole?: 'OWNER' | 'EDITOR' | 'VIEWER' | string | null
   userId: string
   username: string
   isPublic: boolean
@@ -48,12 +50,15 @@ export interface QuestionBank {
   updatedAt: string
 }
 
-/** 题库协作人（与 User 不同：用 userId 而非 id） */
-export interface BankCollaborator {
+/** 题库成员（VIEWER=仅查看 / EDITOR=可编辑；OWNER=创建者不落库） */
+export interface BankMember {
+  id: string
+  bankId: string
   userId: string
-  nickname?: string
-  username?: string
-  role: 'OWNER' | 'EDITOR' | 'REVIEWER' | 'VIEWER' | string
+  username?: string | null
+  nickname?: string | null
+  role: 'VIEWER' | 'EDITOR' | string
+  createdAt?: string
 }
 
 // 标签

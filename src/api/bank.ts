@@ -1,5 +1,5 @@
 import request from './request'
-import type { ApiResponse, PageResult, QuestionBank, BankCollaborator } from '@/types'
+import type { ApiResponse, PageResult, QuestionBank, BankMember } from '@/types'
 
 export interface CreateBankParams {
   name: string
@@ -38,8 +38,8 @@ export function getBankDetail(id: number | string) {
   return request.get<ApiResponse<QuestionBank>>(`/banks/${id}`)
 }
 
-export function getCollaborators(bankId: number | string) {
-  return request.get<ApiResponse<BankCollaborator[]>>(`/banks/${bankId}/collaborators`)
+export function getMembers(bankId: number | string) {
+  return request.get<ApiResponse<BankMember[]>>(`/banks/${bankId}/members`)
 }
 
 export function transferBank(id: number | string, targetUserId: string) {
@@ -62,10 +62,10 @@ export function transfer(id: string, targetUserId: string) {
   return request.post<ApiResponse<null>>(`/banks/${id}/transfer`, { targetUserId })
 }
 
-export function addCollaborator(bankId: number | string, userId: string) {
-  return request.post<ApiResponse<null>>(`/banks/${bankId}/collaborators`, { userId })
+export function addMember(bankId: number | string, userId: string, role: 'VIEWER' | 'EDITOR') {
+  return request.post<ApiResponse<null>>(`/banks/${bankId}/members`, { userId, role })
 }
 
-export function removeCollaborator(bankId: number | string, userId: string) {
-  return request.delete<ApiResponse<null>>(`/banks/${bankId}/collaborators/${userId}`)
+export function removeMember(bankId: number | string, userId: string) {
+  return request.delete<ApiResponse<null>>(`/banks/${bankId}/members/${userId}`)
 }

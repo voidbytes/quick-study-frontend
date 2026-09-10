@@ -210,11 +210,15 @@ const pagination = reactive({
 
 function visibilityTagLabel(bank: BankItem): string {
   if (bank.isOfficial) return '官方'
+  if (bank.myRole === 'EDITOR') return '可编辑'
+  if (bank.myRole === 'VIEWER') return '仅查看'
   return bank.isPublic ? '公开' : '私有'
 }
 
 function visibilityTagClass(bank: BankItem): string {
   if (bank.isOfficial) return 'bg-warning-50 text-warning-600'
+  if (bank.myRole === 'EDITOR') return 'bg-primary-50 text-primary-600'
+  if (bank.myRole === 'VIEWER') return 'bg-neutral-100 text-neutral-600'
   return bank.isPublic ? 'bg-success-50 text-success-600' : 'bg-neutral-100 text-neutral-600'
 }
 
