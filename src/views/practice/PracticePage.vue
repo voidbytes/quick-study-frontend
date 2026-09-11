@@ -177,7 +177,7 @@
                 :max-images="9"
                 :disabled-menus="shortDisabledMenus"
                 :disabled="answered"
-                @update:model-value="(v: string) => (shortAnswerDraft = v)"
+                @update:model-value="handleShortDraftChange"
               />
             </template>
 
@@ -296,13 +296,12 @@
               <div class="flex flex-wrap items-center gap-2">
                 <n-button size="small" :disabled="currentIndex === 0" @click="prevQuestion">上一题</n-button>
                 <n-button
-                  v-if="!answered && currentQuestion?.type !== 'PROGRAMMING'"
+                  v-if="currentIndex < questions.length - 1"
                   size="small"
                   type="primary"
-                  :loading="submitting"
-                  @click="submitAnswer"
+                  @click="nextQuestion"
                 >
-                  提交答案
+                  下一题
                 </n-button>
                 <n-badge :value="hasNote" dot>
                   <n-button size="small" quaternary @click="openNoteDrawer">
@@ -314,14 +313,6 @@
                 </n-badge>
               </div>
               <div class="flex flex-wrap items-center gap-2">
-                <n-button
-                  v-if="answered && currentIndex < questions.length - 1"
-                  size="small"
-                  type="primary"
-                  @click="nextQuestion"
-                >
-                  下一题
-                </n-button>
                 <n-button size="small" type="success" @click="handleComplete">完成练习</n-button>
               </div>
             </div>
@@ -791,6 +782,7 @@ function updateFillBlank(bi: number, value: string) {
   const arr = [...fillBlankAnswers.value]
   arr[bi] = value
   fillBlankAnswers.value = arr
+  saveLocalAnswer()
 }
 
 /** 当前题是否为填空题且已提交（用于逐空明细渲染分流） */
@@ -837,6 +829,12 @@ const showAiSuggest = computed(
 )
 /** 简答作答工具栏禁用项（与考试侧 answerDisabledMenus 同口径） */
 const shortDisabledMenus = ['title', 'quote', 'code', 'table', 'hr', 'link', 'clear', 'sub', 'sup']
+
+/** 简答草稿变更：本地暂存（整卷模式，不判分） */
+function handleShortDraftChange(v: string) {
+  shortAnswerDraft.value = v
+  saveLocalAnswer()
+}
 
 const aiSuggestShow = ref(false)
 const aiSuggestLoading = ref(false)
@@ -905,83 +903,51 @@ function resultTextClass(isCorrect: boolean | null | undefined): string {
 }
 
 function selectAnswer(id: number) {
-  if (answered.value) return
   selectedId.value = id
   selectedIds.value = []
+  // 整卷模式：点选即暂存并自动跳下一题（判分统一在完成练习时进行）
+  saveLocalAnswer()
+  nextQuestion()
 }
 
 function toggleMultiple(id: number) {
-  if (answered.value) return
   const idx = selectedIds.value.indexOf(id)
   if (idx >= 0) selectedIds.value.splice(idx, 1)
   else selectedIds.value.push(id)
+  saveLocalAnswer()
 }
 
-async function submitAnswer() {
+/** 按题型把当前作答控件状态物化为提交串；null=该题尚未作答有效内容 */
+function buildAnswerPayload(q: QuestionRow): string | null {
+  const isMultiple = q.type === 'MULTIPLE'
+  if (isMultiple) {
+    return selectedIds.value.length ? formatAnswerIds(selectedIds.value) : null
+  }
+  if (q.type === 'FILL_BLANK') {
+    const payload = fillBlankAnswers.value.map((v) => v ?? '')
+    if (payload.every((v) => v.trim() === '')) return null
+    return JSON.stringify(payload)
+  }
+  if (q.type === 'SHORT_ANSWER') {
+    const content = shortAnswerDraft.value.trim()
+    return content || null
+  }
+  // SINGLE / TRUE_FALSE
+  if (selectedId.value == null) return null
+  return formatAnswerIds([selectedId.value])
+}
+
+/** 作答暂存（牛客式整卷模式）：仅写本地状态，不调后端、不判分；完成练习时统一提交 */
+function saveLocalAnswer() {
   const q = currentQuestion.value
   if (!q) return
-  const isMultiple = q.type === 'MULTIPLE'
-  if (!isMultiple && selectedId.value == null && q.type !== 'FILL_BLANK' && q.type !== 'SHORT_ANSWER') {
-    message.warning('请先选择答案')
-    return
-  }
-  if (isMultiple && selectedIds.value.length === 0) {
-    message.warning('请先选择答案')
-    return
-  }
-  // 统一 option_id JSON 数组提交（单选 [id]、多选升序 [id,id]），与后端 toIdSet 判分对齐
-  const answer = isMultiple ? formatAnswerIds(selectedIds.value) : formatAnswerIds([selectedId.value!])
-
-  submitting.value = true
-  try {
-    if (q.type === 'FILL_BLANK') {
-      // 填空：JSON 字符串数组逐位对齐空位（未填的空存 ""）
-      const payload = fillBlankAnswers.value.map((v) => v ?? '')
-      if (payload.every((v) => v.trim() === '')) {
-        message.warning('请至少填写一个空')
-        return
-      }
-      const res = await submitPracticeAnswer(sessionId, {
-        index: currentIndex.value,
-        answer: JSON.stringify(payload)
-      })
-      applyFillAnswerResult(q, JSON.stringify(payload), res.data)
-    } else if (q.type === 'SHORT_ANSWER') {
-      // 简答：富文本串原样提交，isCorrect=null（主观题交自评/AI 建议）
-      const content = shortAnswerDraft.value.trim()
-      if (!content) {
-        message.warning('请先作答')
-        return
-      }
-      const res = await submitPracticeAnswer(sessionId, {
-        index: currentIndex.value,
-        answer: content
-      })
-      answered.value = true
-      const target = questions.value[currentIndex.value]
-      if (target) {
-        target.userAnswer = content
-        target.isCorrect = res.data ?? null
-      }
-    } else {
-      const res = await submitPracticeAnswer(sessionId, {
-        index: currentIndex.value,
-        answer
-      })
-      answered.value = true
-      // 以后端判分结果为准（id 集合比对，与提交顺序无关）
-      const target = questions.value[currentIndex.value]
-      if (target) {
-        target.userAnswer = answer
-        target.isCorrect = typeof res.data === 'boolean'
-          ? res.data
-          : sameIdSet(parseAnswerIds(answer), parseAnswerIds(target.answer))
-      }
-    }
-  } catch {
-    message.error('提交答案失败')
-  } finally {
-    submitting.value = false
+  const answer = buildAnswerPayload(q)
+  if (answer == null) return
+  const target = questions.value[currentIndex.value]
+  if (target) {
+    target.userAnswer = answer
+    target.isCorrect = null
+    target.fillDetail = null
   }
 }
 
@@ -1038,16 +1004,35 @@ function onProgrammingAnswered(payload: { code: string; languageId: string; subm
 
 function prevQuestion() {
   if (currentIndex.value > 0) {
+    saveLocalAnswer()
     currentIndex.value--
     resetAnswer()
   }
 }
 
 function nextQuestion() {
-  if (currentIndex.value < questions.value.length - 1) {
-    currentIndex.value++
-    resetAnswer()
+  if (currentIndex.value >= questions.value.length - 1) return
+  const q = currentQuestion.value
+  // 主观题(填空/简答)未作答内容 → 弹框确认（可强制跳过）
+  if (q && (q.type === 'FILL_BLANK' || q.type === 'SHORT_ANSWER')) {
+    const payload = buildAnswerPayload(q)
+    if (payload == null) {
+      confirm({
+        title: '本题尚未作答',
+        content: '确定跳过本题继续下一题吗？',
+        positiveText: '跳过',
+        negativeText: '返回作答',
+        onPositiveClick: () => {
+          currentIndex.value++
+          resetAnswer()
+        }
+      })
+      return
+    }
   }
+  saveLocalAnswer()
+  currentIndex.value++
+  resetAnswer()
 }
 
 function resetAnswer() {
@@ -1073,15 +1058,33 @@ function resetAnswer() {
       // 编程题：代码与语言由面板内部状态承载，此处仅标记已作答
       selectedId.value = parseAnswerIds(q.userAnswer)[0] ?? null
     }
-    answered.value = true
+    // 整卷模式：作答暂存不判分，answered 仅在完成练习后的对答案环节为 true
   }
 }
 
 async function finishPractice() {
   try {
+    // 整卷模式：完成时把所有本地作答统一提交后端判分（saveAnswer 幂等，重复提交覆盖）
+    for (let i = 0; i < questions.value.length; i++) {
+      const q = questions.value[i]
+      if (!q.userAnswer) continue
+      const res = await submitPracticeAnswer(sessionId, { index: i, answer: q.userAnswer })
+      // 判分结果回填（对答案环节展示）：填空题返回 isCorrect + 逐空明细
+      if (q.type === 'FILL_BLANK') {
+        applyFillAnswerResult(q, q.userAnswer, res.data)
+      } else if (typeof res.data === 'boolean') {
+        q.isCorrect = res.data
+      } else {
+        q.isCorrect = null
+      }
+    }
     const res = await completePractice(sessionId)
     result.value = res.data
-    message.success('练习完成')
+    // 进入对答案环节：从第 1 题开始回放，显示对错/解析/逐空明细/AI 建议
+    currentIndex.value = 0
+    resetAnswer()
+    answered.value = true
+    message.success('练习完成，进入对答案环节')
   } catch {
     message.error('完成练习失败')
   }

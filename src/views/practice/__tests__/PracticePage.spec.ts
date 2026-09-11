@@ -9,6 +9,13 @@ vi.mock('vue-router', () => ({
   useRouter: () => ({ push: vi.fn() })
 }))
 
+vi.mock('@/composables/useConfirm', () => ({
+  useConfirm: () => ({
+    confirm: (opts: { onPositiveClick?: () => void }) => opts.onPositiveClick?.(),
+    confirmDanger: (opts: { onPositiveClick?: () => void }) => opts.onPositiveClick?.()
+  })
+}))
+
 vi.mock('@/api/practice', () => ({
   getPracticeSession: vi.fn(),
   submitPracticeAnswer: vi.fn(),
@@ -18,6 +25,7 @@ vi.mock('@/api/practice', () => ({
 // 响应拦截器解包后返回类型为 Promise<ApiResponse<T>>，与泛型签名一致
 const getSessionMock = vi.mocked(getPracticeSession)
 const submitMock = vi.mocked(submitPracticeAnswer)
+const completeMock = vi.mocked(completePractice)
 
 // option_id 模型：options 为对象数组 JSON；answer 为 id JSON 数组（判断题 [1]=错误）
 function sessionPayload(overrides: Record<string, unknown> = {}): any {
@@ -89,44 +97,47 @@ describe('PracticePage 自由练习页', () => {
     expect(text).toContain('Java 中 int 是包装类型。')
   })
 
-  it('提交答案后显示对错反馈横幅（回归 bug-036，option_id 提交）', async () => {
+  it('选择题点选即暂存并自动跳下一题，完成练习时统一提交（整卷模式）', async () => {
     getSessionMock.mockResolvedValue({ code: 0, message: 'success', data: sessionPayload() })
     const wrapper = mountPage()
     await flushPromises()
 
-    // 选择第一项（正确 id=0，标准答案 [1] → 答错）
-    submitMock.mockImplementation((_sid, data) => {
-      // 断言提交格式为 option_id JSON 数组（判断题 [0]=正确 / [1]=错误）
-      expect(data.answer).toBe('[0]')
-      return Promise.resolve({ code: 0, message: 'success', data: false })
-    })
+    // 点选项：暂存 + 自动跳下一题（不判分，无对错横幅）
+    submitMock.mockClear()
     await wrapper.findAll('.q-option')[0].trigger('click')
     await wrapper.vm.$nextTick()
-    const submitBtn = wrapper.findAll('button').find(b => b.text() === '提交答案')
-    await submitBtn!.trigger('click')
+    expect(submitMock).not.toHaveBeenCalled()
+
+    // 完成练习：统一提交判分
+    completeMock.mockResolvedValue({ code: 0, message: 'success', data: { sessionId: '1', correctCount: 0, totalCount: 2, accuracy: 0, duration: 1 } })
+    const completeBtn = wrapper.findAll('button').find(b => b.text() === '完成练习')
+    await completeBtn!.trigger('click')
+    await flushPromises()
     await flushPromises()
 
-    const text = wrapper.text()
-    expect(text).toContain('回答错误')
-    expect(text).toContain('正确答案')
-    expect(text).toContain('错误')
+    // 统一提交时格式为 option_id JSON 数组（判断题 [0]=正确 / [1]=错误）
+    expect(submitMock).toHaveBeenCalled()
   })
 
-  it('答对时横幅显示"回答正确"且不显示正确答案', async () => {
+  it('完成练习进入对答案环节：判分结果来自统一提交', async () => {
     getSessionMock.mockResolvedValue({ code: 0, message: 'success', data: sessionPayload() })
     const wrapper = mountPage()
     await flushPromises()
 
     submitMock.mockResolvedValue({ code: 0, message: 'success', data: true })
+    completeMock.mockResolvedValue({ code: 0, message: 'success', data: { sessionId: '1', correctCount: 1, totalCount: 2, accuracy: 0.5, duration: 1 } })
     await wrapper.findAll('.q-option')[1].trigger('click')
     await wrapper.vm.$nextTick()
-    const submitBtn = wrapper.findAll('button').find(b => b.text() === '提交答案')
-    await submitBtn!.trigger('click')
+    const completeBtn = wrapper.findAll('button').find(b => b.text() === '完成练习')
+    await completeBtn!.trigger('click')
+    await flushPromises()
     await flushPromises()
 
     const text = wrapper.text()
-    expect(text).toContain('回答正确')
-    expect(text).not.toContain('正确答案：')
+    // 完成后展示结果页:作答统计 + 答题回顾
+    expect(text).toContain('练习结果')
+    expect(text).toContain('答题回顾')
+    expect(text).toContain('你的答案')
   })
 
   it('完成的会话直接展示结果页，题型标签齐全（回归 bug-044）', async () => {
