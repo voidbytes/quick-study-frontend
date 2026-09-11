@@ -238,8 +238,8 @@
                   </template>
                 </template>
 
-                <!-- 主观题裁决行动区：AI 给分建议 + 自评同排对齐，统一实心按钮强化可点击感。
-                     自评过一次后 AI 给分建议一并收起（结论已定，不再需要辅助判断） -->
+                <!-- 主观题裁决行动区：请 AI 帮我评分 + 我已掌握/还没掌握 同排对齐，统一实心按钮强化可点击感。
+                     自评过一次后 AI 评分入口一并收起（结论已定，不再需要辅助判断） -->
                 <div
                   v-if="showAiSuggest || isShortPending"
                   class="flex flex-wrap items-center gap-2 mt-3"
@@ -254,7 +254,7 @@
                     <template #icon>
                       <n-icon><SparklesOutline /></n-icon>
                     </template>
-                    AI 给分建议
+                    请 AI 帮我评分
                   </n-button>
                   <template v-if="isShortPending">
                     <n-button size="small" type="success" @click="selfAssess(true)">
@@ -842,16 +842,19 @@ const fillPending = computed(() =>
   isFillAnswered.value && currentQuestion.value?.isCorrect == null && fillDetailRows.value.some((r) => !r.hit)
 )
 
-/** AI 给分建议按钮显隐：填空已答且有未判定空；或简答题已作答（主观题一律待 AI/自评）。
- *  已自评（我已掌握/还没掌握）后结论已定，同步收起 AI 建议 */
-const isShortAnswered = computed(
-  () => currentQuestion.value?.type === 'SHORT_ANSWER' && Boolean(currentQuestion.value?.userAnswer)
-)
+/** 主观类题（填空/简答）是否已作答 */
+const isSubjectiveAnswered = computed(() => {
+  const q = currentQuestion.value
+  return (q?.type === 'SHORT_ANSWER' || q?.type === 'FILL_BLANK') && Boolean(q?.userAnswer)
+})
+/** AI 评分入口显隐：主观类题已作答 → 一律可请 AI 评分。
+ *  覆盖三种原样：填空含开放空/未判定空、填空「每空均有标准答案但判错」、简答待裁决；已判定全对或已自评则不显示 */
 const showAiSuggest = computed(
   () =>
     aiSuggestAvailable.value &&
     selfAssessed.value[currentIndex.value] === undefined &&
-    (fillPending.value || isShortAnswered.value)
+    currentQuestion.value?.isCorrect !== true &&
+    isSubjectiveAnswered.value
 )
 /** 判分横幅状态机：填空待评估 / 简答待自评 / 对 / 错 */
 const bannerTone = computed(() => {

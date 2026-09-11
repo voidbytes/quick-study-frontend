@@ -250,8 +250,8 @@ describe('PracticePage 自由练习页', () => {
     await flushPromises()
     await flushPromises()
 
-    // 待裁决：AI 给分建议 + 自评按钮同排
-    expect(wrapper.text()).toContain('AI 给分建议')
+    // 待裁决：请 AI 帮我评分 + 自评按钮同排
+    expect(wrapper.text()).toContain('请 AI 帮我评分')
     expect(wrapper.text()).toContain('我已掌握')
     expect(wrapper.text()).toContain('还没掌握')
 
@@ -259,7 +259,54 @@ describe('PracticePage 自由练习页', () => {
     const masteredBtn = wrapper.findAll('button').find((b) => b.text().includes('我已掌握'))
     await masteredBtn!.trigger('click')
     await wrapper.vm.$nextTick()
-    expect(wrapper.text()).not.toContain('AI 给分建议')
+    expect(wrapper.text()).not.toContain('请 AI 帮我评分')
     expect(wrapper.text()).not.toContain('还没掌握')
+  })
+
+  it('填空题判定确定性判错（每空均有标准答案）仍保留 AI 评分入口（回归：旁边漏按钮）', async () => {
+    getSessionMock.mockResolvedValue({
+      code: 0,
+      message: 'success',
+      data: sessionPayload({
+        totalCount: 1,
+        questions: [
+          {
+            index: 0,
+            type: 'FILL_BLANK',
+            content: '题【空1】干',
+            options: null,
+            answer: '[[\"color\"]]',
+            analysis: '',
+            difficulty: 'MEDIUM'
+          }
+        ],
+        answers: [{ questionIndex: 0, userAnswer: '[\"wrong\"]', isCorrect: false }]
+      })
+    })
+    const wrapper = mountPage()
+    await flushPromises()
+
+    // 后端对该题返回 isCorrect=false + 逐空明细（无开放空）
+    submitMock.mockResolvedValue({
+      code: 0,
+      message: 'success',
+      data: { isCorrect: false, fillDetail: [{ hit: false, open: false }] }
+    } as never)
+    completeMock.mockResolvedValue({
+      code: 0,
+      message: 'success',
+      data: { sessionId: '1', correctCount: 0, totalCount: 1, accuracy: 0, duration: 1 }
+    })
+
+    const completeBtn = wrapper.findAll('button').find((b) => b.text() === '完成练习')
+    await completeBtn!.trigger('click')
+    await flushPromises()
+    await flushPromises()
+
+    // 判错：横幅提示待确认，自评一对 + AI 评分入口必须同时在（原实现在此漏掉 AI 按钮）
+    expect(wrapper.text()).toContain('未完全匹配')
+    expect(wrapper.text()).toContain('请 AI 帮我评分')
+    expect(wrapper.text()).toContain('我已掌握')
+    expect(wrapper.text()).toContain('还没掌握')
   })
 })
