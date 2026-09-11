@@ -26,7 +26,7 @@
           <section>
             <h3 class="text-sm font-medium text-neutral-500 mb-2">题干</h3>
             <div class="bg-neutral-50 border border-neutral-200 rounded-lg p-4">
-              <RichText :content="stemContent" />
+              <RichText :content="stemContent" fill-blanks />
             </div>
           </section>
 
@@ -106,7 +106,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useMessage } from 'naive-ui'
 import { getWrongQuestionById } from '@/api/wrongQuestion'
 import type { WrongQuestion, QuestionType, Difficulty, OptionItem } from '@/types'
-import { parseOptionList, parseAnswerIds, answerIdsToLabel, sortOptionsById, formatFillAnswer, renderFillContent, TRUE_FALSE_TRUE_ID } from '@/utils/answer'
+import { parseOptionList, parseAnswerIds, answerIdsToLabel, sortOptionsById, formatFillAnswer, TRUE_FALSE_TRUE_ID } from '@/utils/answer'
 import { QUESTION_TYPE_MAP, DIFFICULTY_MAP } from '@/utils/constants'
 import PageHeader from '@/components/common/PageHeader.vue'
 import RichText from '@/components/common/RichText.vue'
@@ -205,12 +205,8 @@ const answerLabel = computed(() => {
   return answer
 })
 
-/** 填空题干：【空N】渲染为行内横线段（进 markdown-it 前替换） */
-const stemContent = computed(() => {
-  const s = snapshot.value
-  if (!s) return ''
-  return s.type === 'FILL_BLANK' ? renderFillContent(s.content) : s.content
-})
+/** 填空题干保留【空N】原文，由 RichText fill-blanks 渲染后替换为徽章（方案 C） */
+const stemContent = computed(() => snapshot.value?.content ?? '')
 
 /** 填空答案组展示：① color/Color ② #fff ③（开放）（三形态容错） */
 const fillAnswerLabel = computed(() => {

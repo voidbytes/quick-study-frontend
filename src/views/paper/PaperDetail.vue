@@ -68,10 +68,78 @@
         </div>
       </div>
 
-      <!-- 题目列表（只读快照） -->
-      <div class="bg-white border border-neutral-200 rounded-lg overflow-hidden mb-6">
-        <div class="px-5 py-4 border-b border-neutral-200">
+      <!-- 作答统计（出卷人视角，置于题目列表上方） -->
+      <div v-if="canManage" class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <StatCard label="总作答人数" :value="sessionStats?.totalSessions || 0" tone="brand" />
+        <StatCard label="平均分" :value="sessionStats?.avgScore?.toFixed(1) || '-'" />
+        <StatCard label="最高分" :value="sessionStats?.maxScore || '-'" tone="success" />
+        <StatCard label="最低分" :value="sessionStats?.minScore || '-'" tone="error" />
+      </div>
+
+      <!-- 作答记录列表（仅出卷人可见，点击行进入批改详情） -->
+      <div v-if="canManage" class="bg-white border border-neutral-200 rounded-lg overflow-hidden mb-6">
+        <div class="px-5 py-4 border-b border-neutral-200 flex items-center justify-between">
+          <span class="text-base font-semibold text-neutral-900">作答记录</span>
+          <span class="text-xs text-neutral-400">共 {{ sessionPagination.itemCount }} 条</span>
+        </div>
+        <EmptyState
+          v-if="!sessionsLoading && sessions.length === 0"
+          description="暂无作答记录"
+          :icon="TimeOutline"
+        />
+        <div v-else>
+          <div
+            v-for="row in sessions"
+            :key="row.id"
+            class="flex items-center gap-4 px-5 py-4 border-b border-neutral-200 last:border-b-0 hover:bg-neutral-50 transition-colors cursor-pointer"
+            @click="goSessionDetail(row)"
+          >
+            <div class="w-9 h-9 rounded-lg bg-neutral-100 flex items-center justify-center flex-shrink-0">
+              <n-icon :size="18" color="var(--color-neutral-500)"><PersonOutline /></n-icon>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2 flex-wrap">
+                <span class="text-sm font-medium text-neutral-900">{{ row.userName || row.userNickname || '-' }}</span>
+                <span
+                  class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold"
+                  :class="(sessionStatusMap[row.status] || { cls: 'bg-neutral-100 text-neutral-600' }).cls"
+                >
+                  {{ (sessionStatusMap[row.status] || { label: row.status }).label }}
+                </span>
+              </div>
+              <div class="mt-0.5 text-xs text-neutral-500">
+                提交于 {{ row.submittedAt ? dayjs(row.submittedAt).format('YYYY-MM-DD HH:mm') : '-' }}
+              </div>
+            </div>
+            <div class="text-right flex-shrink-0">
+              <div class="text-base font-semibold text-neutral-900 tabular-nums">{{ row.totalScore ?? '-' }}</div>
+              <div class="text-xs text-neutral-400">分</div>
+            </div>
+            <span
+              v-if="['SUBMITTED', 'GRADING', 'GRADED'].includes(row.status)"
+              class="text-primary-500 hover:text-primary-600 text-sm font-medium flex-shrink-0"
+            >
+              查看详情
+            </span>
+          </div>
+          <!-- 分页 -->
+          <div v-if="sessionPagination.itemCount > sessionPagination.pageSize" class="flex justify-end px-5 py-3 border-t border-neutral-200">
+            <n-pagination
+              :page="sessionPagination.page"
+              :page-size="sessionPagination.pageSize"
+              :item-count="sessionPagination.itemCount"
+              size="small"
+              @update:page="handleSessionPageChange"
+            />
+          </div>
+        </div>
+      </div>
+
+      <!-- 题目列表（展开式：点行展开完整题干/选项/答案/解析） -->
+      <div class="bg-white border border-neutral-200 rounded-lg overflow-hidden">
+        <div class="px-5 py-4 border-b border-neutral-200 flex items-center justify-between">
           <span class="text-base font-semibold text-neutral-900">题目列表</span>
+          <span class="text-xs text-neutral-400">共 {{ paperQuestions.length }} 题 · 点击展开详情</span>
         </div>
         <EmptyState
           v-if="!loading && paperQuestions.length === 0"
@@ -82,47 +150,73 @@
           <div
             v-for="(q, index) in paperQuestions"
             :key="q.id"
-            class="flex items-start gap-3 px-5 py-4 border-b border-neutral-200 last:border-b-0 hover:bg-neutral-50 transition-colors"
+            class="border-b border-neutral-200 last:border-b-0"
           >
-            <span class="text-sm text-neutral-500 font-mono flex-shrink-0 mt-0.5">#{{ index + 1 }}</span>
-            <div class="flex-1 min-w-0">
-              <div class="flex items-center gap-2 mb-1">
-                <span
-                  class="flex-shrink-0 text-xs font-semibold px-2 py-0.5 rounded-full"
-                  :class="typeTagClass(q.type)"
-                >
-                  {{ typeLabel(q.type) }}
-                </span>
-                <span class="text-sm text-neutral-500">{{ q.score }} 分</span>
+            <!-- 行头：序号 / 题型 / 分值 / 题干摘要 / 展开箭头 -->
+            <button
+              class="w-full flex items-center gap-3 px-5 py-4 text-left hover:bg-neutral-50 transition-colors"
+              @click="toggleQuestion(index)"
+            >
+              <n-icon
+                :size="16"
+                class="text-neutral-400 transition-transform flex-shrink-0"
+                :class="{ 'rotate-90': expandedQuestions.has(index) }"
+              >
+                <ChevronForwardOutline />
+              </n-icon>
+              <span class="text-sm text-neutral-500 font-mono flex-shrink-0">#{{ index + 1 }}</span>
+              <span
+                class="flex-shrink-0 text-xs font-semibold px-2 py-0.5 rounded-full"
+                :class="typeTagClass(q.type)"
+              >
+                {{ typeLabel(q.type) }}
+              </span>
+              <span class="flex-1 min-w-0 text-sm text-neutral-900 truncate">
+                {{ questionSummary(q) }}
+              </span>
+              <span class="text-sm text-neutral-500 flex-shrink-0">{{ q.score }} 分</span>
+            </button>
+            <!-- 展开区：完整题干 / 选项 / 参考答案 / 解析 / 原题链接 -->
+            <div v-if="expandedQuestions.has(index)" class="px-5 pb-5 pt-1 bg-neutral-50/60">
+              <div class="practice-stem text-sm text-neutral-900 leading-relaxed mb-3">
+                <RichText :content="q.content" fill-blanks />
               </div>
-              <div class="text-sm text-neutral-900 whitespace-pre-line">{{ stripHtml(q.content) }}</div>
+              <!-- 选项（选择题） -->
+              <div v-if="parsedOptions(q).length" class="space-y-1.5 mb-3">
+                <div
+                  v-for="opt in parsedOptions(q)"
+                  :key="opt.id"
+                  class="flex items-start gap-2 text-sm text-neutral-700"
+                >
+                  <span class="font-mono text-neutral-400 flex-shrink-0">{{ optionMarker(opt.id) }}.</span>
+                  <RichText :content="opt.text" />
+                </div>
+              </div>
+              <!-- 参考答案 / 解析（仅创建者可见，后端按权限下发） -->
+              <div v-if="q.answer != null" class="mb-2 text-sm">
+                <span class="text-neutral-500">参考答案：</span>
+                <span class="text-success-700 font-medium">{{ formatAnswerView(q) }}</span>
+              </div>
+              <div v-if="q.analysis" class="text-sm mb-3">
+                <span class="text-neutral-500">解析：</span>
+                <RichText :content="q.analysis" />
+              </div>
+              <div v-if="!q.answer && canManage" class="mb-3 text-sm text-neutral-400">
+                答案与解析未随本卷下发
+              </div>
+              <!-- 跳原题 -->
+              <n-button
+                v-if="q.questionId"
+                size="tiny"
+                quaternary
+                type="primary"
+                @click="goOriginalQuestion(q)"
+              >
+                查看原题 →
+              </n-button>
             </div>
           </div>
         </div>
-      </div>
-
-      <!-- 作答统计（出卷人视角） -->
-      <div v-if="canManage" class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <StatCard label="总作答人数" :value="sessionStats?.totalSessions || 0" tone="brand" />
-        <StatCard label="平均分" :value="sessionStats?.avgScore?.toFixed(1) || '-'" />
-        <StatCard label="最高分" :value="sessionStats?.maxScore || '-'" tone="success" />
-        <StatCard label="最低分" :value="sessionStats?.minScore || '-'" tone="error" />
-      </div>
-
-      <!-- 作答记录列表（仅出卷人可见） -->
-      <div v-if="canManage" class="bg-white border border-neutral-200 rounded-lg overflow-hidden">
-        <div class="px-5 py-4 border-b border-neutral-200">
-          <span class="text-base font-semibold text-neutral-900">作答记录</span>
-        </div>
-        <n-data-table
-          remote
-          :columns="sessionColumns"
-          :data="sessions"
-          :loading="sessionsLoading"
-          :pagination="sessionPagination"
-          size="small"
-          @update:page="handleSessionPageChange"
-        />
       </div>
     </n-spin>
     <LoadError v-else :description="loadError" :retrying="loading" @retry="fetchDetail" />
@@ -130,10 +224,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted, h } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useMessage } from 'naive-ui'
-import type { DataTableColumn } from 'naive-ui'
 import { getPaperDetail, getPaperSessions, getSessionsSummary, updateGrader } from '@/api/paper'
 import type { ExamPaper, PaperQuestion, GradingSession } from '@/types'
 import { QUESTION_TYPE_MAP } from '@/utils/constants'
@@ -142,9 +235,12 @@ import LoadError from '@/components/LoadError.vue'
 import PageHeader from '@/components/common/PageHeader.vue'
 import StatCard from '@/components/common/StatCard.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
+import RichText from '@/components/common/RichText.vue'
 import UserSearchSelect from '@/components/common/UserSearchSelect.vue'
-import { DocumentTextOutline } from '@vicons/ionicons5'
+import { DocumentTextOutline, ChevronForwardOutline, PersonOutline, TimeOutline } from '@vicons/ionicons5'
 import { useAuthStore } from '@/stores/auth'
+import { parseAnswerIds, formatFillAnswer } from '@/utils/answer'
+import type { OptionItem } from '@/types'
 
 const route = useRoute()
 const router = useRouter()
@@ -222,6 +318,78 @@ function stripHtml(content?: string): string {
   return content?.replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').trim() || ''
 }
 
+// ==================== 题目展开详情 ====================
+
+const expandedQuestions = ref<Set<number>>(new Set())
+
+function toggleQuestion(index: number) {
+  const next = new Set(expandedQuestions.value)
+  if (next.has(index)) {
+    next.delete(index)
+  } else {
+    next.add(index)
+  }
+  expandedQuestions.value = next
+}
+
+/** 行头摘要：去 HTML 标签的单行题干 */
+function questionSummary(q: PaperQuestion): string {
+  return stripHtml(q.content).slice(0, 60) || '（无题干）'
+}
+
+/** PaperQuestion.options(JSON 字符串) → OptionItem[] */
+function parsedOptions(q: PaperQuestion): OptionItem[] {
+  if (!q.options) return []
+  try {
+    const parsed: unknown = JSON.parse(q.options)
+    if (Array.isArray(parsed)) {
+      return parsed.filter((o): o is OptionItem =>
+        typeof o === 'object' && o !== null && 'id' in o && 'text' in o)
+    }
+  } catch {
+    // 旧格式忽略
+  }
+  return []
+}
+
+/** 选项展示序号（A/B/C…，与考试作答侧同规则：按 options 数组顺序） */
+function optionMarker(id: number): string {
+  return String.fromCharCode(65 + id)
+}
+
+/** 参考答案展示（按题型分派；选项答案 id → 字母） */
+function formatAnswerView(q: PaperQuestion): string {
+  const answer = q.answer ?? ''
+  if (q.type === 'SINGLE' || q.type === 'MULTIPLE' || q.type === 'TRUE_FALSE') {
+    const ids = parseAnswerIds(answer)
+    if (!ids.length) return answer || '-'
+    const opts = parsedOptions(q)
+    return ids
+      .map((id) => {
+        const opt = opts.find((o) => o.id === id)
+        return (opt ? optionMarker(opt.id) : String(id))
+      })
+      .join('、')
+  }
+  if (q.type === 'FILL_BLANK') {
+    return formatFillAnswer(answer) || answer
+  }
+  return answer || '-'
+}
+
+/** 跳转原题（题库题目详情页） */
+function goOriginalQuestion(q: PaperQuestion) {
+  // PaperQuestion 无 bankId，路由参数带 questionId 由详情页内部定位；
+  // 走题目详情路由需要 bankId，此处跳「我的题目」详情（题目管理视图）
+  router.push(`/banks/${route.params.bankId ?? ''}/questions/${q.questionId}`)
+}
+
+function goSessionDetail(row: SessionRow) {
+  if (['SUBMITTED', 'GRADING', 'GRADED'].includes(row.status)) {
+    router.push(`/grading/sessions/${row.id}`)
+  }
+}
+
 const sessionPagination = reactive({
   page: 1,
   pageSize: 20,
@@ -234,52 +402,6 @@ const sessionStatusMap: Record<string, { label: string; cls: string }> = {
   GRADING: { label: '批改中', cls: 'bg-warning-50 text-warning-600' },
   GRADED: { label: '已批改', cls: 'bg-success-50 text-success-600' }
 }
-
-const sessionColumns: DataTableColumn<SessionRow>[] = [
-  {
-    title: '作答者',
-    key: 'userName',
-    width: 140,
-    ellipsis: { tooltip: true },
-    render(row) { return row.userName || row.userNickname || '-' }
-  },
-  { title: '得分', key: 'totalScore', width: 80, align: 'center' },
-  {
-    title: '状态',
-    key: 'status',
-    width: 100,
-    align: 'center',
-    render(row) {
-      const item = sessionStatusMap[row.status] || { label: row.status, cls: 'bg-neutral-100 text-neutral-600' }
-      return h('span', { class: `inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${item.cls}` }, item.label)
-    }
-  },
-  {
-    title: '提交时间',
-    key: 'submittedAt',
-    width: 170,
-    render(row) { return row.submittedAt ? dayjs(row.submittedAt).format('YYYY-MM-DD HH:mm') : '-' }
-  },
-  {
-    title: '操作',
-    key: 'actions',
-    width: 100,
-    align: 'center',
-    render(row) {
-      // 已提交/批改中的会话可进入详情（后端允许批改人与出卷人只读查看）
-      const viewable = ['SUBMITTED', 'GRADING', 'GRADED'].includes(row.status)
-      if (!viewable) return '-'
-      return h(
-        'a',
-        {
-          class: 'text-primary-500 hover:text-primary-600 text-sm font-medium cursor-pointer',
-          onClick: () => router.push(`/grading/sessions/${row.id}`)
-        },
-        '查看详情'
-      )
-    }
-  }
-]
 
 async function fetchDetail() {
   loading.value = true

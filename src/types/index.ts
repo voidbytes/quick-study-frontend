@@ -206,11 +206,15 @@ export interface ExamPaper {
 export interface PaperQuestion {
   /** 题目雪花 id，选中回填时以字符串匹配题单 */
   id: string
+  /** 原题 id（题库内题目，跳转原题用；详情接口仅创建者可见场景下发） */
+  questionId?: string
   content: string
   type: string
   options?: string | null
   difficulty?: string
   analysis?: string
+  /** 参考答案（试卷详情仅创建者可见；游客/非创建者不下发） */
+  answer?: string | null
   score: number
   sortOrder?: number
 }

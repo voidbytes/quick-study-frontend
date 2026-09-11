@@ -85,7 +85,10 @@
 
             <!-- 题干（填空题：占位符渲染为行内横线段） -->
             <div class="review-stem mb-4">
-              <RichText :content="q.type === 'FILL_BLANK' ? renderFillStem(q.content) : parseQuestionContent(q.content)" />
+              <RichText
+                :content="parseQuestionContent(q.content)"
+                :fill-blanks="q.type === 'FILL_BLANK'"
+              />
             </div>
 
             <!-- 答案对比（简答题为富文本 HTML，用 RichText 渲染；客观题保持文本插值；编程题为代码块；填空为逐空对照表） -->
@@ -184,6 +187,13 @@
               <RichText :content="q.analysis" class="analysis-rich" />
             </div>
 
+            <!-- 跳原题 -->
+            <div v-if="q.questionId" class="mb-4">
+              <n-button size="tiny" quaternary type="primary" @click="router.push(`/questions/${q.questionId}`)">
+                查看原题 →
+              </n-button>
+            </div>
+
             <!-- 得分 -->
             <div class="flex items-center justify-between pt-3 border-t border-neutral-200">
               <span class="text-sm text-neutral-500">得分</span>
@@ -213,7 +223,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getResult } from '@/api/exam'
 import type { SessionResultResponse, QuestionResultItem } from '@/api/exam'
-import { formatAnswerView, formatFillAnswer, parseOptionList, sortOptionsById, parseFillAnswer, parseFillBlanks, renderFillContent } from '@/utils/answer'
+import { formatAnswerView, formatFillAnswer, parseOptionList, sortOptionsById, parseFillAnswer, parseFillBlanks } from '@/utils/answer'
 import { QUESTION_TYPE_MAP } from '@/utils/constants'
 import PageHeader from '@/components/common/PageHeader.vue'
 import StatCard from '@/components/common/StatCard.vue'
@@ -395,11 +405,6 @@ function parseQuestionContent(content?: string): string {
   } catch {
     return content
   }
-}
-
-/** 填空题干：占位符【空N】渲染为行内横线段（进 markdown-it 前替换，避免 ____ 误解析为 hr） */
-function renderFillStem(content?: string): string {
-  return renderFillContent(parseQuestionContent(content))
 }
 
 /** 编程题判题轮询：存在未终态判题时每 5s 刷新，最多 60s（判题 worker 一般秒级完成） */

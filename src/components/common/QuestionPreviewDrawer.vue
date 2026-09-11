@@ -16,7 +16,7 @@
           <section>
             <h3 class="text-sm font-medium text-neutral-500 mb-2">题干</h3>
             <div class="bg-neutral-50 border border-neutral-200 rounded-lg p-4">
-              <RichText :content="stemContent" />
+              <RichText :content="stemContent" fill-blanks />
             </div>
           </section>
 
@@ -109,7 +109,6 @@ import {
   parseAnswerIds,
   answerIdsToLabel,
   formatFillAnswer,
-  renderFillContent,
   TRUE_FALSE_TRUE_ID
 } from '@/utils/answer'
 import type { OptionItem } from '@/types'
@@ -191,12 +190,8 @@ const answerLabel = computed(() => {
   return answer
 })
 
-/** 填空题干：【空N】渲染为行内横线段（进 markdown-it 前替换） */
-const stemContent = computed(() => {
-  const d = detail.value
-  if (!d) return ''
-  return d.type === 'FILL_BLANK' ? renderFillContent(d.content) : d.content
-})
+/** 填空题干保留【空N】原文，由 RichText fill-blanks 渲染后替换为徽章（方案 C） */
+const stemContent = computed(() => detail.value?.content ?? '')
 
 /** 填空答案组展示：① color/Color ② #fff ③（开放）（三形态容错） */
 const fillAnswerLabel = computed(() => {

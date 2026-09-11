@@ -104,7 +104,7 @@
 
             <!-- 题干（富文本；填空题渲染为行内横线段） -->
             <div class="practice-stem mb-6">
-              <RichText :content="practiceStem" />
+              <RichText :content="practiceStem" fill-blanks />
             </div>
 
             <!-- 客观题选项（按 option_id 选择，字母为展示序号） -->
@@ -406,7 +406,7 @@
 
               <!-- 题干（填空题渲染为行内横线段） -->
               <div class="practice-stem mb-4">
-                <RichText :content="q.type === 'FILL_BLANK' ? renderFillContent(q.content) : q.content" />
+                <RichText :content="q.content" fill-blanks />
               </div>
 
               <!-- 答案对比 -->
@@ -512,7 +512,6 @@ import {
   formatFillAnswer,
   parseFillAnswer,
   parseFillBlanks,
-  renderFillContent,
   gradeFillBlanks,
   sameIdSet,
   optionMarker,
@@ -775,12 +774,8 @@ function isCorrectOption(index: number): boolean {
 
 // ==================== 填空题（多空行内作答 + 逐空反馈 + AI 建议） ====================
 
-/** 填空题题干：占位符渲染为行内横线段（进 markdown-it 前替换） */
-const practiceStem = computed(() => {
-  const q = currentQuestion.value
-  if (!q) return ''
-  return q.type === 'FILL_BLANK' ? renderFillContent(q.content) : q.content
-})
+/** 题干：填空保留【空N】原文由 RichText fill-blanks 渲染徽章（方案 C） */
+const practiceStem = computed(() => currentQuestion.value?.content ?? '')
 
 /** 填空题干拆分：片段与空位交替（非填空题为单元素数组，模板不消费） */
 const fillSegments = computed(() =>

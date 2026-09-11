@@ -63,6 +63,8 @@ export interface SessionResultResponse {
 
 export interface QuestionResultItem {
   paperQuestionId: string
+  /** 原题 id（题库内题目，成绩复核页跳转原题用） */
+  questionId?: string
   content: string
   type: string
   /** 选项对象数组（成卷快照，乱序后顺序） */
