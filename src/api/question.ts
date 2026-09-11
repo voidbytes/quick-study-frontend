@@ -89,6 +89,13 @@ export function getQuestionDetail(id: number | string) {
   return request.get<ApiResponse<Question>>(`/questions/${id}`)
 }
 
+/** 同题库相邻题目 id（题目详情页上一题/下一题导航） */
+export function getQuestionNeighbors(bankId: number | string, questionId: number | string) {
+  return request.get<ApiResponse<{ prevId: string | null; nextId: string | null }>>(
+    `/banks/${bankId}/questions/${questionId}/neighbors`
+  )
+}
+
 export function updateQuestion(bankId: number | string, questionId: number | string, data: UpdateQuestionParams) {
   return request.put<ApiResponse<Question>>(`/banks/${bankId}/questions/${questionId}`, data)
 }
