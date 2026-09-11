@@ -309,6 +309,15 @@
               </div>
               <div class="flex flex-wrap items-center gap-2">
                 <n-button size="small" type="success" @click="handleComplete">完成练习</n-button>
+                <n-button
+                  v-if="answered && reviewResult"
+                  size="small"
+                  type="primary"
+                  secondary
+                  @click="result = reviewResult"
+                >
+                  查看结果
+                </n-button>
               </div>
             </div>
           </div>
@@ -317,7 +326,7 @@
     </template>
 
     <!-- ============ 练习结果 ============ -->
-    <template v-else>
+    <template v-else-if="result || reviewResult">
       <div class="max-w-4xl mx-auto">
         <PageHeader title="练习结果" subtitle="本套练习的作答统计与逐题回顾">
           <template #actions>
@@ -969,6 +978,9 @@ function buildAnswerPayload(q: QuestionRow): string | null {
   return formatAnswerIds([selectedId.value])
 }
 
+/** 完成练习后的统计结果（对答案环节点「查看结果」时展示） */
+const reviewResult = ref<ResultView | null>(null)
+
 /** 作答暂存（牛客式整卷模式）：仅写本地状态，不调后端、不判分；完成练习时统一提交 */
 function saveLocalAnswer() {
   const q = currentQuestion.value
@@ -1111,8 +1123,8 @@ async function finishPractice() {
       }
     }
     const res = await completePractice(sessionId)
-    result.value = res.data
-    // 进入对答案环节：从第 1 题开始回放，显示对错/解析/逐空明细/AI 建议
+    reviewResult.value = res.data
+    // 先进入对答案环节（逐题自评/AI 建议），「查看结果」按钮才出统计页
     currentIndex.value = 0
     resetAnswer()
     answered.value = true

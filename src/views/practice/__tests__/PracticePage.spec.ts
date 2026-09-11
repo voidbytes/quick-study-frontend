@@ -133,11 +133,16 @@ describe('PracticePage 自由练习页', () => {
     await flushPromises()
     await flushPromises()
 
+    // 完成练习后先停在对答案环节（第 1 题），判分结果即时可见
     const text = wrapper.text()
-    // 完成后展示结果页:作答统计 + 答题回顾
-    expect(text).toContain('练习结果')
-    expect(text).toContain('答题回顾')
-    expect(text).toContain('你的答案')
+    expect(text).toContain('回答正确')
+    expect(text).toContain('查看结果')
+    // 点「查看结果」→ 出统计结果页
+    const resultsBtn = wrapper.findAll('button').find(b => b.text() === '查看结果')
+    await resultsBtn!.trigger('click')
+    await wrapper.vm.$nextTick()
+    expect(wrapper.text()).toContain('练习结果')
+    expect(wrapper.text()).toContain('答题回顾')
   })
 
   it('完成的会话直接展示结果页，题型标签齐全（回归 bug-044）', async () => {
