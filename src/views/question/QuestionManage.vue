@@ -47,7 +47,7 @@
           @update:value="handleSearch"
         />
         <n-select
-          v-model:value="filter.tagIds"
+          v-model:value="filter.tagNames"
           :options="tagOptions"
           placeholder="标签（可多选）"
           multiple
@@ -201,7 +201,7 @@ import type { Question, QuestionType, Difficulty } from '@/types'
 import { getAllQuestions, deleteQuestion } from '@/api/question'
 import { getBankList } from '@/api/bank'
 import { getTagList } from '@/api/tag'
-import { buildGroupedTagOptions } from '@/utils/tagOptions'
+import { buildGroupedTagNameOptions } from '@/utils/tagOptions'
 import { exportQuestions } from '@/api/importExport'
 import { triggerBlobDownload, nowStamp } from '@/utils/download'
 import {
@@ -244,8 +244,8 @@ const filter = reactive({
   type: null as QuestionType | null,
   difficulty: null as Difficulty | null,
   status: null as string | null,
-  // 标签 id 雪花 long 超 2^53，字符串承载（n-select value 与后端 Jackson 序列化一致）
-  tagIds: [] as string[],
+  // 标签按名筛选（跨库列表用全局池，标签库内不重名、跨库可同名，故按名取值避免下拉重名）
+  tagNames: [] as string[],
   keyword: ''
 })
 
@@ -332,7 +332,8 @@ async function fetchBankOptions() {
 async function fetchTagOptions() {
   try {
     const res = await getTagList()
-    tagOptions.value = buildGroupedTagOptions(res.data || [])
+    // 跨库管理：标签下拉用全局标签池（GET /tags），按名去重后以标签名回传
+    tagOptions.value = buildGroupedTagNameOptions(res.data || [])
   } catch {
     // 忽略错误
   }
@@ -348,7 +349,7 @@ async function fetchList() {
       type: filter.type ?? undefined,
       difficulty: filter.difficulty ?? undefined,
       status: filter.status ?? undefined,
-      tagIds: filter.tagIds.length ? filter.tagIds : undefined,
+      tagNames: filter.tagNames.length ? filter.tagNames : undefined,
       keyword: filter.keyword || undefined
     }
     const res = await getAllQuestions(params)
@@ -376,7 +377,7 @@ function handleReset() {
   filter.type = null
   filter.difficulty = null
   filter.status = null
-  filter.tagIds = []
+  filter.tagNames = []
   filter.keyword = ''
   pagination.page = 1
   selectedIds.value = []
@@ -418,7 +419,7 @@ async function handleExport() {
   const noSelection = selectedIds.value.length === 0
   const noFilter =
     !filter.bankId && !filter.type && !filter.difficulty && !filter.status &&
-    filter.tagIds.length === 0 && !filter.keyword
+    filter.tagNames.length === 0 && !filter.keyword
   if (noSelection && noFilter) {
     message.warning('请先勾选题目，或设置筛选条件（如选择题库）后再批量导出')
     return
@@ -433,7 +434,7 @@ async function handleExport() {
             type: filter.type ?? undefined,
             difficulty: filter.difficulty ?? undefined,
             status: filter.status ?? undefined,
-            tagIds: filter.tagIds.length ? filter.tagIds : undefined,
+            tagNames: filter.tagNames.length ? filter.tagNames : undefined,
             keyword: filter.keyword || undefined
           })
     triggerBlobDownload(blob, `题目导出_${nowStamp()}.json`)

@@ -6,7 +6,10 @@ export interface WrongQuestionListParams {
   size?: number
   keyword?: string
   bankId?: string
+  /** 标签 id（单库场景） */
   tagId?: number
+  /** 标签名（跨库场景推荐，大小写不敏感；与 tagId 取并集） */
+  tagNames?: string[]
   sortBy?: string
 }
 

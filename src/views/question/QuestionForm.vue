@@ -365,7 +365,7 @@
     </div>
 
     <!-- 标签管理（分组设置） -->
-    <TagManageModal v-model:show="showTagManage" @updated="loadTags" />
+    <TagManageModal v-model:show="showTagManage" :bank-id="bankId" @updated="loadTags" />
   </div>
 </template>
 
@@ -391,7 +391,7 @@ import {
 } from '@/utils/answer'
 import { getProgrammingLanguages } from '@/api/judge'
 import type { ProgrammingLanguage } from '@/api/judge'
-import { getTagList } from '@/api/tag'
+import { getTagListByBankScope } from '@/api/tag'
 import { buildGroupedTagOptions } from '@/utils/tagOptions'
 import { QUESTION_TYPE_OPTIONS, DIFFICULTY_OPTIONS, QUESTION_STATUS_OPTIONS } from '@/utils/constants'
 import PageHeader from '@/components/common/PageHeader.vue'
@@ -674,7 +674,8 @@ function loadLanguages() {
 
 async function loadTags() {
   try {
-    const res = await getTagList()
+    // 标签作用域为单题库：只列出当前题库的标签，避免选到其他库的标签（后端会拒绝跨库关联）
+    const res = await getTagListByBankScope(bankId)
     tagOptions.value = buildGroupedTagOptions(res.data || [])
   } catch {
     // ignore

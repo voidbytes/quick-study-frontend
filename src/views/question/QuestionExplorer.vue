@@ -45,7 +45,7 @@
         @update:value="handleSearch"
       />
       <n-select
-        v-model:value="filterTagIds"
+        v-model:value="filterTags"
         :options="tagOptions"
         placeholder="标签（可多选，支持搜索）"
         multiple
@@ -126,7 +126,7 @@ import type { SelectOption } from 'naive-ui'
 import type { Question, QuestionType, Difficulty } from '@/types'
 import { getAllQuestions } from '@/api/question'
 import { getTagList } from '@/api/tag'
-import { buildGroupedTagOptions } from '@/utils/tagOptions'
+import { buildGroupedTagNameOptions } from '@/utils/tagOptions'
 import {
   QUESTION_TYPE_MAP,
   QUESTION_TYPE_OPTIONS,
@@ -153,8 +153,12 @@ const searchKeyword = ref('')
 const filterType = ref<QuestionType | null>(null)
 const filterDifficulty = ref<Difficulty | null>(null)
 const filterStatus = ref<string | null>(null)
-/** 标签多选（跨库场景用全局 GET /tags 下拉）；雪花 long 超出 2^53，值按原始数字字符串传递 */
-const filterTagIds = ref<string[]>([])
+/**
+ * 标签多选：跨库浏览按<b>标签名</b>筛选。
+ * 标签作用域为单题库、跨库允许同名，按名筛选可避免同名标签在筛选器里重复出现；
+ * 下拉项已按名去重（buildGroupedTagNameOptions）。
+ */
+const filterTags = ref<string[]>([])
 const tagOptions = ref<SelectOption[]>([])
 const questionList = ref<Question[]>([])
 
@@ -233,7 +237,7 @@ async function fetchList() {
       type: filterType.value ?? undefined,
       difficulty: filterDifficulty.value || undefined,
       status: filterStatus.value || undefined,
-      tagIds: filterTagIds.value.length ? filterTagIds.value : undefined,
+      tagNames: filterTags.value.length ? filterTags.value : undefined,
       keyword: searchKeyword.value || undefined
     })
     questionList.value = res.data.records || []
@@ -249,7 +253,8 @@ async function fetchTagOptions() {
   try {
     // 跨库浏览：标签下拉用全局标签池（GET /tags），不限定单题库
     const res = await getTagList()
-    tagOptions.value = buildGroupedTagOptions(res.data || [])
+    // option 的 value 取标签名（跨库同名去重），与筛选的 tagNames 语义一致
+    tagOptions.value = buildGroupedTagNameOptions(res.data || [])
   } catch {
     // 忽略错误
   }
@@ -272,14 +277,13 @@ function handlePageChange(page: number) {
 // 复制地址栏即可让他人直达同一筛选结果；非法值一律忽略走默认。
 
 /**
- * 解析 tags=1,2,3（容忍重复键数组形态），仅保留纯数字段、保持字符串原样。
- * 注意：id 是后端雪花 long，超出 JS Number 安全整数（2^53），必须按原始数字字符串
- * 传递，禁止 Number() 转换（会精度失真成错误 id）。与 n-select 的 string value 及 axios 序列化一致。
+ * 解析 tags=数组,集合（容忍重复键数组形态），按标签名筛选、保持原样。
+ * 旧链接里遗留的纯数字标签 id 会因匹配不到标签名而自然失效（不报错）。
  */
-function parseTagIds(raw: unknown): string[] {
+function parseTagNames(raw: unknown): string[] {
   const str = Array.isArray(raw) ? raw.join(',') : raw
   if (typeof str !== 'string' || !str) return []
-  return str.split(',').filter((v) => /^\d+$/.test(v))
+  return str.split(',').map((v) => v.trim()).filter(Boolean)
 }
 
 /** 从 route.query 恢复状态（非法值忽略走默认） */
@@ -297,8 +301,8 @@ function restoreStateFromQuery() {
     filterStatus.value = q.status
   }
   if (typeof q.keyword === 'string') searchKeyword.value = q.keyword
-  const tagIds = parseTagIds(q.tags)
-  if (tagIds.length) filterTagIds.value = tagIds
+  const tags = parseTagNames(q.tags)
+  if (tags.length) filterTags.value = tags
 }
 
 /** 由当前状态构建目标 query（page=1 且无筛选时清掉参数，保持 URL 干净） */
@@ -309,7 +313,7 @@ function buildQueryFromState(): Record<string, string> {
   if (filterDifficulty.value) query.difficulty = filterDifficulty.value
   if (filterStatus.value) query.status = filterStatus.value
   if (searchKeyword.value) query.keyword = searchKeyword.value
-  if (filterTagIds.value.length) query.tags = filterTagIds.value.join(',')
+  if (filterTags.value.length) query.tags = filterTags.value.join(',')
   return query
 }
 

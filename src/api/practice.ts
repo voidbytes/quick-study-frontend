@@ -5,7 +5,10 @@ export interface CreateSessionParams {
   count: number
   bankIds?: string[]
   types?: string[]
+  /** 标签 id（单库场景） */
   tagIds?: string[]
+  /** 标签名（跨库场景推荐，大小写不敏感；与 tagIds 取并集） */
+  tagNames?: string[]
   correctRateMin?: number
   correctRateMax?: number
   priorUnanswered?: boolean

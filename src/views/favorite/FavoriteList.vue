@@ -34,7 +34,7 @@
         @update:value="handleSearch"
       />
       <n-select
-        v-model:value="filterTagId"
+        v-model:value="filterTagName"
         :options="tagOptions"
         placeholder="全部标签"
         style="width: 200px"
@@ -141,6 +141,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useMessage } from 'naive-ui'
+import type { SelectOption } from 'naive-ui'
 import {
   StarOutline,
   Star,
@@ -153,6 +154,7 @@ import {
 import { listFavorites, cancelFavorite, getFavoriteStats, exportFavorites } from '@/api/favorite'
 import { getBankList } from '@/api/bank'
 import { getTagList } from '@/api/tag'
+import { buildGroupedTagNameOptions } from '@/utils/tagOptions'
 import type { FavoriteItem, QuestionType, Difficulty } from '@/types'
 import { triggerBlobDownload, nowStamp } from '@/utils/download'
 import { QUESTION_TYPE_MAP, DIFFICULTY_MAP } from '@/utils/constants'
@@ -171,12 +173,13 @@ const { confirmDanger } = useConfirm()
 const loading = ref(false)
 const exporting = ref(false)
 const filterBankId = ref<string | null>(null)
-const filterTagId = ref<string | null>(null)
+/** 标签按名筛选：跨库列表用全局池，标签库内不重名、跨库可同名，按名取值避免下拉重名 */
+const filterTagName = ref<string | null>(null)
 const filterType = ref<QuestionType | null>(null)
 const sortBy = ref<string>('favoritedAt_desc')
 const favList = ref<FavRow[]>([])
 const bankOptions = ref<{ label: string; value: string }[]>([])
-const tagOptions = ref<{ label: string; value: string }[]>([])
+const tagOptions = ref<SelectOption[]>([])
 
 const stats = reactive({ total: 0, thisWeekNew: 0, thisMonthPractice: 0 })
 
@@ -296,7 +299,7 @@ async function fetchList() {
       page: pagination.page,
       size: pagination.pageSize,
       bankId: filterBankId.value ?? undefined,
-      tagId: filterTagId.value ?? undefined,
+      tagNames: filterTagName.value ? [filterTagName.value] : undefined,
       type: filterType.value ?? undefined,
       sortBy: sortBy.value
     })
@@ -326,7 +329,8 @@ async function loadOptions() {
       getTagList()
     ])
     bankOptions.value = (bankRes.data.records || []).map((b) => ({ label: b.name, value: b.id }))
-    tagOptions.value = tagRes.data.map((t) => ({ label: t.name, value: t.id }))
+    // 跨库：全局标签池，按名去重（value=标签名，与后端 tagNames 筛选一致）
+    tagOptions.value = buildGroupedTagNameOptions(tagRes.data || [])
   } catch {
     // ignore
   }
@@ -363,7 +367,7 @@ function handleExport() {
   exporting.value = true
   exportFavorites({
     bankId: filterBankId.value ?? undefined,
-    tagId: filterTagId.value ?? undefined,
+    tagNames: filterTagName.value ? [filterTagName.value] : undefined,
     type: filterType.value ?? undefined
   })
     .then((blob) => {

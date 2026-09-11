@@ -64,11 +64,15 @@
 import { ref, computed, watch } from 'vue'
 import { useMessage } from 'naive-ui'
 import type { Tag } from '@/types'
-import { getTagList, create, updateTagGroup, deleteTag } from '@/api/tag'
+import { getTagList, getTagListByBankScope, create, updateTagGroup, deleteTag } from '@/api/tag'
 import { useAuthStore } from '@/stores/auth'
 import { useConfirm } from '@/composables/useConfirm'
 
-const props = defineProps<{ show: boolean }>()
+/**
+ * bankId 非空时标签管理限定在该题库作用域（列表 + 新建）；
+ * 不传则回落历史全局标签池（跨库管理场景）。
+ */
+const props = defineProps<{ show: boolean; bankId?: number | string | null }>()
 const emit = defineEmits<{
   (e: 'update:show', v: boolean): void
   (e: 'updated'): void
@@ -104,7 +108,8 @@ watch(
 
 async function load() {
   try {
-    const res = await getTagList()
+    const res =
+      props.bankId != null && props.bankId !== '' ? await getTagListByBankScope(props.bankId) : await getTagList()
     tags.value = res.data || []
   } catch {
     // 忽略错误
@@ -119,7 +124,11 @@ async function handleCreate() {
   }
   creating.value = true
   try {
-    await create({ name, groupName: newGroup.value.trim() || undefined })
+    await create({
+      name,
+      groupName: newGroup.value.trim() || undefined,
+      bankId: props.bankId != null && props.bankId !== '' ? props.bankId : undefined
+    })
     message.success('标签已添加')
     newName.value = ''
     newGroup.value = ''

@@ -6,7 +6,10 @@ export interface FavoriteListParams {
   page?: number
   size?: number
   bankId?: string
+  /** 标签 id（单库场景） */
   tagId?: string
+  /** 标签名（跨库场景推荐，大小写不敏感；与 tagId 取并集） */
+  tagNames?: string[]
   type?: QuestionType | null
   /** favoritedAt_desc（默认） | favoritedAt_asc */
   sortBy?: string
@@ -28,7 +31,12 @@ export function getFavoriteStats() {
 }
 
 // 批量导出收藏题目（流式下载 JSON，格式与全站题目导出一致）
-export function exportFavorites(params?: { bankId?: string; tagId?: string; type?: QuestionType | null }) {
+export function exportFavorites(params?: {
+  bankId?: string
+  tagId?: string
+  tagNames?: string[]
+  type?: QuestionType | null
+}) {
   return ensureBlob(
     request.get<Blob>('/favorites/export', { params, responseType: 'blob' })
   )

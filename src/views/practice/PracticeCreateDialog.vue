@@ -38,7 +38,7 @@
 
       <n-form-item label="标签选择">
         <n-select
-          v-model:value="form.tagIds"
+          v-model:value="form.tagNames"
           :options="tagOptions"
           multiple
           filterable
@@ -85,10 +85,11 @@
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useMessage } from 'naive-ui'
-import type { FormInst } from 'naive-ui'
+import type { FormInst, SelectOption } from 'naive-ui'
 import { createPractice } from '@/api/practice'
 import { getBankList } from '@/api/bank'
 import { getTagList } from '@/api/tag'
+import { buildGroupedTagNameOptions } from '@/utils/tagOptions'
 
 const props = defineProps<{
   show: boolean
@@ -105,13 +106,14 @@ const message = useMessage()
 const formRef = ref<FormInst | null>(null)
 const loading = ref(false)
 const bankOptions = ref<{ label: string; value: string }[]>([])
-const tagOptions = ref<{ label: string; value: string }[]>([])
+const tagOptions = ref<SelectOption[]>([])
 
 const form = reactive({
   count: 10,
   bankIds: [] as string[],
   types: [] as string[],
-  tagIds: [] as string[],
+  // 标签按名选择（跨库：全局池按名去重，value=标签名，与后端 tagNames 一致）
+  tagNames: [] as string[],
   correctRateMin: undefined as number | undefined,
   correctRateMax: undefined as number | undefined,
   priorUnanswered: false,
@@ -133,7 +135,8 @@ async function loadOptions() {
       getTagList()
     ])
     bankOptions.value = (bankRes.data.records || []).map((b) => ({ label: b.name, value: b.id }))
-    tagOptions.value = tagRes.data.map((t) => ({ label: t.name, value: t.id }))
+    // 跨库：全局标签池，按名去重（value=标签名）
+    tagOptions.value = buildGroupedTagNameOptions(tagRes.data || [])
   } catch {
     // ignore
   }
@@ -150,7 +153,7 @@ async function handleCreate() {
       types: form.types.length > 0
         ? form.types
         : ['SINGLE', 'MULTIPLE', 'TRUE_FALSE', 'FILL_BLANK', 'SHORT_ANSWER'],
-      tagIds: form.tagIds.length > 0 ? form.tagIds : undefined,
+      tagNames: form.tagNames.length > 0 ? form.tagNames : undefined,
       correctRateMin: form.correctRateMin != null ? form.correctRateMin / 100 : undefined,
       correctRateMax: form.correctRateMax != null ? form.correctRateMax / 100 : undefined,
       priorUnanswered: form.priorUnanswered || undefined,

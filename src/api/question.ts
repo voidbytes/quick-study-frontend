@@ -68,6 +68,11 @@ export interface QuestionListParams {
   keyword?: string
   /** 标签 id（雪花 long，字符串承载防 2^53 精度丢失） */
   tagIds?: string[]
+  /**
+   * 标签名多选（AND 语义）。跨题库浏览（GET /questions）推荐按名筛选：
+   * 标签作用域为单题库、跨库允许同名，按名可避免同名标签在筛选中重复造成歧义。
+   */
+  tagNames?: string[]
   status?: string
   sortBy?: string
   sortOrder?: string

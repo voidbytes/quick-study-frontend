@@ -22,7 +22,7 @@
         @update:value="handleSearch"
       />
       <n-select
-        v-model:value="filterTagId"
+        v-model:value="filterTagName"
         :options="tagOptions"
         placeholder="按标签筛选"
         style="width: 200px"
@@ -115,10 +115,12 @@
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useMessage } from 'naive-ui'
+import type { SelectOption } from 'naive-ui'
 import { CloseCircleOutline, LibraryOutline, TrashOutline } from '@vicons/ionicons5'
 import { list as getWrongQuestionList, deleteWrongQuestion } from '@/api/wrongQuestion'
 import { getBankList } from '@/api/bank'
 import { getTagList } from '@/api/tag'
+import { buildGroupedTagNameOptions } from '@/utils/tagOptions'
 import type { WrongQuestion, QuestionType, Difficulty } from '@/types'
 import { QUESTION_TYPE_MAP, DIFFICULTY_MAP } from '@/utils/constants'
 import { useConfirm } from '@/composables/useConfirm'
@@ -135,10 +137,11 @@ const { confirmDanger } = useConfirm()
 const loading = ref(false)
 const filterBankId = ref<string | null>(null)
 const filterKeyword = ref('')
-const filterTagId = ref<number | null>(null)
+/** 标签按名筛选：跨库列表用全局池，标签库内不重名、跨库可同名，按名取值避免下拉重名 */
+const filterTagName = ref<string | null>(null)
 const wrongList = ref<WrongRow[]>([])
 const bankOptions = ref<{ label: string; value: string }[]>([])
-const tagOptions = ref<{ label: string; value: string }[]>([])
+const tagOptions = ref<SelectOption[]>([])
 
 const pagination = reactive({
   page: 1,
@@ -252,7 +255,7 @@ async function fetchList() {
       size: pagination.pageSize,
       keyword: filterKeyword.value.trim() || undefined,
       bankId: filterBankId.value ?? undefined,
-      tagId: filterTagId.value ?? undefined
+      tagNames: filterTagName.value ? [filterTagName.value] : undefined
     })
     wrongList.value = (res.data.records || []).map(toRow)
     pagination.itemCount = res.data.total || 0
@@ -270,7 +273,8 @@ async function loadOptions() {
       getTagList()
     ])
     bankOptions.value = (bankRes.data.records || []).map((b) => ({ label: b.name, value: b.id }))
-    tagOptions.value = tagRes.data.map((t) => ({ label: t.name, value: t.id }))
+    // 跨库：全局标签池，按名去重（value=标签名，与后端 tagNames 筛选一致）
+    tagOptions.value = buildGroupedTagNameOptions(tagRes.data || [])
   } catch {
     // ignore
   }

@@ -56,7 +56,7 @@ export function exportBankMarkdown(
 
 /**
  * 批量导出题目：传 questionIds 按显式 ID 导出；
- * 传 bankId/type/difficulty/status/tagIds/keyword 按筛选条件导出全部。
+ * 传 bankId/type/difficulty/status/tagNames/keyword 按筛选条件导出全部。
  */
 export interface ExportQuestionsParams {
   questionIds?: string[]
@@ -64,7 +64,10 @@ export interface ExportQuestionsParams {
   type?: string
   difficulty?: string
   status?: string
+  /** 标签 id（单库场景） */
   tagIds?: string[]
+  /** 标签名（跨库场景推荐，AND 语义，大小写不敏感） */
+  tagNames?: string[]
   keyword?: string
 }
 
