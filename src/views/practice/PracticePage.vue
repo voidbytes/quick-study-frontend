@@ -248,7 +248,7 @@
               >
                 AI 给分建议
               </n-button>
-              <!-- 简答自评 -->
+              <!-- 主观题/填空未全中自评 -->
               <div v-if="isShortPending" class="flex gap-2 mt-2">
                 <n-button size="small" type="success" secondary @click="selfAssess(true)">我已掌握</n-button>
                 <n-button size="small" type="error" secondary @click="selfAssess(false)">还没掌握</n-button>
@@ -820,13 +820,22 @@ const showAiSuggest = computed(
 /** 判分横幅状态机：填空待评估 / 简答待自评 / 对 / 错 */
 const bannerTone = computed(() => {
   const q = currentQuestion.value
-  const isShort = q?.type === 'SHORT_ANSWER' && answered.value && q.isCorrect == null && !q.userAnswer?.startsWith('<span')
+  // 主观类未裁决（简答 null / 填空含未命中空且用户未自评）→ 待确认
+  const isSubjectivePending = answered.value && q != null && q.isCorrect == null
+  const needsConfirm = answered.value && q != null
+    && q.isCorrect === false
+    && (q.type === 'SHORT_ANSWER' || q.type === 'FILL_BLANK')
+    && selfAssessed.value[currentIndex.value] === undefined
   if (q?.isCorrect) {
     return { state: 'correct', label: '回答正确', cls: 'bg-success-50 border-success-200', color: 'var(--color-success-500)', text: 'text-success-700' }
   }
-  if (fillPending.value || isShort) {
-    return { state: 'pending', label: isShort ? '主观题待自评：可对照参考答案，或点「AI 给分建议」辅助判断' : '部分命中，其余待评估', cls: 'bg-warning-50 border-warning-200', color: 'var(--color-warning-500)', text: 'text-warning-700' }
+  if (isSubjectivePending || needsConfirm) {
+    return { state: 'pending', label: needsConfirm
+      ? '未完全匹配，请对照参考答案后自行确认掌握情况'
+      : '待确认：可对照参考答案，或点「AI 给分建议」辅助判断',
+      cls: 'bg-warning-50 border-warning-200', color: 'var(--color-warning-500)', text: 'text-warning-700' }
   }
+  // 客观题（单选/多选/判断）确定性判错，直接显示
   return { state: 'wrong', label: '回答错误', cls: 'bg-error-50 border-error-200', color: 'var(--color-error-500)', text: 'text-error-700' }
 })
 
@@ -844,9 +853,13 @@ function selfAssess(correct: boolean) {
 const shortDisabledMenus = ['title', 'quote', 'code', 'table', 'hr', 'link', 'clear', 'sub', 'sup']
 
 /** 简答待自评（对答案环节，未自评过） */
+/** 待确认（自评按钮显隐）：简答待裁决 / 填空未全中未自评 */
 const isShortPending = computed(() => {
   const q = currentQuestion.value
-  return q?.type === 'SHORT_ANSWER' && answered.value && q.isCorrect == null && selfAssessed.value[currentIndex.value] === undefined
+  if (!answered.value || selfAssessed.value[currentIndex.value] !== undefined) return false
+  if (q?.type === 'SHORT_ANSWER') return q.isCorrect == null
+  if (q?.type === 'FILL_BLANK') return q.isCorrect === false || fillPending.value
+  return false
 })
 
 /** 简答草稿变更：本地暂存（整卷模式，不判分） */
