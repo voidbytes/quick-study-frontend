@@ -188,19 +188,20 @@
             <!-- 提交后判分横幅（编程题不展示：判题结果由面板内展示） -->
             <div
               v-if="answered && currentQuestion?.type !== 'PROGRAMMING'"
-              class="mt-6 px-4 py-3.5 rounded-lg border flex items-start gap-3"
+              class="mt-6 px-4 py-3.5 rounded-lg border"
               :class="bannerTone.cls"
             >
-              <n-icon
-                :size="22"
-                class="flex-shrink-0 mt-0.5"
-                :color="bannerTone.color"
-              >
-                <CheckmarkCircleOutline v-if="currentQuestion?.isCorrect" />
-                <CloseCircleOutline v-else-if="bannerTone.state === 'wrong'" />
-                <TimeOutline v-else />
-              </n-icon>
-              <div class="text-sm leading-relaxed min-w-0 flex-1">
+              <div class="flex items-start gap-3">
+                <n-icon
+                  :size="22"
+                  class="flex-shrink-0 mt-0.5"
+                  :color="bannerTone.color"
+                >
+                  <CheckmarkCircleOutline v-if="currentQuestion?.isCorrect" />
+                  <CloseCircleOutline v-else-if="bannerTone.state === 'wrong'" />
+                  <TimeOutline v-else />
+                </n-icon>
+                <div class="text-sm leading-relaxed min-w-0 flex-1">
                 <span class="font-bold" :class="bannerTone.text">
                   {{ bannerTone.label }}
                 </span>
@@ -236,22 +237,41 @@
                     </span>
                   </template>
                 </template>
+
+                <!-- 主观题裁决行动区：AI 给分建议 + 自评同排对齐，统一实心按钮强化可点击感。
+                     自评过一次后 AI 给分建议一并收起（结论已定，不再需要辅助判断） -->
+                <div
+                  v-if="showAiSuggest || isShortPending"
+                  class="flex flex-wrap items-center gap-2 mt-3"
+                >
+                  <n-button
+                    v-if="showAiSuggest"
+                    size="small"
+                    type="warning"
+                    :loading="aiSuggestLoading"
+                    @click="handleAiSuggest"
+                  >
+                    <template #icon>
+                      <n-icon><SparklesOutline /></n-icon>
+                    </template>
+                    AI 给分建议
+                  </n-button>
+                  <template v-if="isShortPending">
+                    <n-button size="small" type="success" @click="selfAssess(true)">
+                      <template #icon>
+                        <n-icon><CheckmarkCircleOutline /></n-icon>
+                      </template>
+                      我已掌握
+                    </n-button>
+                    <n-button size="small" type="error" @click="selfAssess(false)">
+                      <template #icon>
+                        <n-icon><CloseCircleOutline /></n-icon>
+                      </template>
+                      还没掌握
+                    </n-button>
+                  </template>
+                </div>
               </div>
-              <!-- 填空存在未判定空/开放空时显示 AI 给分建议（全命中不显示；AI 未配置/报错时降级隐藏） -->
-              <n-button
-                v-if="showAiSuggest"
-                size="small"
-                type="warning"
-                secondary
-                :loading="aiSuggestLoading"
-                @click="handleAiSuggest"
-              >
-                AI 给分建议
-              </n-button>
-              <!-- 主观题/填空未全中自评 -->
-              <div v-if="isShortPending" class="flex gap-2 mt-2">
-                <n-button size="small" type="success" secondary @click="selfAssess(true)">我已掌握</n-button>
-                <n-button size="small" type="error" secondary @click="selfAssess(false)">还没掌握</n-button>
               </div>
             </div>
 
@@ -308,7 +328,7 @@
                 </n-badge>
               </div>
               <div class="flex flex-wrap items-center gap-2">
-                <n-button size="small" type="success" @click="handleComplete">完成练习</n-button>
+                <n-button v-if="!reviewing" size="small" type="success" @click="handleComplete">完成练习</n-button>
                 <n-button
                   v-if="answered && reviewResult"
                   size="small"
@@ -491,7 +511,8 @@ import {
   BulbOutline,
   DocumentTextOutline,
   BookOutline,
-  TimeOutline
+  TimeOutline,
+  SparklesOutline
 } from '@vicons/ionicons5'
 import { getPracticeSession, submitPracticeAnswer, completePractice, aiSuggest } from '@/api/practice'
 import { getNote, saveNote, deleteNote, NOTE_IMAGE_PATTERN } from '@/api/note'
@@ -578,6 +599,8 @@ const fillBlankAnswers = ref<string[]>([])
 /** 简答：当前题富文本草稿 */
 const shortAnswerDraft = ref('')
 const answered = ref(false)
+/** 对答案环节：完成练习后置 true，切题时保持判分态（不再回落作答界面） */
+const reviewing = ref(false)
 const submitting = ref(false)
 const loading = ref(true)
 const result = ref<ResultView | null>(null)
@@ -819,12 +842,16 @@ const fillPending = computed(() =>
   isFillAnswered.value && currentQuestion.value?.isCorrect == null && fillDetailRows.value.some((r) => !r.hit)
 )
 
-/** AI 给分建议按钮显隐：填空已答且有未判定空；或简答题已作答（主观题一律待 AI/自评） */
+/** AI 给分建议按钮显隐：填空已答且有未判定空；或简答题已作答（主观题一律待 AI/自评）。
+ *  已自评（我已掌握/还没掌握）后结论已定，同步收起 AI 建议 */
 const isShortAnswered = computed(
   () => currentQuestion.value?.type === 'SHORT_ANSWER' && Boolean(currentQuestion.value?.userAnswer)
 )
 const showAiSuggest = computed(
-  () => aiSuggestAvailable.value && (fillPending.value || isShortAnswered.value)
+  () =>
+    aiSuggestAvailable.value &&
+    selfAssessed.value[currentIndex.value] === undefined &&
+    (fillPending.value || isShortAnswered.value)
 )
 /** 判分横幅状态机：填空待评估 / 简答待自评 / 对 / 错 */
 const bannerTone = computed(() => {
@@ -1048,7 +1075,7 @@ function onProgrammingAnswered(payload: { code: string; languageId: string; subm
 
 function prevQuestion() {
   if (currentIndex.value > 0) {
-    saveLocalAnswer()
+    if (!reviewing.value) saveLocalAnswer()
     currentIndex.value--
     resetAnswer()
   }
@@ -1057,8 +1084,9 @@ function prevQuestion() {
 function nextQuestion() {
   if (currentIndex.value >= questions.value.length - 1) return
   const q = currentQuestion.value
-  // 主观题(填空/简答)未作答内容 → 弹框确认（可强制跳过）
-  if (q && (q.type === 'FILL_BLANK' || q.type === 'SHORT_ANSWER')) {
+  // 作答模式：主观题(填空/简答)未作答内容 → 弹框确认（可强制跳过）。
+  // 对答案环节已统一提交，不再拦截
+  if (!reviewing.value && q && (q.type === 'FILL_BLANK' || q.type === 'SHORT_ANSWER')) {
     const payload = buildAnswerPayload(q)
     if (payload == null) {
       confirm({
@@ -1074,7 +1102,8 @@ function nextQuestion() {
       return
     }
   }
-  saveLocalAnswer()
+  // 对答案环节不落本地作答，避免覆盖刚判分回来的 isCorrect/fillDetail
+  if (!reviewing.value) saveLocalAnswer()
   currentIndex.value++
   resetAnswer()
 }
@@ -1084,7 +1113,8 @@ function resetAnswer() {
   selectedIds.value = []
   fillBlankAnswers.value = []
   shortAnswerDraft.value = ''
-  answered.value = false
+  // 对答案环节保持判分态展示；作答模式回落未判分
+  answered.value = reviewing.value
   // 重置 AI 建议状态（每题独立；切换后按当前题重新判定按钮显隐）
   aiSuggestShow.value = false
   aiSuggestResult.value = null
@@ -1124,10 +1154,11 @@ async function finishPractice() {
     }
     const res = await completePractice(sessionId)
     reviewResult.value = res.data
-    // 先进入对答案环节（逐题自评/AI 建议），「查看结果」按钮才出统计页
+    // 先进入对答案环节（逐题自评/AI 建议），「查看结果」按钮才出统计页。
+    // reviewing 让切题保持判分态，避免回到作答界面（用户只能评第一题）
+    reviewing.value = true
     currentIndex.value = 0
     resetAnswer()
-    answered.value = true
     message.success('练习完成，进入对答案环节')
   } catch {
     message.error('完成练习失败')

@@ -19,7 +19,8 @@ vi.mock('@/composables/useConfirm', () => ({
 vi.mock('@/api/practice', () => ({
   getPracticeSession: vi.fn(),
   submitPracticeAnswer: vi.fn(),
-  completePractice: vi.fn()
+  completePractice: vi.fn(),
+  aiSuggest: vi.fn()
 }))
 
 // 响应拦截器解包后返回类型为 Promise<ApiResponse<T>>，与泛型签名一致
@@ -169,5 +170,96 @@ describe('PracticePage 自由练习页', () => {
 
     // PracticePage catch 后 router.push('/practice')，页面不渲染题目
     expect(wrapper.text()).not.toContain('第 1 题 / 共 2 题')
+  })
+
+  it('对答案环节切题保持判分态，不回落作答界面（回归：只能评第一题）', async () => {
+    getSessionMock.mockResolvedValue({
+      code: 0,
+      message: 'success',
+      data: sessionPayload({
+        answers: [
+          { questionIndex: 0, userAnswer: '[1]', isCorrect: true },
+          { questionIndex: 1, userAnswer: '[0]', isCorrect: false }
+        ]
+      })
+    })
+    const wrapper = mountPage()
+    await flushPromises()
+
+    submitMock.mockImplementation(async (_sid: string, payload: { index: number }) => ({
+      code: 0,
+      message: 'success',
+      data: payload.index === 0
+    }))
+    completeMock.mockResolvedValue({
+      code: 0,
+      message: 'success',
+      data: { sessionId: '1', correctCount: 1, totalCount: 2, accuracy: 0.5, duration: 1 }
+    })
+
+    const completeBtn = wrapper.findAll('button').find((b) => b.text() === '完成练习')
+    await completeBtn!.trigger('click')
+    await flushPromises()
+    await flushPromises()
+
+    // 进入对答案环节：第 1 题判分可见，完成练习按钮收起
+    expect(wrapper.text()).toContain('回答正确')
+    expect(wrapper.findAll('button').find((b) => b.text() === '完成练习')).toBeUndefined()
+
+    // 切到第 2 题：仍是判分态（第二题判错横幅可见），不是作答界面
+    const nextBtn = wrapper.findAll('button').find((b) => b.text() === '下一题')
+    await nextBtn!.trigger('click')
+    await wrapper.vm.$nextTick()
+    expect(wrapper.text()).toContain('回答错误')
+    expect(wrapper.text()).toContain('第 2 题 / 共 2 题')
+  })
+
+  it('主观题自评后收起 AI 给分建议（回归：评完仍显示）', async () => {
+    getSessionMock.mockResolvedValue({
+      code: 0,
+      message: 'success',
+      data: sessionPayload({
+        totalCount: 1,
+        questions: [
+          {
+            index: 0,
+            type: 'SHORT_ANSWER',
+            content: '简述 JVM 内存模型。',
+            options: null,
+            answer: '参考答案',
+            analysis: '',
+            difficulty: 'MEDIUM'
+          }
+        ],
+        answers: [{ questionIndex: 0, userAnswer: '我的作答', isCorrect: null }]
+      })
+    })
+    const wrapper = mountPage()
+    await flushPromises()
+
+    // 简答题后端返回 data=null（主观题确定性层不裁决），与声明的 ApiResponse<boolean> 不符，测试内做收敛
+    submitMock.mockResolvedValue({ code: 0, message: 'success', data: null as unknown as boolean })
+    completeMock.mockResolvedValue({
+      code: 0,
+      message: 'success',
+      data: { sessionId: '1', correctCount: 0, totalCount: 1, accuracy: 0, duration: 1 }
+    })
+
+    const completeBtn = wrapper.findAll('button').find((b) => b.text() === '完成练习')
+    await completeBtn!.trigger('click')
+    await flushPromises()
+    await flushPromises()
+
+    // 待裁决：AI 给分建议 + 自评按钮同排
+    expect(wrapper.text()).toContain('AI 给分建议')
+    expect(wrapper.text()).toContain('我已掌握')
+    expect(wrapper.text()).toContain('还没掌握')
+
+    // 自评「我已掌握」后，三颗按钮一并收起（结论已定）
+    const masteredBtn = wrapper.findAll('button').find((b) => b.text().includes('我已掌握'))
+    await masteredBtn!.trigger('click')
+    await wrapper.vm.$nextTick()
+    expect(wrapper.text()).not.toContain('AI 给分建议')
+    expect(wrapper.text()).not.toContain('还没掌握')
   })
 })
