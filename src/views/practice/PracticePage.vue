@@ -102,9 +102,9 @@
               </span>
             </div>
 
-            <!-- 题干（富文本） -->
+            <!-- 题干（富文本；填空题渲染为行内横线段） -->
             <div class="practice-stem mb-6">
-              <RichText :content="currentQuestion?.content" />
+              <RichText :content="practiceStem" fill-blanks />
             </div>
 
             <!-- 客观题选项（按 option_id 选择，字母为展示序号） -->
@@ -138,6 +138,39 @@
               </QuestionOption>
             </template>
 
+            <!-- 填空题：题干徽章标空位，下方独立横线输入框逐空作答（提交后锁定） -->
+            <template v-else-if="currentQuestion?.type === 'FILL_BLANK'">
+              <div :key="`fill-${currentIndex}`" class="fill-lines">
+                <div v-for="(blank, bi) in fillBlanks" :key="bi" class="fill-line-input">
+                  <n-input
+                    :value="fillBlankAnswers[bi] ?? ''"
+                    :bordered="false"
+                    :placeholder="`填写第 ${blank.no} 空`"
+                    :disabled="answered"
+                    @update:value="(v: string) => updateFillBlank(bi, v)"
+                  />
+                </div>
+              </div>
+            </template>
+
+            <!-- 简答题：富媒体作答（富文本 + 图片，与考试侧同款编辑器） -->
+            <template v-else-if="currentQuestion?.type === 'SHORT_ANSWER'">
+              <label class="block text-sm font-medium text-neutral-700 mb-2">
+                请作答（支持文字、图片与公式）
+              </label>
+              <MarkdownEditor
+                :key="`short-${currentIndex}`"
+                :model-value="shortAnswerDraft"
+                mode="edit"
+                height="240px"
+                placeholder="输入文字作答，可通过工具栏插入图片（最多 9 张）"
+                :max-images="9"
+                :disabled-menus="shortDisabledMenus"
+                :disabled="answered"
+                @update:model-value="handleShortDraftChange"
+              />
+            </template>
+
             <!-- 编程题作答（语言选择 / 运行样例 / 提交判题均在面板内） -->
             <template v-else-if="currentQuestion?.type === 'PROGRAMMING'">
               <ProgrammingAnswerPanel
@@ -155,30 +188,90 @@
             <!-- 提交后判分横幅（编程题不展示：判题结果由面板内展示） -->
             <div
               v-if="answered && currentQuestion?.type !== 'PROGRAMMING'"
-              class="mt-6 px-4 py-3.5 rounded-lg border flex items-start gap-3"
-              :class="currentQuestion?.isCorrect ? 'bg-success-50 border-success-200' : 'bg-error-50 border-error-200'"
+              class="mt-6 px-4 py-3.5 rounded-lg border"
+              :class="bannerTone.cls"
             >
-              <n-icon
-                :size="22"
-                class="flex-shrink-0 mt-0.5"
-                :color="currentQuestion?.isCorrect ? 'var(--color-success-500)' : 'var(--color-error-500)'"
-              >
-                <CheckmarkCircleOutline v-if="currentQuestion?.isCorrect" />
-                <CloseCircleOutline v-else />
-              </n-icon>
-              <div class="text-sm leading-relaxed min-w-0">
-                <span class="font-bold" :class="currentQuestion?.isCorrect ? 'text-success-700' : 'text-error-700'">
-                  {{ currentQuestion?.isCorrect ? '回答正确' : '回答错误' }}
+              <div class="flex items-start gap-3">
+                <n-icon
+                  :size="22"
+                  class="flex-shrink-0 mt-0.5"
+                  :color="bannerTone.color"
+                >
+                  <CheckmarkCircleOutline v-if="currentQuestion?.isCorrect" />
+                  <CloseCircleOutline v-else-if="bannerTone.state === 'wrong'" />
+                  <TimeOutline v-else />
+                </n-icon>
+                <div class="text-sm leading-relaxed min-w-0 flex-1">
+                <span class="font-bold" :class="bannerTone.text">
+                  {{ bannerTone.label }}
                 </span>
-                <span class="text-neutral-600">
-                  你的答案：<b>{{ formatAnswer(currentQuestion?.userAnswer, currentQuestion?.type) || '未作答' }}</b>
-                </span>
-                <template v-if="!currentQuestion?.isCorrect">
-                  <span class="mx-2 text-neutral-300">|</span>
+                <!-- 填空题：逐空 ✓/✗/待评估 明细 -->
+                <div v-if="fillDetailRows.length" class="mt-2 space-y-1">
+                  <div
+                    v-for="row in fillDetailRows"
+                    :key="row.no"
+                    class="flex items-center gap-2 flex-wrap"
+                  >
+                    <span
+                      class="inline-flex items-center justify-center w-5 h-5 rounded text-xs font-bold flex-shrink-0"
+                      :class="row.hit ? 'bg-success-500 text-white' : row.open ? 'bg-warning-500 text-white' : 'bg-error-500 text-white'"
+                    >
+                      {{ row.hit ? '✓' : row.open ? '?' : '✗' }}
+                    </span>
+                    <span class="text-neutral-600">空{{ row.no }}：</span>
+                    <span class="font-medium text-neutral-900">{{ row.user || '未作答' }}</span>
+                    <template v-if="!row.hit">
+                      <span v-if="row.open" class="text-warning-600">（开放空，待 AI 评估）</span>
+                      <span v-else class="text-neutral-500">正确答案：<b class="text-success-700">{{ row.correct }}</b></span>
+                    </template>
+                  </div>
+                </div>
+                <template v-else>
                   <span class="text-neutral-600">
-                    正确答案：<b class="text-success-700">{{ formatAnswer(currentQuestion?.answer, currentQuestion?.type) }}</b>
+                    你的答案：<b>{{ formatAnswer(currentQuestion?.userAnswer, currentQuestion?.type) || '未作答' }}</b>
                   </span>
+                  <template v-if="!currentQuestion?.isCorrect">
+                    <span class="mx-2 text-neutral-300">|</span>
+                    <span class="text-neutral-600">
+                      正确答案：<b class="text-success-700">{{ formatAnswer(currentQuestion?.answer, currentQuestion?.type) }}</b>
+                    </span>
+                  </template>
                 </template>
+
+                <!-- 主观题裁决行动区：请 AI 帮我评分 + 我已掌握/还没掌握 同排对齐，统一实心按钮强化可点击感。
+                     自评过一次后 AI 评分入口一并收起（结论已定，不再需要辅助判断） -->
+                <div
+                  v-if="showAiSuggest || isShortPending"
+                  class="flex flex-wrap items-center gap-2 mt-3"
+                >
+                  <n-button
+                    v-if="showAiSuggest"
+                    size="small"
+                    type="warning"
+                    :loading="aiSuggestLoading"
+                    @click="handleAiSuggest"
+                  >
+                    <template #icon>
+                      <n-icon><SparklesOutline /></n-icon>
+                    </template>
+                    请 AI 帮我评分
+                  </n-button>
+                  <template v-if="isShortPending">
+                    <n-button size="small" type="success" @click="selfAssess(true)">
+                      <template #icon>
+                        <n-icon><CheckmarkCircleOutline /></n-icon>
+                      </template>
+                      我已掌握
+                    </n-button>
+                    <n-button size="small" type="error" @click="selfAssess(false)">
+                      <template #icon>
+                        <n-icon><CloseCircleOutline /></n-icon>
+                      </template>
+                      还没掌握
+                    </n-button>
+                  </template>
+                </div>
+              </div>
               </div>
             </div>
 
@@ -193,18 +286,37 @@
               </div>
             </div>
 
+            <!-- AI 给分建议弹层（仅展示，不回写判分） -->
+            <n-modal
+              v-model:show="aiSuggestShow"
+              preset="card"
+              title="AI 给分建议"
+              style="width: 520px"
+            >
+              <div v-if="aiSuggestResult" class="space-y-4">
+                <div class="flex items-baseline gap-2">
+                  <span class="text-sm text-neutral-500">建议得分</span>
+                  <span class="text-3xl font-bold text-warning-600 tabular-nums">{{ aiSuggestResult.suggestedScore }}</span>
+                  <span class="text-xs text-neutral-400">仅供参考，不记入成绩</span>
+                </div>
+                <div class="bg-neutral-50 border border-neutral-200 rounded-lg px-4 py-3 text-sm text-neutral-700 leading-relaxed whitespace-pre-wrap">
+                  {{ aiSuggestResult.reasoning }}
+                </div>
+              </div>
+              <n-spin v-else :show="true" />
+            </n-modal>
+
             <!-- 底部操作 -->
             <div class="flex flex-wrap items-center justify-between gap-3 mt-8 pt-5 border-t border-neutral-200">
               <div class="flex flex-wrap items-center gap-2">
                 <n-button size="small" :disabled="currentIndex === 0" @click="prevQuestion">上一题</n-button>
                 <n-button
-                  v-if="!answered && currentQuestion?.type !== 'PROGRAMMING'"
+                  v-if="currentIndex < questions.length - 1"
                   size="small"
                   type="primary"
-                  :loading="submitting"
-                  @click="submitAnswer"
+                  @click="nextQuestion"
                 >
-                  提交答案
+                  下一题
                 </n-button>
                 <n-badge :value="hasNote" dot>
                   <n-button size="small" quaternary @click="openNoteDrawer">
@@ -216,15 +328,16 @@
                 </n-badge>
               </div>
               <div class="flex flex-wrap items-center gap-2">
+                <n-button v-if="!reviewing" size="small" type="success" @click="handleComplete">完成练习</n-button>
                 <n-button
-                  v-if="answered && currentIndex < questions.length - 1"
+                  v-if="answered && reviewResult"
                   size="small"
                   type="primary"
-                  @click="nextQuestion"
+                  secondary
+                  @click="result = reviewResult"
                 >
-                  下一题
+                  查看结果
                 </n-button>
-                <n-button size="small" type="success" @click="handleComplete">完成练习</n-button>
               </div>
             </div>
           </div>
@@ -233,7 +346,7 @@
     </template>
 
     <!-- ============ 练习结果 ============ -->
-    <template v-else>
+    <template v-else-if="result || reviewResult">
       <div class="max-w-4xl mx-auto">
         <PageHeader title="练习结果" subtitle="本套练习的作答统计与逐题回顾">
           <template #actions>
@@ -306,9 +419,9 @@
                 </span>
               </div>
 
-              <!-- 题干 -->
+              <!-- 题干（填空题渲染为行内横线段） -->
               <div class="practice-stem mb-4">
-                <RichText :content="q.content" />
+                <RichText :content="q.content" fill-blanks />
               </div>
 
               <!-- 答案对比 -->
@@ -397,9 +510,11 @@ import {
   CloseCircleOutline,
   BulbOutline,
   DocumentTextOutline,
-  BookOutline
+  BookOutline,
+  TimeOutline,
+  SparklesOutline
 } from '@vicons/ionicons5'
-import { getPracticeSession, submitPracticeAnswer, completePractice } from '@/api/practice'
+import { getPracticeSession, submitPracticeAnswer, completePractice, aiSuggest } from '@/api/practice'
 import { getNote, saveNote, deleteNote, NOTE_IMAGE_PATTERN } from '@/api/note'
 import ProgrammingAnswerPanel from '@/components/programming/ProgrammingAnswerPanel.vue'
 import type { ProgrammingAnswerView } from '@/components/programming/ProgrammingAnswerPanel.vue'
@@ -410,6 +525,10 @@ import {
   parseAnswerIds,
   formatAnswerIds,
   formatAnswerView,
+  formatFillAnswer,
+  parseFillAnswer,
+  parseFillBlanks,
+  gradeFillBlanks,
   sameIdSet,
   optionMarker,
   TRUE_FALSE_TRUE_ID,
@@ -435,6 +554,16 @@ interface QuestionRow extends PracticeQuestion {
   isCorrect?: boolean | null
   /** 编程题配置（答题者视角，脱敏：仅公开样例） */
   programming?: ProgrammingAnswerView | null
+  /** 填空题逐空判分明细（后端 saveAnswer 响应扩展，运行期赋值） */
+  fillDetail?: FillBlankDetail[] | null
+}
+
+/** 填空逐空判分明细（后端契约：每空对错 + 开放空标记） */
+interface FillBlankDetail {
+  /** 该空是否确定性命中 */
+  hit: boolean
+  /** 是否开放空（无标准答案，待 AI 评估） */
+  open?: boolean
 }
 
 /** filterParams JSON 展开 */
@@ -465,7 +594,13 @@ const currentIndex = ref(0)
 const selectedId = ref<number | null>(null)
 /** 多选：已选 option_id 集合 */
 const selectedIds = ref<number[]>([])
+/** 填空：当前题逐空作答（与【空N】顺序对齐） */
+const fillBlankAnswers = ref<string[]>([])
+/** 简答：当前题富文本草稿 */
+const shortAnswerDraft = ref('')
 const answered = ref(false)
+/** 对答案环节：完成练习后置 true，切题时保持判分态（不再回落作答界面） */
+const reviewing = ref(false)
 const submitting = ref(false)
 const loading = ref(true)
 const result = ref<ResultView | null>(null)
@@ -633,6 +768,8 @@ function accuracyTextClass(): string {
 
 function formatAnswer(answer?: string | null, type?: string): string {
   if (!answer) return '未作答'
+  // 填空答案展示改为答案组格式：① color/Color ② #fff ③（开放）
+  if (type === 'FILL_BLANK') return formatFillAnswer(answer) || answer
   return formatAnswerView(answer, type, parsedOptions.value) || answer
 }
 
@@ -651,6 +788,158 @@ function isCorrectOption(index: number): boolean {
   const opt = parsedOptions.value[index]
   if (!opt) return false
   return parseAnswerIds(q.answer).includes(opt.id)
+}
+
+// ==================== 填空题（多空行内作答 + 逐空反馈 + AI 建议） ====================
+
+/** 题干：填空保留【空N】原文由 RichText fill-blanks 渲染徽章（方案 C） */
+const practiceStem = computed(() => currentQuestion.value?.content ?? '')
+
+/** 填空空位序列（1..N，与题干徽章编号一致），驱动下方横线输入框列表 */
+const fillBlanks = computed(() =>
+  currentQuestion.value?.type === 'FILL_BLANK' ? parseFillBlanks(currentQuestion.value.content).blanks : []
+)
+
+function updateFillBlank(bi: number, value: string) {
+  const arr = [...fillBlankAnswers.value]
+  arr[bi] = value
+  fillBlankAnswers.value = arr
+  saveLocalAnswer()
+}
+
+/** 当前题是否为填空题且已提交（用于逐空明细渲染分流） */
+const isFillAnswered = computed(
+  () => answered.value && currentQuestion.value?.type === 'FILL_BLANK'
+)
+
+/** 填空逐空明细行（无明细/非填空题为空数组，横幅回落通用文案） */
+const fillDetailRows = computed(() => {
+  if (!isFillAnswered.value) return []
+  const q = currentQuestion.value as QuestionRow
+  const groups = parseFillAnswer(q.answer)
+  const user = parseFillUserAnswerList(q.userAnswer)
+  const detail = q.fillDetail
+  const n = Math.max(groups.length, user.length, detail?.length ?? 0)
+  const rows: { no: number; user: string; correct: string; hit: boolean; open: boolean }[] = []
+  for (let i = 0; i < n; i++) {
+    const group = groups[i] || []
+    // 后端逐空明细优先；缺省（旧格式会话）时本地确定性预判兜底
+    const d = detail?.[i]
+    const hit = d ? d.hit === true : gradeFillBlanks([group], [user[i] ?? ''])[0]
+    rows.push({
+      no: i + 1,
+      user: user[i] ?? '',
+      correct: group.length ? group.join(' / ') : '（开放）',
+      hit,
+      open: d?.open === true || (!d && group.length === 0)
+    })
+  }
+  return rows
+})
+
+/** 是否存在未判定空（开放空或后端未给出逐空判定的未命中空） */
+const fillPending = computed(() =>
+  isFillAnswered.value && currentQuestion.value?.isCorrect == null && fillDetailRows.value.some((r) => !r.hit)
+)
+
+/** 主观类题（填空/简答）是否已作答 */
+const isSubjectiveAnswered = computed(() => {
+  const q = currentQuestion.value
+  return (q?.type === 'SHORT_ANSWER' || q?.type === 'FILL_BLANK') && Boolean(q?.userAnswer)
+})
+/** AI 评分入口显隐：主观类题已作答 → 一律可请 AI 评分。
+ *  覆盖三种原样：填空含开放空/未判定空、填空「每空均有标准答案但判错」、简答待裁决；已判定全对或已自评则不显示 */
+const showAiSuggest = computed(
+  () =>
+    aiSuggestAvailable.value &&
+    selfAssessed.value[currentIndex.value] === undefined &&
+    currentQuestion.value?.isCorrect !== true &&
+    isSubjectiveAnswered.value
+)
+/** 判分横幅状态机：填空待评估 / 简答待自评 / 对 / 错 */
+const bannerTone = computed(() => {
+  const q = currentQuestion.value
+  // 主观类未裁决（简答 null / 填空含未命中空且用户未自评）→ 待确认
+  const isSubjectivePending = answered.value && q != null && q.isCorrect == null
+  const needsConfirm = answered.value && q != null
+    && q.isCorrect === false
+    && (q.type === 'SHORT_ANSWER' || q.type === 'FILL_BLANK')
+    && selfAssessed.value[currentIndex.value] === undefined
+  if (q?.isCorrect) {
+    return { state: 'correct', label: '回答正确', cls: 'bg-success-50 border-success-200', color: 'var(--color-success-500)', text: 'text-success-700' }
+  }
+  if (isSubjectivePending || needsConfirm) {
+    return { state: 'pending', label: needsConfirm
+      ? '未完全匹配，请对照参考答案后自行确认掌握情况'
+      : '待确认：可对照参考答案，或点「AI 给分建议」辅助判断',
+      cls: 'bg-warning-50 border-warning-200', color: 'var(--color-warning-500)', text: 'text-warning-700' }
+  }
+  // 客观题（单选/多选/判断）确定性判错，直接显示
+  return { state: 'wrong', label: '回答错误', cls: 'bg-error-50 border-error-200', color: 'var(--color-error-500)', text: 'text-error-700' }
+})
+
+/** 简答自评：主观题由用户自己判定掌握与否（写入本地练习状态，仅标记，不影响统计口径） */
+const selfAssessed = ref<Record<number, boolean>>({})
+function selfAssess(correct: boolean) {
+  const idx = currentIndex.value
+  selfAssessed.value = { ...selfAssessed.value, [idx]: correct }
+  const q = questions.value[idx]
+  if (q) q.isCorrect = correct
+  message.info(correct ? '已标记为掌握' : '已标记为未掌握，将进入错题本')
+}
+
+/** 简答作答工具栏禁用项（与考试侧 answerDisabledMenus 同口径） */
+const shortDisabledMenus = ['title', 'quote', 'code', 'table', 'hr', 'link', 'clear', 'sub', 'sup']
+
+/** 简答待自评（对答案环节，未自评过） */
+/** 待确认（自评按钮显隐）：简答待裁决 / 填空未全中未自评 */
+const isShortPending = computed(() => {
+  const q = currentQuestion.value
+  if (!answered.value || selfAssessed.value[currentIndex.value] !== undefined) return false
+  if (q?.type === 'SHORT_ANSWER') return q.isCorrect == null
+  if (q?.type === 'FILL_BLANK') return q.isCorrect === false || fillPending.value
+  return false
+})
+
+/** 简答草稿变更：本地暂存（整卷模式，不判分） */
+function handleShortDraftChange(v: string) {
+  shortAnswerDraft.value = v
+  saveLocalAnswer()
+}
+
+const aiSuggestShow = ref(false)
+const aiSuggestLoading = ref(false)
+const aiSuggestResult = ref<{ suggestedScore: number; reasoning: string } | null>(null)
+/** AI 报过错（未配置/失败）后本题降级隐藏按钮，避免反复触发 */
+const aiSuggestAvailable = ref(true)
+
+async function handleAiSuggest() {
+  const q = currentQuestion.value
+  if (!q) return
+  aiSuggestLoading.value = true
+  try {
+    const res = await aiSuggest(sessionId, currentIndex.value)
+    aiSuggestResult.value = res.data
+    aiSuggestShow.value = true
+  } catch {
+    // AI 未配置/调用失败：降级隐藏按钮，不影响作答主流程
+    aiSuggestAvailable.value = false
+    message.error('AI 建议暂不可用')
+  } finally {
+    aiSuggestLoading.value = false
+  }
+}
+
+/** yourAnswer（JSON 字符串数组）→ string[]；旧格式纯文本按单空容错 */
+function parseFillUserAnswerList(raw: string | null | undefined): string[] {
+  if (!raw) return []
+  try {
+    const parsed: unknown = JSON.parse(raw)
+    if (Array.isArray(parsed)) return parsed.map((v) => (typeof v === 'string' ? v : ''))
+  } catch {
+    // 旧格式纯文本按单空
+  }
+  return [raw]
 }
 
 function optionSelected(index: number): boolean {
@@ -685,52 +974,74 @@ function resultTextClass(isCorrect: boolean | null | undefined): string {
 }
 
 function selectAnswer(id: number) {
-  if (answered.value) return
   selectedId.value = id
   selectedIds.value = []
+  // 整卷模式：点选即暂存并自动跳下一题（判分统一在完成练习时进行）
+  saveLocalAnswer()
+  nextQuestion()
 }
 
 function toggleMultiple(id: number) {
-  if (answered.value) return
   const idx = selectedIds.value.indexOf(id)
   if (idx >= 0) selectedIds.value.splice(idx, 1)
   else selectedIds.value.push(id)
+  saveLocalAnswer()
 }
 
-async function submitAnswer() {
+/** 按题型把当前作答控件状态物化为提交串；null=该题尚未作答有效内容 */
+function buildAnswerPayload(q: QuestionRow): string | null {
+  const isMultiple = q.type === 'MULTIPLE'
+  if (isMultiple) {
+    return selectedIds.value.length ? formatAnswerIds(selectedIds.value) : null
+  }
+  if (q.type === 'FILL_BLANK') {
+    const payload = fillBlankAnswers.value.map((v) => v ?? '')
+    if (payload.every((v) => v.trim() === '')) return null
+    return JSON.stringify(payload)
+  }
+  if (q.type === 'SHORT_ANSWER') {
+    const content = shortAnswerDraft.value.trim()
+    return content || null
+  }
+  // SINGLE / TRUE_FALSE
+  if (selectedId.value == null) return null
+  return formatAnswerIds([selectedId.value])
+}
+
+/** 完成练习后的统计结果（对答案环节点「查看结果」时展示） */
+const reviewResult = ref<ResultView | null>(null)
+
+/** 作答暂存（牛客式整卷模式）：仅写本地状态，不调后端、不判分；完成练习时统一提交 */
+function saveLocalAnswer() {
   const q = currentQuestion.value
   if (!q) return
-  const isMultiple = q.type === 'MULTIPLE'
-  if (!isMultiple && selectedId.value == null) {
-    message.warning('请先选择答案')
-    return
+  const answer = buildAnswerPayload(q)
+  if (answer == null) return
+  const target = questions.value[currentIndex.value]
+  if (target) {
+    target.userAnswer = answer
+    target.isCorrect = null
+    target.fillDetail = null
   }
-  if (isMultiple && selectedIds.value.length === 0) {
-    message.warning('请先选择答案')
-    return
-  }
-  // 统一 option_id JSON 数组提交（单选 [id]、多选升序 [id,id]），与后端 toIdSet 判分对齐
-  const answer = isMultiple ? formatAnswerIds(selectedIds.value) : formatAnswerIds([selectedId.value!])
+}
 
-  submitting.value = true
-  try {
-    const res = await submitPracticeAnswer(sessionId, {
-      index: currentIndex.value,
-      answer
-    })
-    answered.value = true
-    // 以后端判分结果为准（id 集合比对，与提交顺序无关）
-    const target = questions.value[currentIndex.value]
-    if (target) {
-      target.userAnswer = answer
-      target.isCorrect = typeof res.data === 'boolean'
-        ? res.data
-        : sameIdSet(parseAnswerIds(answer), parseAnswerIds(target.answer))
-    }
-  } catch {
-    message.error('提交答案失败')
-  } finally {
-    submitting.value = false
+/**
+ * 填空提交结果回填：后端返回 boolean（全对/全错）或对象（含 isCorrect + 逐空明细）。
+ * 明细缺省时由 fillDetailRows 的本地确定性预判兜底。
+ */
+function applyFillAnswerResult(q: QuestionRow, answer: string, data: unknown) {
+  answered.value = true
+  q.userAnswer = answer
+  if (data && typeof data === 'object') {
+    const obj = data as { isCorrect?: boolean | null; fillDetail?: FillBlankDetail[] }
+    q.isCorrect = obj.isCorrect ?? null
+    q.fillDetail = Array.isArray(obj.fillDetail) ? obj.fillDetail : null
+  } else if (typeof data === 'boolean') {
+    q.isCorrect = data
+    q.fillDetail = null
+  } else {
+    q.isCorrect = null
+    q.fillDetail = null
   }
 }
 
@@ -767,40 +1078,91 @@ function onProgrammingAnswered(payload: { code: string; languageId: string; subm
 
 function prevQuestion() {
   if (currentIndex.value > 0) {
+    if (!reviewing.value) saveLocalAnswer()
     currentIndex.value--
     resetAnswer()
   }
 }
 
 function nextQuestion() {
-  if (currentIndex.value < questions.value.length - 1) {
-    currentIndex.value++
-    resetAnswer()
+  if (currentIndex.value >= questions.value.length - 1) return
+  const q = currentQuestion.value
+  // 作答模式：主观题(填空/简答)未作答内容 → 弹框确认（可强制跳过）。
+  // 对答案环节已统一提交，不再拦截
+  if (!reviewing.value && q && (q.type === 'FILL_BLANK' || q.type === 'SHORT_ANSWER')) {
+    const payload = buildAnswerPayload(q)
+    if (payload == null) {
+      confirm({
+        title: '本题尚未作答',
+        content: '确定跳过本题继续下一题吗？',
+        positiveText: '跳过',
+        negativeText: '返回作答',
+        onPositiveClick: () => {
+          currentIndex.value++
+          resetAnswer()
+        }
+      })
+      return
+    }
   }
+  // 对答案环节不落本地作答，避免覆盖刚判分回来的 isCorrect/fillDetail
+  if (!reviewing.value) saveLocalAnswer()
+  currentIndex.value++
+  resetAnswer()
 }
 
 function resetAnswer() {
   selectedId.value = null
   selectedIds.value = []
-  answered.value = false
-  // 恢复已答题目的状态（userAnswer 为 option_id JSON 数组字符串）
+  fillBlankAnswers.value = []
+  shortAnswerDraft.value = ''
+  // 对答案环节保持判分态展示；作答模式回落未判分
+  answered.value = reviewing.value
+  // 重置 AI 建议状态（每题独立；切换后按当前题重新判定按钮显隐）
+  aiSuggestShow.value = false
+  aiSuggestResult.value = null
+  aiSuggestAvailable.value = true
+  // 恢复已答题目的状态（userAnswer 为 option_id JSON 数组字符串 / 填空 JSON 字符串数组 / 简答富文本）
   const q = questions.value[currentIndex.value]
   if (q && q.userAnswer) {
     if (q.type === 'MULTIPLE') {
       selectedIds.value = parseAnswerIds(q.userAnswer)
+    } else if (q.type === 'FILL_BLANK') {
+      fillBlankAnswers.value = parseFillUserAnswerList(q.userAnswer)
+    } else if (q.type === 'SHORT_ANSWER') {
+      shortAnswerDraft.value = q.userAnswer
     } else if (q.type !== 'PROGRAMMING') {
       // 编程题：代码与语言由面板内部状态承载，此处仅标记已作答
       selectedId.value = parseAnswerIds(q.userAnswer)[0] ?? null
     }
-    answered.value = true
+    // 整卷模式：作答暂存不判分，answered 仅在完成练习后的对答案环节为 true
   }
 }
 
 async function finishPractice() {
   try {
+    // 整卷模式：完成时把所有本地作答统一提交后端判分（saveAnswer 幂等，重复提交覆盖）
+    for (let i = 0; i < questions.value.length; i++) {
+      const q = questions.value[i]
+      if (!q.userAnswer) continue
+      const res = await submitPracticeAnswer(sessionId, { index: i, answer: q.userAnswer })
+      // 判分结果回填（对答案环节展示）：填空题返回 isCorrect + 逐空明细
+      if (q.type === 'FILL_BLANK') {
+        applyFillAnswerResult(q, q.userAnswer, res.data)
+      } else if (typeof res.data === 'boolean') {
+        q.isCorrect = res.data
+      } else {
+        q.isCorrect = null
+      }
+    }
     const res = await completePractice(sessionId)
-    result.value = res.data
-    message.success('练习完成')
+    reviewResult.value = res.data
+    // 先进入对答案环节（逐题自评/AI 建议），「查看结果」按钮才出统计页。
+    // reviewing 让切题保持判分态，避免回到作答界面（用户只能评第一题）
+    reviewing.value = true
+    currentIndex.value = 0
+    resetAnswer()
+    message.success('练习完成，进入对答案环节')
   } catch {
     message.error('完成练习失败')
   }
@@ -895,5 +1257,28 @@ onBeforeUnmount(() => {
   font-size: var(--text-sm);
   line-height: var(--leading-relaxed);
   color: var(--text-secondary);
+}
+/* 填空作答区：题干徽章之下独立横线输入框列表，逐空一条 */
+.fill-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 4px;
+}
+.fill-line-input {
+  min-width: 120px;
+}
+.fill-line-input :deep(.n-input) {
+  border-bottom: 1.5px solid var(--border-default);
+  border-radius: 0;
+  background: transparent;
+}
+.fill-line-input :deep(.n-input:not(.n-input--disabled):hover),
+.fill-line-input :deep(.n-input:not(.n-input--disabled).n-input--focus) {
+  border-bottom-color: var(--border-brand);
+}
+.fill-line-input :deep(.n-input--disabled) {
+  border-bottom-color: var(--border-strong);
+  background: transparent;
 }
 </style>

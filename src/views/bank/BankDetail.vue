@@ -3,6 +3,9 @@
     <!-- 页头：返回 + 题库名称 + 管理员操作 -->
     <PageHeader :title="bank?.name || '题库详情'" :subtitle="bank?.description || undefined" showBack>
       <template #actions>
+        <n-button size="small" @click="router.push({ path: '/records', query: { bankId: String(route.params.id) } })">
+          答卷记录
+        </n-button>
         <n-dropdown
           v-if="authStore.isAdmin && bank"
           trigger="click"
@@ -27,6 +30,9 @@
             <n-tag :type="bank.isPublic ? 'success' : 'default'" size="small" round>
               {{ bank.isPublic ? '公开' : '私有' }}
             </n-tag>
+            <!-- 成员角色角标（被分享的私有库） -->
+            <n-tag v-if="myRole === 'EDITOR'" type="info" size="small" round>可编辑</n-tag>
+            <n-tag v-else-if="myRole === 'VIEWER'" size="small" round>仅查看</n-tag>
           </div>
           <p class="text-sm text-neutral-500 leading-relaxed mb-4">
             {{ bank.description || '暂无描述' }}
@@ -47,14 +53,14 @@
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           <StatCard label="题目数" :value="bank.questionCount ?? 0" tone="brand" />
           <StatCard label="练习次数" :value="bank.practiceCount ?? 0" />
-          <!-- 协作人：创建者/管理员可查看与管理；其他用户不展示该卡（接口无权访问） -->
-          <StatCard v-if="canManageCollaborators" label="协作人" :value="collaborators.length">
+          <!-- 成员：创建者/管理员可查看与管理；其他用户不展示该卡（接口无权访问） -->
+          <StatCard v-if="canManageMembers" label="成员" :value="members.length">
             <template #actions>
               <n-button
                 size="tiny"
                 type="primary"
                 secondary
-                @click="openCollaboratorManager"
+                @click="openMemberManager"
               >
                 管理
               </n-button>
@@ -76,11 +82,11 @@
     </n-spin>
     <LoadError v-else :description="loadError" :retrying="loading" @retry="fetchDetail" />
 
-    <!-- 协作人管理弹窗（管理员）：列表 + 添加 -->
-    <n-modal v-model:show="showCollaboratorManager" preset="card" title="协作人管理" style="width: 460px">
+    <!-- 成员管理弹窗（创建者/管理员）：列表 + 搜索添加（角色选择） -->
+    <n-modal v-model:show="showMemberManager" preset="card" title="成员管理" style="width: 480px">
       <div class="mb-4">
         <div
-          v-for="col in collaborators"
+          v-for="col in members"
           :key="col.userId"
           class="flex items-center gap-3 py-2.5 border-b border-neutral-100 last:border-b-0"
         >
@@ -93,24 +99,39 @@
             <div class="text-sm font-medium text-neutral-900 truncate">
               {{ col.nickname || `用户 #${col.userId}` }}
             </div>
-            <div class="text-xs text-neutral-500">ID: {{ col.userId }}</div>
+            <div class="text-xs text-neutral-500">@{{ col.username || col.userId }}</div>
           </div>
           <n-tag size="small" :type="roleTagType(col.role)" round>
             {{ roleLabel(col.role) }}
           </n-tag>
-          <n-button size="tiny" quaternary type="error" @click="handleRemoveCollaborator(col.userId)">
+          <n-button size="tiny" quaternary type="error" @click="handleRemoveMember(col.userId)">
             移除
           </n-button>
         </div>
-        <div v-if="collaborators.length === 0" class="text-sm text-neutral-400 text-center py-4">
-          暂无协作人
+        <div v-if="members.length === 0" class="text-sm text-neutral-400 text-center py-4">
+          暂无成员
         </div>
       </div>
       <n-form label-placement="top">
-        <n-form-item label="添加协作人（用户ID）">
-          <n-input v-model:value="newCollaboratorUserId" placeholder="输入用户ID" />
+        <n-form-item label="搜索用户（用户名/昵称）">
+          <n-select
+            v-model:value="newMemberUserId"
+            :options="userSearchOptions"
+            :loading="userSearching"
+            filterable
+            remote
+            clearable
+            placeholder="输入用户名或昵称搜索"
+            @search="handleUserSearch"
+          />
         </n-form-item>
-        <n-button type="primary" block :loading="addColLoading" @click="handleAddCollaborator">
+        <n-form-item label="角色">
+          <n-radio-group v-model:value="newMemberRole">
+            <n-radio value="VIEWER">仅查看（学生：可浏览、练习）</n-radio>
+            <n-radio value="EDITOR">可编辑（老师：可增删改题目、导入）</n-radio>
+          </n-radio-group>
+        </n-form-item>
+        <n-button type="primary" block :loading="addMemberLoading" @click="handleAddMember">
           添加
         </n-button>
       </n-form>
@@ -180,8 +201,9 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useMessage, type FormRules, type FormInst } from 'naive-ui'
-import type { QuestionBank, BankCollaborator } from '@/types'
-import { getBankDetail, getCollaborators, addCollaborator, removeCollaborator, transferBank, updateBank } from '@/api/bank'
+import type { QuestionBank, BankMember } from '@/types'
+import { getBankDetail, getMembers, addMember, removeMember, transferBank, updateBank } from '@/api/bank'
+import { searchUsers, type UserSearchItem } from '@/api/user'
 import { exportBank, exportBankMarkdown, type MarkdownExportParams } from '@/api/importExport'
 import { triggerBlobDownload, nowStamp } from '@/utils/download'
 import { QUESTION_TYPE_OPTIONS } from '@/utils/constants'
@@ -209,13 +231,19 @@ const bankId = route.params.id as string
 const loading = ref(false)
 const loadError = ref('')
 const bank = ref<BankInfo | null>(null)
-const collaborators = ref<BankCollaborator[]>([])
+const members = ref<BankMember[]>([])
 
-/** 协作人管理权限：管理员或题库创建者（与后端校验口径一致） */
-const canManageCollaborators = computed(() => {
+/** 当前用户角色（后端 myRole；管理员按 canManage 兜底） */
+const myRole = computed(() => bank.value?.myRole ?? null)
+/** 成员管理权限：创建者（myRole=OWNER）或管理员（后端口径一致） */
+const canManageMembers = computed(() => {
   if (authStore.isAdmin) return true
-  const uid = authStore.userInfo?.id
-  return uid != null && bank.value?.creatorId === uid
+  return myRole.value === 'OWNER'
+})
+/** EDITOR 可编辑题目（后端写权限门同口径） */
+const canEditQuestions = computed(() => {
+  if (authStore.isAdmin) return true
+  return myRole.value === 'OWNER' || myRole.value === 'EDITOR'
 })
 const exporting = ref(false)
 
@@ -242,9 +270,13 @@ const showTransfer = ref(false)
 const transferUserId = ref('')
 const transferLoading = ref(false)
 
-const showCollaboratorManager = ref(false)
-const newCollaboratorUserId = ref('')
-const addColLoading = ref(false)
+const showMemberManager = ref(false)
+const newMemberUserId = ref<string | null>(null)
+const newMemberRole = ref<'VIEWER' | 'EDITOR'>('VIEWER')
+const addMemberLoading = ref(false)
+const userSearchKeyword = ref('')
+const userSearchOptions = ref<UserSearchItem[]>([])
+const userSearching = ref(false)
 
 const showEditDialog = ref(false)
 const editFormRef = ref<FormInst>()
@@ -262,21 +294,43 @@ const editRules: FormRules = {
 
 const ROLE_TAG: Record<string, 'default' | 'info' | 'warning' | 'success' | 'error' | 'primary'> = {
   EDITOR: 'info',
-  REVIEWER: 'warning',
   VIEWER: 'default'
 }
 const ROLE_LABEL: Record<string, string> = {
-  EDITOR: '编辑者',
-  REVIEWER: '审阅者',
-  VIEWER: '查看者'
+  EDITOR: '可编辑',
+  VIEWER: '仅查看'
 }
 
-function roleLabel(role: BankCollaborator['role'] | string): string {
+function roleLabel(role: BankMember['role'] | string): string {
   return ROLE_LABEL[role] || role
 }
 
-function roleTagType(role: BankCollaborator['role'] | string) {
+function roleTagType(role: BankMember['role'] | string) {
   return ROLE_TAG[role] || 'default'
+}
+
+/** 成员添加用户搜索（远程下拉，复用批改人搜索接口） */
+function handleUserSearch(query: string) {
+  userSearchKeyword.value = query
+  if (!query.trim()) {
+    userSearchOptions.value = []
+    return
+  }
+  userSearching.value = true
+  searchUsers(query.trim())
+    .then((res) => {
+      userSearchOptions.value = (res.data || []).map((u) => ({
+        ...u,
+        label: u.nickname ? `${u.nickname} (@${u.username})` : `@${u.username}`,
+        value: u.id
+      }))
+    })
+    .catch(() => {
+      userSearchOptions.value = []
+    })
+    .finally(() => {
+      userSearching.value = false
+    })
 }
 
 function formatTime(time?: string) {
@@ -300,18 +354,18 @@ async function fetchDetail() {
   }
 }
 
-async function fetchCollaborators() {
+async function fetchMembers() {
   try {
-    const res = await getCollaborators(bankId)
-    collaborators.value = res.data || []
+    const res = await getMembers(bankId)
+    members.value = res.data || []
   } catch {
     // ignore：无权限等情况静默
   }
 }
 
-function openCollaboratorManager() {
-  showCollaboratorManager.value = true
-  fetchCollaborators()
+function openMemberManager() {
+  showMemberManager.value = true
+  fetchMembers()
 }
 
 async function handleExportBank() {
@@ -370,30 +424,31 @@ async function handleTransfer() {
   }
 }
 
-async function handleAddCollaborator() {
-  if (!newCollaboratorUserId.value) {
-    message.warning('请输入用户ID')
+async function handleAddMember() {
+  if (!newMemberUserId.value) {
+    message.warning('请先搜索并选择用户')
     return
   }
-  addColLoading.value = true
+  addMemberLoading.value = true
   try {
-    // 当前 addCollaborator API 仅接收 userId，角色选择不再随请求提交
-    await addCollaborator(bankId, newCollaboratorUserId.value)
+    await addMember(bankId, newMemberUserId.value, newMemberRole.value)
     message.success('添加成功')
-    newCollaboratorUserId.value = ''
-    fetchCollaborators()
-  } catch {
-    message.error('添加失败')
+    newMemberUserId.value = null
+    userSearchKeyword.value = ''
+    userSearchOptions.value = []
+    fetchMembers()
+  } catch (err: any) {
+    message.error(err?.response?.data?.message || '添加失败')
   } finally {
-    addColLoading.value = false
+    addMemberLoading.value = false
   }
 }
 
-async function handleRemoveCollaborator(userId: string) {
+async function handleRemoveMember(userId: string) {
   try {
-    await removeCollaborator(bankId, userId)
+    await removeMember(bankId, userId)
     message.success('移除成功')
-    fetchCollaborators()
+    fetchMembers()
   } catch {
     message.error('移除失败')
   }
@@ -431,9 +486,9 @@ async function handleSaveEdit() {
 
 onMounted(() => {
   fetchDetail()
-  // 协作人接口仅创建者/管理员可访问，其他用户不发请求（避免 403 噪音）
-  if (canManageCollaborators.value) {
-    fetchCollaborators()
+  // 成员接口仅创建者/管理员可访问，其他用户不发请求（避免 403 噪音）
+  if (canManageMembers.value) {
+    fetchMembers()
   }
 })
 </script>

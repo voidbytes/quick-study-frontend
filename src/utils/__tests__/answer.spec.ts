@@ -10,7 +10,17 @@ import {
   idToMarker,
   sortOptionsById,
   TRUE_FALSE_TRUE_ID,
-  TRUE_FALSE_FALSE_ID
+  TRUE_FALSE_FALSE_ID,
+  parseFillBlanks,
+  renderFillContent,
+  parseFillAnswer,
+  formatFillAnswer,
+  normalizeForMatch,
+  matchFillBlank,
+  gradeFillBlanks,
+  validateFillQuestion,
+  formatFillAnswerJson,
+  FILL_MAX_BLANKS
 } from '../answer'
 import type { OptionItem } from '@/types'
 
@@ -178,3 +188,189 @@ describe('sameIdSet', () => {
     expect(sameIdSet([0, 1, 2], [0, 1])).toBe(false)
   })
 })
+
+// ==================== 填空题多空（占位符/转义/答案组） ====================
+
+describe('parseFillBlanks', () => {
+  it('拆分片段与空位（单空）', () => {
+    const { parts, blanks } = parseFillBlanks('Java 中【空1】是面向对象语言')
+    expect(parts).toEqual(['Java 中', '是面向对象语言'])
+    expect(blanks).toEqual([{ no: 1, text: 'Java 中' }])
+  })
+
+  it('多空按顺序解析，编号保留', () => {
+    const { parts, blanks } = parseFillBlanks('a【空1】b【空2】c')
+    expect(parts).toEqual(['a', 'b', 'c'])
+    expect(blanks.map((b) => b.no)).toEqual([1, 2])
+  })
+
+  it('\\【空N】转义字面量不拆空位且去除反斜杠', () => {
+    const { parts, blanks } = parseFillBlanks('写作 \\【空1】 是字面量，真实空位【空1】在此')
+    expect(blanks.map((b) => b.no)).toEqual([1])
+    // 转义符 \ 被去除，字面量原样保留
+    expect(parts[0]).toContain('【空1】')
+    expect(parts[0]).not.toContain('\\')
+  })
+
+  it('无空位：单一片段、空空位数组', () => {
+    const { parts, blanks } = parseFillBlanks('没有空位的题干')
+    expect(parts).toEqual(['没有空位的题干'])
+    expect(blanks).toEqual([])
+  })
+
+  it('空/null 内容兜底', () => {
+    expect(parseFillBlanks('')).toEqual({ parts: [''], blanks: [] })
+    expect(parseFillBlanks(null)).toEqual({ parts: [''], blanks: [] })
+    expect(parseFillBlanks(undefined)).toEqual({ parts: [''], blanks: [] })
+  })
+
+  it('开头即空位 / 结尾即空位', () => {
+    const head = parseFillBlanks('【空1】尾部')
+    expect(head.parts).toEqual(['', '尾部'])
+    const tail = parseFillBlanks('开头【空1】')
+    expect(tail.parts).toEqual(['开头', ''])
+  })
+
+  it('代码内容不受影响（{1}、[1]、{{x}} 等非占位符语法）', () => {
+    const { blanks } = parseFillBlanks('new int[]{1} 与 {{ x }} 与 arr[1]')
+    expect(blanks).toEqual([])
+  })
+})
+
+describe('renderFillContent', () => {
+  it('【空N】替换为行内横线段（<u>）', () => {
+    const html = renderFillContent('Java 中【空1】是面向对象语言，三大特性是【空2】、【空3】')
+    expect(html).toBe('Java 中<u>　　</u>是面向对象语言，三大特性是<u>　　</u>、<u>　　</u>')
+    expect(html).not.toContain('【空')
+  })
+
+  it('转义字面量保留展示且不生成横线', () => {
+    const html = renderFillContent('字面量 \\【空1】 与真实空【空1】')
+    expect(html).toContain('【空1】')
+    expect(html).toContain('<u>　　</u>')
+    // 仅 1 条横线（字面量不拆空）
+    expect(html.match(/<u>/g)?.length).toBe(1)
+  })
+
+  it('无空位原样返回', () => {
+    expect(renderFillContent('纯题干')).toBe('纯题干')
+    expect(renderFillContent('')).toBe('')
+    expect(renderFillContent(null)).toBe('')
+  })
+
+  it('行内横线进 markdown-it 不被误解析为 hr（____ 单独成行会变 <hr>，<u> 不会）', async () => {
+    const { renderRichTextContent } = await import('../richText')
+    const content = renderFillContent('题干第一行\n【空1】\n第二行')
+    const html = renderRichTextContent(content)
+    expect(html).toContain('<u>')
+    expect(html).not.toContain('<hr')
+  })
+})
+
+describe('parseFillAnswer（三形态归一化）', () => {
+  it('嵌套数组原样', () => {
+    const raw = '[["color","Color"],["#fff"],[]]'
+    expect(parseFillAnswer(raw)).toEqual([['color', 'Color'], ['#fff'], []])
+  })
+
+  it('单层数组（旧格式）→ 每空单答案', () => {
+    expect(parseFillAnswer('["a","b"]')).toEqual([['a'], ['b']])
+    expect(parseFillAnswer('["color"]')).toEqual([['color']])
+  })
+
+  it('纯文本（旧格式）→ 单空单答案', () => {
+    expect(parseFillAnswer('TCP')).toEqual([['TCP']])
+    expect(parseFillAnswer('参考答案文本')).toEqual([['参考答案文本']])
+  })
+
+  it('空/非法输入返回空数组', () => {
+    expect(parseFillAnswer('')).toEqual([])
+    expect(parseFillAnswer(null)).toEqual([])
+    expect(parseFillAnswer(undefined)).toEqual([])
+  })
+
+  it('空 JSON 数组 → 无空', () => {
+    expect(parseFillAnswer('[]')).toEqual([])
+  })
+
+  it('嵌套数组内混入非字符串项被过滤', () => {
+    expect(parseFillAnswer('[["a",1,null],["b"]]')).toEqual([['a'], ['b']])
+  })
+})
+
+describe('formatFillAnswer', () => {
+  it('① 编号 + 组内 / 连接 + 开放空（开放）', () => {
+    expect(formatFillAnswer('[["color","Color"],["#fff"],[]]'))
+      .toBe('① color/Color ② #fff ③ （开放）')
+  })
+
+  it('单空纯文本旧格式', () => {
+    expect(formatFillAnswer('TCP')).toBe('① TCP')
+  })
+
+  it('超 10 空回退 N. 编号', () => {
+    const groups = Array.from({ length: 11 }, (_, i) => [`v${i + 1}`])
+    expect(formatFillAnswer(JSON.stringify(groups))).toContain('11. v11')
+  })
+
+  it('空答案返回空串', () => {
+    expect(formatFillAnswer('')).toBe('')
+    expect(formatFillAnswer(null)).toBe('')
+  })
+})
+
+describe('normalizeForMatch / matchFillBlank', () => {
+  it('全角空格→半角、trim、连续空白折叠；大小写不动', () => {
+    expect(normalizeForMatch('　a  b　')).toBe('a b')
+    expect(normalizeForMatch('Hello   World')).toBe('Hello World')
+    expect(normalizeForMatch('ABC')).toBe('ABC')
+    expect(normalizeForMatch('abc')).toBe('abc') // 不转换大小写
+  })
+
+  it('组内任一命中（精确或归一化后相等）', () => {
+    expect(matchFillBlank(['color', 'Color'], 'color')).toBe(true)
+    expect(matchFillBlank(['color', 'Color'], 'Color')).toBe(true)
+    expect(matchFillBlank(['hello world'], 'hello  world')).toBe(true) // 空白归一化
+    expect(matchFillBlank(['hello world'], '　hello world ')).toBe(true)
+  })
+
+  it('未命中 / 大小写敏感（既定决策）', () => {
+    expect(matchFillBlank(['color'], 'colour')).toBe(false)
+    expect(matchFillBlank(['color'], 'COLOR')).toBe(false) // 大小写敏感
+  })
+
+  it('开放空（空组）恒不命中', () => {
+    expect(matchFillBlank([], '任意答案')).toBe(false)
+  })
+})
+
+describe('gradeFillBlanks', () => {
+  it('逐空判分；user 不足位按未作答计', () => {
+    const correct = [['color', 'Color'], ['#fff'], []]
+    expect(gradeFillBlanks(correct, ['Color', '#fff', 'whatever']))
+      .toEqual([true, true, false]) // 开放空不裁决
+    expect(gradeFillBlanks(correct, ['color'])).toEqual([true, false, false])
+  })
+})
+
+describe('validateFillQuestion（保存门禁，与后端同规则）', () => {
+  it('编号连续 + 数量一致 → 通过', () => {
+    expect(validateFillQuestion('a【空1】b【空2】c', [['x'], []])).toBeNull()
+  })
+
+  it('无空位 / 编号断裂 / 超上限 / 数量不一致 → 中文原因', () => {
+    expect(validateFillQuestion('无空位', [])).toContain('未插入空位')
+    expect(validateFillQuestion('【空1】【空3】', [['x'], [], ['y']])).toContain('连续')
+    const over = Array.from({ length: FILL_MAX_BLANKS + 1 }, (_, i) => `【空${i + 1}】`).join('')
+    expect(validateFillQuestion(over, [])).toContain('不能超过')
+    expect(validateFillQuestion('a【空1】b', [['x'], ['y']])).toContain('数量不一致')
+  })
+})
+
+describe('formatFillAnswerJson（物化为嵌套数组落库）', () => {
+  it('往返一致', () => {
+    const groups = [['color', 'Color'], ['#fff'], []]
+    expect(parseFillAnswer(formatFillAnswerJson(groups))).toEqual(groups)
+  })
+})
+

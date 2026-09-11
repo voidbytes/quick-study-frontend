@@ -22,11 +22,11 @@
         </div>
 
         <div class="px-6 py-6 space-y-6">
-          <!-- 题干 -->
+          <!-- 题干（填空题：占位符渲染为行内横线段） -->
           <section>
             <h3 class="text-sm font-medium text-neutral-500 mb-2">题干</h3>
             <div class="bg-neutral-50 border border-neutral-200 rounded-lg p-4">
-              <RichText :content="snapshot?.content" />
+              <RichText :content="stemContent" fill-blanks />
             </div>
           </section>
 
@@ -70,8 +70,16 @@
             </div>
           </section>
 
-          <!-- 正确答案（非判断题） -->
-          <section v-if="snapshot?.answer && snapshot.type !== 'TRUE_FALSE'">
+          <!-- 填空题答案：答案组格式（① color/Color ② #fff ③（开放）） -->
+          <section v-else-if="snapshot?.type === 'FILL_BLANK' && snapshot?.answer">
+            <h3 class="text-sm font-medium text-neutral-500 mb-2">正确答案</h3>
+            <div class="bg-success-50 border border-success-100 rounded-lg p-4 font-medium">
+              {{ fillAnswerLabel }}
+            </div>
+          </section>
+
+          <!-- 正确答案（其他非判断题） -->
+          <section v-else-if="snapshot?.answer">
             <h3 class="text-sm font-medium text-neutral-500 mb-2">正确答案</h3>
             <div class="bg-success-50 border border-success-100 rounded-lg p-4">
               <RichText :content="answerLabel" />
@@ -98,7 +106,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useMessage } from 'naive-ui'
 import { getWrongQuestionById } from '@/api/wrongQuestion'
 import type { WrongQuestion, QuestionType, Difficulty, OptionItem } from '@/types'
-import { parseOptionList, parseAnswerIds, answerIdsToLabel, sortOptionsById, TRUE_FALSE_TRUE_ID } from '@/utils/answer'
+import { parseOptionList, parseAnswerIds, answerIdsToLabel, sortOptionsById, formatFillAnswer, TRUE_FALSE_TRUE_ID } from '@/utils/answer'
 import { QUESTION_TYPE_MAP, DIFFICULTY_MAP } from '@/utils/constants'
 import PageHeader from '@/components/common/PageHeader.vue'
 import RichText from '@/components/common/RichText.vue'
@@ -195,6 +203,16 @@ const answerLabel = computed(() => {
     return answerIdsToLabel(parsedOptions.value, answer)
   }
   return answer
+})
+
+/** 填空题干保留【空N】原文，由 RichText fill-blanks 渲染后替换为徽章（方案 C） */
+const stemContent = computed(() => snapshot.value?.content ?? '')
+
+/** 填空答案组展示：① color/Color ② #fff ③（开放）（三形态容错） */
+const fillAnswerLabel = computed(() => {
+  const answer = snapshot.value?.answer
+  if (!answer) return ''
+  return formatFillAnswer(answer) || answer
 })
 
 function formatTime(time?: string) {

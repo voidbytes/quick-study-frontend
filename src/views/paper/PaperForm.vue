@@ -65,6 +65,16 @@
                 </n-form-item>
               </n-grid-item>
               <n-grid-item>
+                <n-form-item label="多选漏选给分">
+                  <n-select v-model:value="basicForm.multipleChoicePartial" :options="multiplePartialOptions" />
+                </n-form-item>
+              </n-grid-item>
+              <n-grid-item>
+                <n-form-item label="填空部分命中">
+                  <n-select v-model:value="basicForm.fillBlankPartial" :options="fillPartialOptions" />
+                </n-form-item>
+              </n-grid-item>
+              <n-grid-item>
                 <n-form-item label="分享类型" path="shareType">
                   <n-select v-model:value="basicForm.shareType" :options="shareTypeOptions" />
                 </n-form-item>
@@ -384,6 +394,10 @@ const basicForm = reactive({
   attemptLimit: null as number | null,
   passPercent: 60 as number | null,
   graderId: null as string | null,
+  /** 多选漏选给分策略（HALF=漏选半分 / ZERO=漏选不给分） */
+  multipleChoicePartial: 'HALF',
+  /** 填空题部分命中给分策略（PER_BLANK=按空等分累加 / ALL_OR_NOTHING=全对才给分） */
+  fillBlankPartial: 'PER_BLANK',
   shareType: 'PRIVATE',
   password: '',
   cheatEnabled: false
@@ -399,6 +413,16 @@ const shareTypeOptions = [
   { label: '链接分享', value: 'LINK' },
   { label: '密码访问', value: 'PASSWORD' },
   { label: '公开', value: 'PUBLIC' }
+]
+
+const multiplePartialOptions = [
+  { label: '漏选给一半分（HALF）', value: 'HALF' },
+  { label: '漏选不给分（ZERO）', value: 'ZERO' }
+]
+
+const fillPartialOptions = [
+  { label: '按空给分（命中空累加）', value: 'PER_BLANK' },
+  { label: '全对才给分', value: 'ALL_OR_NOTHING' }
 ]
 
 const shareTypeLabels: Record<string, string> = {
@@ -603,6 +627,9 @@ async function loadPaper() {
     basicForm.endTime = data.endTime ? new Date(data.endTime).getTime() : null
     basicForm.attemptLimit = data.attemptLimit ?? null
     basicForm.passPercent = data.passPercent ?? 60
+    // 判分策略回显（历史数据缺省回退后端同款默认值：HALF / PER_BLANK）
+    basicForm.multipleChoicePartial = data.multipleChoicePartial || 'HALF'
+    basicForm.fillBlankPartial = data.fillBlankPartial || 'PER_BLANK'
     basicForm.shareType = data.shareType || 'PRIVATE'
     basicForm.cheatEnabled = data.cheatEnabled || false
     // 回填批改人：详情接口返回 graderName，直接预置选项，无需用户重新搜索
@@ -691,6 +718,9 @@ async function handleSave() {
         : basicForm.attemptLimit === 1 ? 'ONCE' : 'MULTIPLE',
       shareType: basicForm.shareType,
       password: basicForm.password || undefined,
+      // 判分策略：多选漏选（HALF/ZERO）与填空部分命中（PER_BLANK/ALL_OR_NOTHING）
+      multipleChoicePartial: basicForm.multipleChoicePartial,
+      fillBlankPartial: basicForm.fillBlankPartial,
       cheatEnabled: basicForm.cheatEnabled,
       // 批改人：留空交由后端默认为创建者本人
       graderId: basicForm.graderId ?? undefined,

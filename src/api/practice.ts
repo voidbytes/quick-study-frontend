@@ -49,6 +49,18 @@ export function abandonPractice(sessionId: string) {
   return request.post<ApiResponse<null>>(`/practice/sessions/${sessionId}/abandon`)
 }
 
+/** 练习 AI 给分建议（仅未命中/开放空可点；AI 未配置时后端报错，前端降级隐藏按钮） */
+export interface PracticeAiSuggestResult {
+  suggestedScore: number
+  reasoning: string
+}
+
+export function aiSuggest(sessionId: string, index: number) {
+  return request.post<ApiResponse<PracticeAiSuggestResult>>(
+    `/practice/sessions/${sessionId}/answers/${index}/ai-suggest`
+  )
+}
+
 export function reroll(sessionId: string, data?: Partial<CreateSessionParams>) {
   return request.post<ApiResponse<PracticeSession>>(`/practice/sessions/${sessionId}/reroll`, data)
 }

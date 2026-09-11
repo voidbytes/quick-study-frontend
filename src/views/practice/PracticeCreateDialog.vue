@@ -32,7 +32,7 @@
           v-model:value="form.types"
           :options="typeOptions"
           multiple
-          placeholder="不选则全部题型"
+          placeholder="不选则含全部可练习题型（单选/多选/判断/填空/简答）"
         />
       </n-form-item>
 
@@ -121,7 +121,9 @@ const form = reactive({
 const typeOptions = [
   { label: '单选题', value: 'SINGLE' },
   { label: '多选题', value: 'MULTIPLE' },
-  { label: '判断题', value: 'TRUE_FALSE' }
+  { label: '判断题', value: 'TRUE_FALSE' },
+  { label: '填空题', value: 'FILL_BLANK' },
+  { label: '简答题', value: 'SHORT_ANSWER' }
 ]
 
 async function loadOptions() {
@@ -143,7 +145,11 @@ async function handleCreate() {
     const res = await createPractice({
       count: form.count,
       bankIds: form.bankIds.length > 0 ? form.bankIds : undefined,
-      types: form.types.length > 0 ? form.types : undefined,
+      // 不选题型时显式传全部可练习题型（不含编程——编程由专门的判题开关控制）；
+      // 后端 types=undefined 的默认口径是仅客观题，会导致随机练习几乎全是单选
+      types: form.types.length > 0
+        ? form.types
+        : ['SINGLE', 'MULTIPLE', 'TRUE_FALSE', 'FILL_BLANK', 'SHORT_ANSWER'],
       tagIds: form.tagIds.length > 0 ? form.tagIds : undefined,
       correctRateMin: form.correctRateMin != null ? form.correctRateMin / 100 : undefined,
       correctRateMax: form.correctRateMax != null ? form.correctRateMax / 100 : undefined,

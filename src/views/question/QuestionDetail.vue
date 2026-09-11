@@ -47,11 +47,11 @@
         </div>
 
         <div class="px-6 py-6 space-y-6">
-          <!-- 题干 -->
+          <!-- 题干（填空题：占位符渲染为行内横线段） -->
           <section>
             <h3 class="text-sm font-medium text-neutral-500 mb-2">题干</h3>
             <div class="bg-neutral-50 border border-neutral-200 rounded-lg p-4">
-              <RichText :content="question.content" />
+              <RichText :content="stemContent" fill-blanks />
             </div>
           </section>
 
@@ -95,8 +95,19 @@
             </div>
           </section>
 
-          <!-- 正确答案（非判断题） -->
-          <section v-if="question.answer && question.type !== 'TRUE_FALSE'">
+          <!-- 填空题答案：答案组格式（① color/Color ② #fff ③（开放）） -->
+          <section v-else-if="question.type === 'FILL_BLANK' && question.answer">
+            <h3 class="text-sm font-medium text-neutral-500 mb-2">正确答案</h3>
+            <div class="bg-success-50 border border-success-100 rounded-lg p-4 font-medium">
+              {{ fillAnswerLabel }}
+            </div>
+            <div class="text-xs text-neutral-400 mt-1.5">
+              每空任一答案命中即该空正确；（开放）= 开放空，作答交 AI 辅助评估。
+            </div>
+          </section>
+
+          <!-- 正确答案（其他非判断题） -->
+          <section v-else-if="question.answer">
             <h3 class="text-sm font-medium text-neutral-500 mb-2">正确答案</h3>
             <div class="bg-success-50 border border-success-100 rounded-lg p-4">
               <RichText :content="answerLabel" />
@@ -226,11 +237,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import type { QuestionType, Difficulty, Question, OptionItem } from '@/types'
-import { getQuestionDetail } from '@/api/question'
-import { parseOptionList, parseAnswerIds, idToIndex, TRUE_FALSE_TRUE_ID } from '@/utils/answer'
+import { getQuestionDetail, getQuestionNeighbors } from '@/api/question'
+import { parseOptionList, parseAnswerIds, idToIndex, formatFillAnswer, TRUE_FALSE_TRUE_ID } from '@/utils/answer'
 import { getNote, saveNote, deleteNote, NOTE_IMAGE_PATTERN } from '@/api/note'
 import { useAuthStore } from '@/stores/auth'
 import { QUESTION_TYPE_MAP, DIFFICULTY_MAP, QUESTION_STATUS_OPTIONS } from '@/utils/constants'
@@ -248,7 +259,11 @@ const message = useMessage()
 
 /** 题库 ID：长 URL 从路由取；短 URL（alias /questions/:questionId）路由无此参数，加载详情后回填 */
 const bankId = ref((route.params.bankId as string) || '')
+/** 当前题目 id（路由响应式：上一题/下一题导航在同页切换） */
+const currentQuestionId = computed(() => (route.params.questionId as string) || questionId)
 const questionId = route.params.questionId as string
+/** 同题库相邻题 id（上一题/下一题导航） */
+const neighbors = ref<{ prevId: string | null; nextId: string | null } | null>(null)
 
 // ==================== 题目笔记 ====================
 
@@ -413,6 +428,16 @@ const answerLabel = computed(() => {
   return answer
 })
 
+/** 填空题干保留【空N】原文，由 RichText fill-blanks 渲染后替换为徽章（方案 C，代码块内生效） */
+const stemContent = computed(() => question.value?.content ?? '')
+
+/** 填空答案组展示：① color/Color ② #fff ③（开放）（三形态容错） */
+const fillAnswerLabel = computed(() => {
+  const answer = question.value?.answer
+  if (!answer) return ''
+  return formatFillAnswer(answer) || answer
+})
+
 function formatTime(time?: string) {
   return time ? dayjs(time).format('YYYY-MM-DD HH:mm') : '-'
 }
@@ -421,11 +446,20 @@ async function fetchDetail() {
   loading.value = true
   loadError.value = ''
   try {
-    const res = await getQuestionDetail(questionId)
+    const res = await getQuestionDetail(currentQuestionId.value)
     question.value = res.data
     // 短 URL 形态：bankId 只能从详情接口回填（返回题库/编辑跳转依赖它）
     if (!bankId.value && res.data?.bankId) {
       bankId.value = String(res.data.bankId)
+    }
+    // 同题库相邻题（上一题/下一题导航）
+    if (bankId.value) {
+      try {
+        const nb = await getQuestionNeighbors(bankId.value, currentQuestionId.value)
+        neighbors.value = nb.data
+      } catch {
+        neighbors.value = null
+      }
     }
   } catch (err: any) {
     loadError.value = err?.response?.data?.message || err?.message || '加载题目详情失败'
@@ -433,6 +467,21 @@ async function fetchDetail() {
     loading.value = false
   }
 }
+
+/** 上一题/下一题导航：同页路由切换，watch 触发重新加载 */
+function goNeighbor(id?: string | null) {
+  if (!id) return
+  if (bankId.value) {
+    router.push(`/banks/${bankId.value}/questions/${id}`)
+  } else {
+    router.push(`/questions/${id}`)
+  }
+}
+
+/** 同页路由参数变化（上一题/下一题切换）时重新加载详情与邻居 */
+watch(() => route.params.questionId, (nv, ov) => {
+  if (nv && nv !== ov) fetchDetail()
+})
 
 onMounted(() => {
   fetchDetail()

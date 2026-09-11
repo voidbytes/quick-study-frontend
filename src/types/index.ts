@@ -39,6 +39,8 @@ export interface QuestionBank {
   cover: string
   /** 创建者ID（后端 BankResponse 字段名） */
   creatorId?: string
+  /** 当前用户在题库中的角色：OWNER/EDITOR/VIEWER，无成员关系为空 */
+  myRole?: 'OWNER' | 'EDITOR' | 'VIEWER' | string | null
   userId: string
   username: string
   isPublic: boolean
@@ -48,12 +50,15 @@ export interface QuestionBank {
   updatedAt: string
 }
 
-/** 题库协作人（与 User 不同：用 userId 而非 id） */
-export interface BankCollaborator {
+/** 题库成员（VIEWER=仅查看 / EDITOR=可编辑；OWNER=创建者不落库） */
+export interface BankMember {
+  id: string
+  bankId: string
   userId: string
-  nickname?: string
-  username?: string
-  role: 'OWNER' | 'EDITOR' | 'REVIEWER' | 'VIEWER' | string
+  username?: string | null
+  nickname?: string | null
+  role: 'VIEWER' | 'EDITOR' | string
+  createdAt?: string
 }
 
 // 标签
@@ -182,6 +187,10 @@ export interface ExamPaper {
   endTime?: string | null
   attemptType?: string
   attemptLimit?: number | null
+  /** 多选题漏选给分策略（HALF/ZERO） */
+  multipleChoicePartial?: string
+  /** 填空题部分命中给分策略（ALL_OR_NOTHING=全对才给分 / PER_BLANK=按空等分累加，默认） */
+  fillBlankPartial?: string
   cheatEnabled?: boolean
   shareType: PaperShareType
   password?: string
@@ -197,11 +206,17 @@ export interface ExamPaper {
 export interface PaperQuestion {
   /** 题目雪花 id，选中回填时以字符串匹配题单 */
   id: string
+  /** 原题 id（题库内题目，跳转原题用；详情接口仅创建者可见场景下发） */
+  questionId?: string
+  /** 原题所属题库 id（跳转原题用） */
+  bankId?: string
   content: string
   type: string
   options?: string | null
   difficulty?: string
   analysis?: string
+  /** 参考答案（试卷详情仅创建者可见；游客/非创建者不下发） */
+  answer?: string | null
   score: number
   sortOrder?: number
 }

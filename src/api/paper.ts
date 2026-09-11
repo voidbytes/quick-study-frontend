@@ -11,7 +11,8 @@ export interface CreatePaperParams {
   attemptLimit?: number
   attemptType?: string
   multipleChoicePartial?: string
-  fillBlankAutoSplit?: boolean
+  /** 填空题部分命中给分策略（ALL_OR_NOTHING / PER_BLANK，缺省后端按 PER_BLANK） */
+  fillBlankPartial?: string
   questionItems: { questionId: string; score: number }[]
   graderId?: string
   shareType: string
@@ -30,7 +31,8 @@ export interface UpdatePaperParams {
   attemptLimit?: number
   attemptType?: string
   multipleChoicePartial?: string
-  fillBlankAutoSplit?: boolean
+  /** 填空题部分命中给分策略（ALL_OR_NOTHING / PER_BLANK，缺省后端按 PER_BLANK） */
+  fillBlankPartial?: string
   graderId?: string
   shareType?: string
   password?: string

@@ -83,13 +83,48 @@
               </span>
             </div>
 
-            <!-- 题干 -->
+            <!-- 题干（填空题：占位符渲染为行内横线段） -->
             <div class="review-stem mb-4">
-              <RichText :content="parseQuestionContent(q.content)" />
+              <RichText
+                :content="parseQuestionContent(q.content)"
+                :fill-blanks="q.type === 'FILL_BLANK'"
+              />
             </div>
 
-            <!-- 答案对比（简答题为富文本 HTML，用 RichText 渲染；客观题保持文本插值；编程题为代码块） -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+            <!-- 答案对比（简答题为富文本 HTML，用 RichText 渲染；客观题保持文本插值；编程题为代码块；填空为逐空对照表） -->
+            <template v-if="q.type === 'FILL_BLANK'">
+              <div class="mb-4 overflow-x-auto">
+                <table class="w-full text-sm border border-neutral-200 rounded-lg overflow-hidden">
+                  <thead>
+                    <tr class="bg-neutral-50 text-neutral-500 text-xs">
+                      <th class="px-3 py-2 text-left font-medium w-16">空位</th>
+                      <th class="px-3 py-2 text-left font-medium">你的答案</th>
+                      <th class="px-3 py-2 text-left font-medium">正确答案</th>
+                      <th class="px-3 py-2 text-left font-medium w-24">判定</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr
+                      v-for="row in fillResultRows(q)"
+                      :key="row.no"
+                      class="border-t border-neutral-100"
+                    >
+                      <td class="px-3 py-2 font-medium text-neutral-700">空{{ row.no }}</td>
+                      <td class="px-3 py-2" :class="row.state === false ? 'text-error-600' : 'text-neutral-900'">
+                        {{ row.user || '未作答' }}
+                      </td>
+                      <td class="px-3 py-2 text-success-700">{{ row.correct }}</td>
+                      <td class="px-3 py-2">
+                        <span v-if="row.state === true" class="text-success-600 font-semibold">✓ 命中</span>
+                        <span v-else-if="row.state === false" class="text-error-500 font-semibold">✗ 未命中</span>
+                        <span v-else class="text-warning-600 font-semibold">⏳ 待批改</span>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </template>
+            <div v-else class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
               <div class="px-4 py-3 rounded-lg" :class="answerBoxClass(q)">
                 <div class="text-xs text-neutral-500 mb-1">
                   你的答案<template v-if="q.programming?.languageName">（{{ q.programming.languageName }}）</template>
@@ -152,6 +187,18 @@
               <RichText :content="q.analysis" class="analysis-rich" />
             </div>
 
+            <!-- 跳原题 -->
+            <div v-if="q.questionId" class="mb-4">
+              <n-button
+                size="tiny"
+                quaternary
+                type="primary"
+                @click="router.push(`/banks/${q.bankId}/questions/${q.questionId}`)"
+              >
+                查看原题 →
+              </n-button>
+            </div>
+
             <!-- 得分 -->
             <div class="flex items-center justify-between pt-3 border-t border-neutral-200">
               <span class="text-sm text-neutral-500">得分</span>
@@ -181,7 +228,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getResult } from '@/api/exam'
 import type { SessionResultResponse, QuestionResultItem } from '@/api/exam'
-import { formatAnswerView, parseOptionList, sortOptionsById } from '@/utils/answer'
+import { formatAnswerView, formatFillAnswer, parseOptionList, sortOptionsById, parseFillAnswer, parseFillBlanks } from '@/utils/answer'
 import { QUESTION_TYPE_MAP } from '@/utils/constants'
 import PageHeader from '@/components/common/PageHeader.vue'
 import StatCard from '@/components/common/StatCard.vue'
@@ -223,7 +270,61 @@ function typeLabel(type?: string): string {
 // options 按 id 升序（题库原序）：解析文本按存库字母书写，回顾态须与原序对齐
 function formatAnswer(q: QuestionResultItem, answer: string | null): string {
   if (answer == null || answer === '') return '未作答'
+  if (q.type === 'FILL_BLANK') return formatFillAnswerRow(answer)
   return formatAnswerView(answer, q.type, sortOptionsById(parseOptionList(q.options))) || answer
+}
+
+/** 填空题答案展示（三形态容错归一化为答案组）：① color/Color ② #fff ③（开放） */
+function formatFillAnswerRow(answer: string | null): string {
+  return formatFillAnswer(answer) || answer || ''
+}
+
+interface FillBlankResultRow {
+  no: number
+  user: string
+  correct: string
+  /** true=命中 / false=未命中 / null=待批改（未判定或开放空） */
+  state: boolean | null
+}
+
+/**
+ * 填空逐空结果行：isCorrect 全对=true / 全未对=false / null=待批改。
+ * 待批改时逐空无法确定对错（锁定分在后端），未命中空一律展示 ⏳ 待批改；
+ * 已批改（isCorrect 非 null）时展示你的答案 vs 正确答案组对照（开放空标「开放」）。
+ */
+function fillResultRows(q: QuestionResultItem): FillBlankResultRow[] {
+  const blankCount = parseFillBlanks(parseQuestionContent(q.content)).blanks.length
+  const user = parseFillUserAnswerList(q.yourAnswer)
+  const groups = parseFillAnswer(q.correctAnswer)
+  const rows: FillBlankResultRow[] = []
+  const n = Math.max(blankCount, groups.length, user.length)
+  for (let i = 0; i < n; i++) {
+    const group = groups[i] || []
+    const u = user[i] ?? ''
+    let state: boolean | null
+    if (q.isCorrect === true) state = true
+    else if (q.isCorrect === false) state = false
+    else state = null // 待批改：逐空判定由批改终审
+    rows.push({
+      no: i + 1,
+      user: u,
+      correct: group.length ? group.join(' / ') : '（开放，待评估）',
+      state
+    })
+  }
+  return rows
+}
+
+/** yourAnswer（JSON 字符串数组）→ string[]；旧格式纯文本按单空容错 */
+function parseFillUserAnswerList(raw: string | null): string[] {
+  if (raw == null || raw === '') return []
+  try {
+    const parsed: unknown = JSON.parse(raw)
+    if (Array.isArray(parsed)) return parsed.map((v) => (typeof v === 'string' ? v : ''))
+  } catch {
+    // 旧格式纯文本按单空
+  }
+  return [raw]
 }
 
 /** 判题结果是否已终态（FINISHED/ERROR） */

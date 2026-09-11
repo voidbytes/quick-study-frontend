@@ -12,11 +12,11 @@
             <span v-if="detail.bankName" class="ml-auto text-xs text-neutral-400">{{ detail.bankName }}</span>
           </div>
 
-          <!-- 题干 -->
+          <!-- 题干（填空题：占位符渲染为行内横线段） -->
           <section>
             <h3 class="text-sm font-medium text-neutral-500 mb-2">题干</h3>
             <div class="bg-neutral-50 border border-neutral-200 rounded-lg p-4">
-              <RichText :content="detail.content" />
+              <RichText :content="stemContent" fill-blanks />
             </div>
           </section>
 
@@ -43,12 +43,22 @@
             </div>
           </section>
 
-          <!-- 正确答案 -->
+          <!-- 判断题答案 -->
           <section v-if="detail.type === 'TRUE_FALSE' && detail.answer">
             <h3 class="text-sm font-medium text-neutral-500 mb-2">正确答案</h3>
             <n-tag :type="isTrueFalseTrue ? 'success' : 'error'" round>
               {{ isTrueFalseTrue ? '正确' : '错误' }}
             </n-tag>
+          </section>
+          <!-- 填空题答案：答案组格式 ① color/Color ② #fff ③（开放） -->
+          <section v-else-if="detail.type === 'FILL_BLANK' && detail.answer">
+            <h3 class="text-sm font-medium text-neutral-500 mb-2">正确答案</h3>
+            <div class="bg-success-50 border border-success-100 rounded-lg p-4 font-medium">
+              {{ fillAnswerLabel }}
+            </div>
+            <div class="text-xs text-neutral-400 mt-1.5">
+              每空任一答案命中即该空正确；（开放）= 开放空，作答交 AI 辅助评估。
+            </div>
           </section>
           <section v-else-if="detail.answer">
             <h3 class="text-sm font-medium text-neutral-500 mb-2">正确答案</h3>
@@ -94,7 +104,13 @@ export interface PreviewQuestion {
 import { ref, computed, watch } from 'vue'
 import { getQuestionDetail } from '@/api/question'
 import { QUESTION_TYPE_MAP, DIFFICULTY_MAP } from '@/utils/constants'
-import { parseOptionList, parseAnswerIds, answerIdsToLabel, TRUE_FALSE_TRUE_ID } from '@/utils/answer'
+import {
+  parseOptionList,
+  parseAnswerIds,
+  answerIdsToLabel,
+  formatFillAnswer,
+  TRUE_FALSE_TRUE_ID
+} from '@/utils/answer'
 import type { OptionItem } from '@/types'
 import type { QuestionType, Difficulty } from '@/types'
 import RichText from '@/components/common/RichText.vue'
@@ -172,6 +188,16 @@ const answerLabel = computed(() => {
     return answerIdsToLabel(parsedOptions.value, answer)
   }
   return answer
+})
+
+/** 填空题干保留【空N】原文，由 RichText fill-blanks 渲染后替换为徽章（方案 C） */
+const stemContent = computed(() => detail.value?.content ?? '')
+
+/** 填空答案组展示：① color/Color ② #fff ③（开放）（三形态容错） */
+const fillAnswerLabel = computed(() => {
+  const answer = detail.value?.answer
+  if (!answer) return ''
+  return formatFillAnswer(answer) || answer
 })
 
 watch(

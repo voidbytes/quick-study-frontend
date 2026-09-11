@@ -28,7 +28,7 @@
 
           <!-- 题干 -->
           <n-form-item label="题干" path="content">
-            <MarkdownEditor v-model="form.content" />
+            <MarkdownEditor ref="contentEditorRef" v-model="form.content" />
           </n-form-item>
 
           <!-- 选项（单选 / 多选）：整题替换模型，提交时按展示顺序重编号 id -->
@@ -212,7 +212,7 @@
             <n-divider />
           </template>
 
-          <!-- 正确答案（编程题无此字段）：选择题选 option_id，判断题 [0]/[1]，填空/简答为文本（简答参考答案并入此字段） -->
+          <!-- 正确答案（编程题无此字段）：选择题选 option_id，判断题 [0]/[1]，填空=可接受答案组，简答为文本（简答参考答案并入此字段） -->
           <n-form-item v-if="form.type !== 'PROGRAMMING'" :label="form.type === 'SHORT_ANSWER' ? '参考答案' : '正确答案'" path="answer">
             <template v-if="form.type === 'SINGLE'">
               <n-select
@@ -244,6 +244,76 @@
               />
             </template>
           </n-form-item>
+
+          <!-- 填空题：题干插入空位 + 每空可接受答案组（嵌入题干表单项下方） -->
+          <template v-if="form.type === 'FILL_BLANK'">
+            <n-form-item label="空位">
+              <div class="w-full space-y-2">
+                <div class="flex items-center gap-2">
+                  <n-button size="small" type="primary" secondary @click="insertFillBlank">
+                    插入空位
+                  </n-button>
+                  <span class="text-xs text-neutral-400">
+                    在题干光标处插入 {{ fillBlankCount < FILL_MAX_BLANKS ? `【空${fillBlankCount + 1}】` : '' }}；上限 {{ FILL_MAX_BLANKS }} 个。要显示字面量「【空1】」时，在前面加 \\ 转义（\\【空1】）。
+                  </span>
+                </div>
+                <div class="text-xs" :class="fillBlankValidation ? 'text-error-500' : 'text-neutral-400'">
+                  <template v-if="fillBlankCount === 0">尚未插入空位（编辑器中先定位光标再点「插入空位」）</template>
+                  <template v-else>已插入 {{ fillBlankCount }} 个空位<span v-if="fillBlankValidation"> · {{ fillBlankValidation }}</span></template>
+                </div>
+              </div>
+            </n-form-item>
+
+            <n-form-item label="每空可接受答案" path="answer">
+              <div class="w-full space-y-3">
+                <div
+                  v-for="(group, gi) in fillAnswerGroups"
+                  :key="gi"
+                  class="border border-neutral-200 rounded-lg p-3 space-y-2"
+                >
+                  <div class="flex items-center gap-2 flex-wrap">
+                    <span class="text-sm font-semibold">空 {{ gi + 1 }}</span>
+                    <n-switch
+                      :value="group.length === 0"
+                      size="small"
+                      @update:value="(v: boolean) => toggleOpenBlank(gi, v)"
+                    />
+                    <span class="text-xs text-neutral-400">开放空（不设标准答案，交 AI 辅助评估）</span>
+                  </div>
+                  <template v-if="group.length > 0">
+                    <div
+                      v-for="(ans, ai) in group"
+                      :key="ai"
+                      class="flex items-center gap-2"
+                    >
+                      <n-input
+                        :value="ans"
+                        size="small"
+                        class="flex-1"
+                        placeholder="可接受答案（任一命中即该空正确）"
+                        @update:value="(v: string) => { fillAnswerGroups[gi][ai] = v }"
+                      />
+                      <n-button
+                        size="tiny"
+                        quaternary
+                        type="error"
+                        :disabled="group.length <= 1"
+                        @click="removeFillAnswer(gi, ai)"
+                      >
+                        删除
+                      </n-button>
+                    </div>
+                    <n-button size="tiny" quaternary type="primary" @click="addFillAnswer(gi)">
+                      添加同义答案（如 color / Color / colour）
+                    </n-button>
+                  </template>
+                </div>
+                <div class="text-xs text-neutral-400">
+                  每空可配置多个可接受答案（同义/变体，任一命中即该空对）；答案按精确匹配判分（大小写敏感，忽略首尾与连续空白差异）。
+                </div>
+              </div>
+            </n-form-item>
+          </template>
 
           <!-- 解析 -->
           <n-form-item label="解析">
@@ -300,14 +370,25 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted, nextTick, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useMessage } from 'naive-ui'
 import type { FormInst, FormRules, SelectOption } from 'naive-ui'
 import type { QuestionType, Difficulty, OptionItem } from '@/types'
 import { createQuestion, updateQuestion, getQuestionDetail } from '@/api/question'
 import type { UpdateQuestionParams, ProgrammingQuestionConfig } from '@/api/question'
-import { parseOptionList, parseAnswerIds, formatAnswerIds, TRUE_FALSE_TRUE_ID, TRUE_FALSE_FALSE_ID } from '@/utils/answer'
+import {
+  parseOptionList,
+  parseAnswerIds,
+  formatAnswerIds,
+  TRUE_FALSE_TRUE_ID,
+  TRUE_FALSE_FALSE_ID,
+  parseFillBlanks,
+  parseFillAnswer,
+  formatFillAnswerJson,
+  validateFillQuestion,
+  FILL_MAX_BLANKS
+} from '@/utils/answer'
 import { getProgrammingLanguages } from '@/api/judge'
 import type { ProgrammingLanguage } from '@/api/judge'
 import { getTagList } from '@/api/tag'
@@ -361,6 +442,86 @@ const form = reactive({
 
 const isChoiceType = computed(() => form.type === 'SINGLE' || form.type === 'MULTIPLE')
 
+// ==================== 填空题：插入空位 + 可接受答案组 ====================
+
+/** 题干编辑器 ref：插入空位需读写光标位置（v-md-editor 实例） */
+const contentEditorRef = ref<{ textareaEl?: HTMLTextAreaElement } | null>(null)
+
+/** 题干当前空位编号序列 */
+const fillBlankNos = computed(() => parseFillBlanks(form.content).blanks.map((b) => b.no))
+const fillBlankCount = computed(() => fillBlankNos.value.length)
+
+/** 每空可接受答案组（开放空=空数组）；与题干空位数联动 */
+const fillAnswerGroups = ref<string[][]>([])
+
+/** 题干空位与答案组数量/编号是否一致（即时校验提示，null=通过） */
+const fillBlankValidation = computed(() => {
+  if (form.type !== 'FILL_BLANK') return null
+  const nos = fillBlankNos.value
+  if (nos.length === 0) return null // 尚未插入空位不报错（保存时拦）
+  for (let i = 0; i < nos.length; i++) {
+    if (nos[i] !== i + 1) return `空位编号不连续（当前 ${nos.join('、')}，应为 1..${nos.length}）`
+  }
+  if (fillAnswerGroups.value.length !== nos.length) {
+    return `答案组 ${fillAnswerGroups.value.length} 组与空位 ${nos.length} 个不一致`
+  }
+  return null
+})
+
+/**
+ * 光标处插入【空N】（N=已有空位数+1）。
+ * v-md-editor 未暴露 insertText 到模板 ref（Vue3 setup 拿 methods 不可靠），
+ * 直接操作其内部 textarea 的 selectionStart/End，等价于 insert-text-at-cursor。
+ */
+async function insertFillBlank() {
+  if (fillBlankCount.value >= FILL_MAX_BLANKS) {
+    message.error(`空位数不能超过 ${FILL_MAX_BLANKS} 个`)
+    return
+  }
+  const marker = `【空${fillBlankCount.value + 1}】`
+  const ta = contentEditorRef.value?.textareaEl
+  if (!ta) {
+    // 编辑器未就绪（极端兜底）：追加到题干末尾
+    form.content = form.content + marker
+    return
+  }
+  const start = ta.selectionStart ?? form.content.length
+  const end = ta.selectionEnd ?? start
+  form.content = form.content.slice(0, start) + marker + form.content.slice(end)
+  // 等编辑器同步 v-model 后恢复光标到插入标记之后
+  await nextTick()
+  const pos = start + marker.length
+  ta.focus()
+  ta.setSelectionRange(pos, pos)
+}
+
+/** 题干空位变化时同步答案组槽位数（保留已填内容） */
+function syncFillAnswerGroups() {
+  const n = fillBlankCount.value
+  const groups = fillAnswerGroups.value
+  if (groups.length < n) {
+    groups.push(...Array.from({ length: n - groups.length }, () => [''] as string[]))
+  } else if (groups.length > n) {
+    groups.length = n
+  }
+}
+
+watch(fillBlankCount, syncFillAnswerGroups)
+
+function addFillAnswer(gi: number) {
+  fillAnswerGroups.value[gi].push('')
+}
+
+function removeFillAnswer(gi: number, ai: number) {
+  if (fillAnswerGroups.value[gi].length <= 1) return
+  fillAnswerGroups.value[gi].splice(ai, 1)
+}
+
+/** 开放空开关：开=空数组（不设标准答案）；关=恢复一个空答案输入位 */
+function toggleOpenBlank(gi: number, open: boolean) {
+  fillAnswerGroups.value[gi] = open ? [] : ['']
+}
+
 /** 状态枚举由全局字典派生（表单不提供待审核选项） */
 const statusOptions = QUESTION_STATUS_OPTIONS.filter((o) => o.value !== 'PENDING_REVIEW')
 
@@ -372,7 +533,7 @@ const answerOptions = computed(() =>
   }))
 )
 
-/** 动态校验规则：编程题无 answer 字段，不参与该校验 */
+/** 动态校验规则：编程题无 answer 字段；填空题 answer 为结构化答案组（由 validateFillQuestion 校验），均不参与该文本必填校验 */
 const rules = computed<FormRules>(() => {
   const base: FormRules = {
     type: [{ required: true, message: '请选择题型' }],
@@ -380,7 +541,7 @@ const rules = computed<FormRules>(() => {
     difficulty: [{ required: true, message: '请选择难度' }],
     status: [{ required: true, message: '请选择状态' }]
   }
-  if (form.type !== 'PROGRAMMING') {
+  if (form.type !== 'PROGRAMMING' && form.type !== 'FILL_BLANK') {
     base.answer = [{ required: true, message: '请输入正确答案', trigger: 'blur' }]
   }
   return base
@@ -438,6 +599,12 @@ function handleTypeChange(_value: string) {
   form.answerIds = []
   form.tfAnswer = TRUE_FALSE_TRUE_ID
   form.answer = ''
+  if (form.type === 'FILL_BLANK') {
+    // 切到填空：按当前题干空位数初始化答案组（无空位则空数组，插入空位后自动补槽位）
+    fillAnswerGroups.value = Array.from({ length: fillBlankCount.value }, () => [''] as string[])
+  } else {
+    fillAnswerGroups.value = []
+  }
 }
 
 function addOption() {
@@ -556,6 +723,14 @@ function parseOptions(raw: string | OptionItem[] | null | undefined): OptionItem
   return parseOptionList(raw)
 }
 
+/** 填空答案组回显：以已填组为基础补齐/截断到空位数（保留用户已录入内容） */
+function form_fillRestore(groups: string[][], blankCount: number) {
+  const restored = groups.map((g) => (g.length ? [...g] : ['']))
+  while (restored.length < blankCount) restored.push([''])
+  restored.length = blankCount
+  fillAnswerGroups.value = restored
+}
+
 async function loadQuestion() {
   if (!questionId) return
   loading.value = true
@@ -577,7 +752,16 @@ async function loadQuestion() {
       form.answerIds = []
       form.tfAnswer = parseAnswerIds(q.answer)[0] ?? TRUE_FALSE_TRUE_ID
       form.answer = ''
+    } else if (q.type === 'FILL_BLANK') {
+      form.answerIds = []
+      form.tfAnswer = TRUE_FALSE_TRUE_ID
+      form.answer = ''
+      // 回显每空可接受答案组（旧格式容错由 parseFillAnswer 归一化）；空位不足处补空槽位
+      const groups = parseFillAnswer(q.answer)
+      const blankCount = parseFillBlanks(q.content).blanks.length
+      form_fillRestore(groups, blankCount)
     } else {
+      // 简答题：参考答案文本回显
       form.answerIds = []
       form.tfAnswer = TRUE_FALSE_TRUE_ID
       form.answer = q.answer || ''
@@ -635,6 +819,23 @@ async function handleSave() {
     }
   }
 
+  // 填空题专项校验（与后端 FillAnswerUtil.validate 同门禁，即时反馈）：
+  // 编号 1..N 连续、N≤10、答案组数=空位数、非开放空每组至少一个非空答案
+  if (form.type === 'FILL_BLANK') {
+    const err = validateFillQuestion(form.content, fillAnswerGroups.value)
+    if (err) {
+      message.error(err)
+      return
+    }
+    for (let i = 0; i < fillAnswerGroups.value.length; i++) {
+      const group = fillAnswerGroups.value[i]
+      if (group.length > 0 && group.every((a) => a.trim() === '')) {
+        message.error(`空 ${i + 1} 的可接受答案不能为空（开放空请打开「开放空」开关）`)
+        return
+      }
+    }
+  }
+
   saving.value = true
   try {
     // 整题替换模型：options 按当前展示顺序重编号 id（0..n-1），answer 与 options 成对原子提交
@@ -648,6 +849,11 @@ async function handleSave() {
       answer = form.answerIds.length ? formatAnswerIds(form.answerIds) : undefined
     } else if (form.type === 'TRUE_FALSE') {
       answer = formatAnswerIds([form.tfAnswer])
+    } else if (form.type === 'FILL_BLANK') {
+      // 填空：物化为嵌套数组落库（开放空=[]），空位对齐【空N】顺序
+      answer = formatFillAnswerJson(
+        fillAnswerGroups.value.map((g) => g.map((a) => a.trim()).filter((a) => a !== ''))
+      )
     } else {
       answer = form.answer || undefined
     }
