@@ -208,6 +208,8 @@ export interface PaperQuestion {
   id: string
   /** 原题 id（题库内题目，跳转原题用；详情接口仅创建者可见场景下发） */
   questionId?: string
+  /** 原题所属题库 id（跳转原题用） */
+  bankId?: string
   content: string
   type: string
   options?: string | null

@@ -189,7 +189,12 @@
 
             <!-- 跳原题 -->
             <div v-if="q.questionId" class="mb-4">
-              <n-button size="tiny" quaternary type="primary" @click="router.push(`/questions/${q.questionId}`)">
+              <n-button
+                size="tiny"
+                quaternary
+                type="primary"
+                @click="router.push(`/banks/${q.bankId}/questions/${q.questionId}`)"
+              >
                 查看原题 →
               </n-button>
             </div>

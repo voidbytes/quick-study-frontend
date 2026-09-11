@@ -377,11 +377,11 @@ function formatAnswerView(q: PaperQuestion): string {
   return answer || '-'
 }
 
-/** 跳转原题（题库题目详情页） */
+/** 跳转原题（题库题目详情页，bankId 由试卷题目数据下发） */
 function goOriginalQuestion(q: PaperQuestion) {
-  // PaperQuestion 无 bankId，路由参数带 questionId 由详情页内部定位；
-  // 走题目详情路由需要 bankId，此处跳「我的题目」详情（题目管理视图）
-  router.push(`/banks/${route.params.bankId ?? ''}/questions/${q.questionId}`)
+  if (q.bankId && q.questionId) {
+    router.push(`/banks/${q.bankId}/questions/${q.questionId}`)
+  }
 }
 
 function goSessionDetail(row: SessionRow) {
