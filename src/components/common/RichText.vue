@@ -36,10 +36,15 @@ const sanitized = computed(() => {
   })
   if (!props.fillBlanks) return html
   // 渲染后替换：fence/highlight 输出的 HTML 里【空N】仍是字面文本，此处替换全场景生效。
+  // 注意：hljs 可能把数字拆进 <span class="hljs-number">（如【空<span>1</span>】），
+  // 正则需允许标签穿插，捕获后剥标签取纯数字（hljs 拆 token 实测复现）。
   // 徽章为自产静态 HTML（无用户输入插值），替换后再过一次净化保持管线一致。
   const withBadges = html.replace(
-    /【空(\d+)】/g,
-    '<span class="fill-blank-badge"><span class="fill-blank-line"></span><span class="fill-blank-no">$1</span></span>'
+    /【空((?:<[^>]+>)*\d+(?:<[^>]+>)*)】/g,
+    (_m, inner: string) => {
+      const no = inner.replace(/<[^>]+>/g, '')
+      return `<span class="fill-blank-badge"><span class="fill-blank-line"></span><span class="fill-blank-no">${no}</span></span>`
+    }
   )
   return DOMPurify.sanitize(withBadges, {
     USE_PROFILES: { html: true },
