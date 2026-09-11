@@ -68,12 +68,12 @@
         </div>
       </div>
 
-      <!-- 作答统计（出卷人视角，置于题目列表上方） -->
+      <!-- 作答统计（出卷人视角，置于题目列表上方）；字段与后端 SessionsSummaryResponse 对齐 -->
       <div v-if="canManage" class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <StatCard label="总作答人数" :value="sessionStats?.totalSessions || 0" tone="brand" />
-        <StatCard label="平均分" :value="sessionStats?.avgScore?.toFixed(1) || '-'" />
-        <StatCard label="最高分" :value="sessionStats?.maxScore || '-'" tone="success" />
-        <StatCard label="最低分" :value="sessionStats?.minScore || '-'" tone="error" />
+        <StatCard label="总作答人数" :value="sessionStats?.totalParticipants ?? 0" tone="brand" />
+        <StatCard label="平均分" :value="sessionStats ? (sessionStats.averageScore?.toFixed(1) || '0.0') : '-'" />
+        <StatCard label="最高分" :value="sessionStats ? (sessionStats.maxScore || '-') : '-'" tone="success" />
+        <StatCard label="最低分" :value="sessionStats ? (sessionStats.minScore || '-') : '-'" tone="error" />
       </div>
 
       <!-- 作答记录列表（仅出卷人可见，点击行进入批改详情） -->
