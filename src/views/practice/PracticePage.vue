@@ -199,20 +199,20 @@
             <div
               v-if="answered && currentQuestion?.type !== 'PROGRAMMING'"
               class="mt-6 px-4 py-3.5 rounded-lg border flex items-start gap-3"
-              :class="fillPending ? 'bg-warning-50 border-warning-200' : currentQuestion?.isCorrect ? 'bg-success-50 border-success-200' : 'bg-error-50 border-error-200'"
+              :class="bannerTone.cls"
             >
               <n-icon
                 :size="22"
                 class="flex-shrink-0 mt-0.5"
-                :color="fillPending ? 'var(--color-warning-500)' : currentQuestion?.isCorrect ? 'var(--color-success-500)' : 'var(--color-error-500)'"
+                :color="bannerTone.color"
               >
                 <CheckmarkCircleOutline v-if="currentQuestion?.isCorrect" />
-                <CloseCircleOutline v-else-if="!fillPending" />
+                <CloseCircleOutline v-else-if="bannerTone.state === 'wrong'" />
                 <TimeOutline v-else />
               </n-icon>
               <div class="text-sm leading-relaxed min-w-0 flex-1">
-                <span class="font-bold" :class="fillPending ? 'text-warning-700' : currentQuestion?.isCorrect ? 'text-success-700' : 'text-error-700'">
-                  {{ fillPending ? '部分命中，其余待评估' : currentQuestion?.isCorrect ? '回答正确' : '回答错误' }}
+                <span class="font-bold" :class="bannerTone.text">
+                  {{ bannerTone.label }}
                 </span>
                 <!-- 填空题：逐空 ✓/✗/待评估 明细 -->
                 <div v-if="fillDetailRows.length" class="mt-2 space-y-1">
@@ -258,6 +258,11 @@
               >
                 AI 给分建议
               </n-button>
+              <!-- 简答自评 -->
+              <div v-if="isShortPending" class="flex gap-2 mt-2">
+                <n-button size="small" type="success" secondary @click="selfAssess(true)">我已掌握</n-button>
+                <n-button size="small" type="error" secondary @click="selfAssess(false)">还没掌握</n-button>
+              </div>
             </div>
 
             <!-- 解析 -->
@@ -827,8 +832,37 @@ const isShortAnswered = computed(
 const showAiSuggest = computed(
   () => aiSuggestAvailable.value && (fillPending.value || isShortAnswered.value)
 )
+/** 判分横幅状态机：填空待评估 / 简答待自评 / 对 / 错 */
+const bannerTone = computed(() => {
+  const q = currentQuestion.value
+  const isShort = q?.type === 'SHORT_ANSWER' && answered.value && q.isCorrect == null && !q.userAnswer?.startsWith('<span')
+  if (q?.isCorrect) {
+    return { state: 'correct', label: '回答正确', cls: 'bg-success-50 border-success-200', color: 'var(--color-success-500)', text: 'text-success-700' }
+  }
+  if (fillPending.value || isShort) {
+    return { state: 'pending', label: isShort ? '主观题待自评：可对照参考答案，或点「AI 给分建议」辅助判断' : '部分命中，其余待评估', cls: 'bg-warning-50 border-warning-200', color: 'var(--color-warning-500)', text: 'text-warning-700' }
+  }
+  return { state: 'wrong', label: '回答错误', cls: 'bg-error-50 border-error-200', color: 'var(--color-error-500)', text: 'text-error-700' }
+})
+
+/** 简答自评：主观题由用户自己判定掌握与否（写入本地练习状态，仅标记，不影响统计口径） */
+const selfAssessed = ref<Record<number, boolean>>({})
+function selfAssess(correct: boolean) {
+  const idx = currentIndex.value
+  selfAssessed.value = { ...selfAssessed.value, [idx]: correct }
+  const q = questions.value[idx]
+  if (q) q.isCorrect = correct
+  message.info(correct ? '已标记为掌握' : '已标记为未掌握，将进入错题本')
+}
+
 /** 简答作答工具栏禁用项（与考试侧 answerDisabledMenus 同口径） */
 const shortDisabledMenus = ['title', 'quote', 'code', 'table', 'hr', 'link', 'clear', 'sub', 'sup']
+
+/** 简答待自评（对答案环节，未自评过） */
+const isShortPending = computed(() => {
+  const q = currentQuestion.value
+  return q?.type === 'SHORT_ANSWER' && answered.value && q.isCorrect == null && selfAssessed.value[currentIndex.value] === undefined
+})
 
 /** 简答草稿变更：本地暂存（整卷模式，不判分） */
 function handleShortDraftChange(v: string) {
