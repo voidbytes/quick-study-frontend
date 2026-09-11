@@ -68,9 +68,10 @@
         </div>
       </div>
 
-      <!-- 作答统计（出卷人视角，置于题目列表上方）；字段与后端 SessionsSummaryResponse 对齐 -->
+      <!-- 作答统计（出卷人视角，置于题目列表上方）；字段与后端 SessionsSummaryResponse 对齐。
+           totalParticipants 实为会话条数（同一人多次作答重复计入），故文案用「作答次数」 -->
       <div v-if="canManage" class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <StatCard label="总作答人数" :value="sessionStats?.totalParticipants ?? 0" tone="brand" />
+        <StatCard label="作答次数" :value="sessionStats?.totalParticipants ?? 0" tone="brand" />
         <StatCard label="平均分" :value="sessionStats ? (sessionStats.averageScore?.toFixed(1) || '0.0') : '-'" />
         <StatCard label="最高分" :value="sessionStats ? (sessionStats.maxScore || '-') : '-'" tone="success" />
         <StatCard label="最低分" :value="sessionStats ? (sessionStats.minScore || '-') : '-'" tone="error" />
