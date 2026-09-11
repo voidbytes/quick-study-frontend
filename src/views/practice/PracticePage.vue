@@ -138,28 +138,18 @@
               </QuestionOption>
             </template>
 
-            <!-- 填空题：题干拆分行内渲染（文本片段与编号输入框交替），提交后锁定 -->
+            <!-- 填空题：题干徽章标空位，下方独立横线输入框逐空作答（提交后锁定） -->
             <template v-else-if="currentQuestion?.type === 'FILL_BLANK'">
-              <label class="block text-sm font-medium text-neutral-700 mb-2">
-                请填写答案（共 {{ fillSegments.length - 1 }} 空）
-              </label>
-              <div
-                :key="`fill-${currentIndex}`"
-                class="fill-inline flex flex-wrap items-center gap-y-1 leading-relaxed"
-              >
-                <template v-for="(seg, si) in fillSegments" :key="si">
-                  <span class="whitespace-pre-wrap">{{ seg }}</span>
+              <div :key="`fill-${currentIndex}`" class="fill-lines">
+                <div v-for="(blank, bi) in fillBlanks" :key="bi" class="fill-line-input">
                   <n-input
-                    v-if="si < fillSegments.length - 1"
-                    :value="fillBlankAnswers[si] ?? ''"
-                    size="small"
-                    class="fill-inline-input"
-                    :style="{ minWidth: `${fillInputWidth(fillBlankAnswers[si])}px` }"
-                    :placeholder="`空${si + 1}`"
+                    :value="fillBlankAnswers[bi] ?? ''"
+                    :bordered="false"
+                    :placeholder="`填写第 ${blank.no} 空`"
                     :disabled="answered"
-                    @update:value="(v: string) => updateFillBlank(si, v)"
+                    @update:value="(v: string) => updateFillBlank(bi, v)"
                   />
-                </template>
+                </div>
               </div>
             </template>
 
@@ -773,15 +763,10 @@ function isCorrectOption(index: number): boolean {
 /** 题干：填空保留【空N】原文由 RichText fill-blanks 渲染徽章（方案 C） */
 const practiceStem = computed(() => currentQuestion.value?.content ?? '')
 
-/** 填空题干拆分：片段与空位交替（非填空题为单元素数组，模板不消费） */
-const fillSegments = computed(() =>
-  currentQuestion.value?.type === 'FILL_BLANK' ? parseFillBlanks(currentQuestion.value.content).parts : ['']
+/** 填空空位序列（1..N，与题干徽章编号一致），驱动下方横线输入框列表 */
+const fillBlanks = computed(() =>
+  currentQuestion.value?.type === 'FILL_BLANK' ? parseFillBlanks(currentQuestion.value.content).blanks : []
 )
-
-function fillInputWidth(value: string | undefined): number {
-  const len = value ? [...value].length : 0
-  return Math.max(96, Math.min(320, len * 14 + 40))
-}
 
 function updateFillBlank(bi: number, value: string) {
   const arr = [...fillBlankAnswers.value]
@@ -1214,14 +1199,27 @@ onBeforeUnmount(() => {
   line-height: var(--leading-relaxed);
   color: var(--text-secondary);
 }
-/* 填空行内输入框：与题干文本基线对齐，宽度由内联 min-width 按答案长度提示 */
-.fill-inline {
-  font-size: 17px;
-  color: var(--text-primary);
-  font-weight: var(--font-medium);
+/* 填空作答区：题干徽章之下独立横线输入框列表，逐空一条 */
+.fill-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 4px;
 }
-.fill-inline-input {
-  margin: 0 4px;
-  flex: 0 1 auto;
+.fill-line-input {
+  min-width: 120px;
+}
+.fill-line-input :deep(.n-input) {
+  border-bottom: 1.5px solid var(--border-default);
+  border-radius: 0;
+  background: transparent;
+}
+.fill-line-input :deep(.n-input:not(.n-input--disabled):hover),
+.fill-line-input :deep(.n-input:not(.n-input--disabled).n-input--focus) {
+  border-bottom-color: var(--border-brand);
+}
+.fill-line-input :deep(.n-input--disabled) {
+  border-bottom-color: var(--border-strong);
+  background: transparent;
 }
 </style>
