@@ -263,7 +263,9 @@ const menuGroups = computed<MenuGroup[]>(() => {
         { label: '用户管理', key: '/admin/users', icon: PeopleOutline },
         { label: '题目管理', key: '/questions/manage', icon: SettingsOutline },
         { label: '审核列表', key: '/admin/reviews', icon: CheckmarkDoneOutline },
-        { label: '邀请码', key: '/admin/invite-codes', icon: TicketOutline }
+        { label: '邀请码', key: '/admin/invite-codes', icon: TicketOutline },
+        { label: '系统配置', key: '/admin/system-config', icon: SettingsOutline },
+        { label: '操作日志', key: '/admin/operation-logs', icon: DocumentTextOutline }
       ]
     })
   }
@@ -294,6 +296,8 @@ const MENU_TITLES: Record<string, string> = {
   '/admin/users': '用户管理',
   '/admin/reviews': '审核列表',
   '/admin/invite-codes': '邀请码',
+  '/admin/system-config': '系统配置',
+  '/admin/operation-logs': '操作日志',
   '/grading': '批改',
   '/profile': '个人中心'
 }

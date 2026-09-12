@@ -225,6 +225,18 @@ const routes: RouteRecordRaw[] = [
         meta: { requiresAdmin: true }
       },
       {
+        path: 'admin/system-config',
+        name: 'AdminSystemConfig',
+        component: () => import('@/views/admin/SystemConfig.vue'),
+        meta: { requiresSuperAdmin: true }
+      },
+      {
+        path: 'admin/operation-logs',
+        name: 'AdminOperationLog',
+        component: () => import('@/views/admin/OperationLog.vue'),
+        meta: { requiresSuperAdmin: true }
+      },
+      {
         // 404 兜底：MainLayout 内渲染（保留导航），必须放 children 最后
         path: ':pathMatch(.*)*',
         name: 'NotFound',
@@ -262,6 +274,16 @@ router.beforeEach((to, _from, next) => {
     const authStore = useAuthStore()
     if (!authStore.isAdmin) {
       log.warn(`非管理员访问管理页 ${to.fullPath}，拦截`)
+      next({ name: 'Home' })
+      return
+    }
+  }
+
+  // 检查超级管理员权限（系统配置 / 操作日志等超管专属页）
+  if (to.meta.requiresSuperAdmin) {
+    const authStore = useAuthStore()
+    if (!authStore.isSuperAdmin) {
+      log.warn(`非超级管理员访问页面 ${to.fullPath}，拦截`)
       next({ name: 'Home' })
       return
     }
