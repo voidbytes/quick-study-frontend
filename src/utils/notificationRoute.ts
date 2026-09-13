@@ -19,13 +19,15 @@ export function resolveNotificationRoute(notif: NotifLike | null | undefined): s
   if (notif.link) return notif.link
 
   const relatedId = notif.relatedId
+  // relatedId 为雪花 id 字符串；'0'/'' 均视为无效（后端 Long=0 序列化为 '0'，非真 id）
+  const validId = relatedId != null && relatedId !== '' && relatedId !== '0'
   switch (notif.type) {
     case 'GRADING_PENDING':
-      return relatedId ? `/grading/sessions/${relatedId}` : '/grading'
+      return validId ? `/grading/sessions/${relatedId}` : '/grading'
     case 'GRADING_ASSIGNED':
       return '/grading'
     case 'GRADING_DONE':
-      return relatedId ? `/exam/sessions/${relatedId}/result` : '/records'
+      return validId ? `/exam/sessions/${relatedId}/result` : '/records'
     case 'GRADING_TIMEOUT':
       return '/papers'
     default:

@@ -51,6 +51,16 @@
           />
         </n-form-item>
 
+        <n-form-item v-if="inviteRequired" label="邀请码" path="inviteCode">
+          <n-input
+            v-model:value="form.inviteCode"
+            placeholder="请输入管理员提供的邀请码"
+            :maxlength="32"
+            class="font-mono"
+            @input="form.inviteCode = normalizeCode(form.inviteCode)"
+          />
+        </n-form-item>
+
         <n-form-item v-if="captchaEnabled" label="验证码" path="captchaCode">
           <div class="flex gap-3 items-center w-full">
             <n-input
@@ -59,7 +69,15 @@
               :maxlength="6"
               class="flex-1"
             />
+            <img
+              v-if="captchaImage"
+              :src="captchaImage"
+              class="w-28 h-10 object-cover bg-brand-soft border border-dashed border-primary-300 rounded-md cursor-pointer select-none flex-shrink-0"
+              title="点击刷新验证码"
+              @click="refreshCaptcha"
+            />
             <div
+              v-else
               class="w-28 h-10 flex items-center justify-center bg-brand-soft border border-dashed border-primary-300 rounded-md font-mono text-xl font-bold tracking-widest text-brand cursor-pointer select-none flex-shrink-0"
               title="点击刷新验证码"
               @click="refreshCaptcha"
@@ -136,7 +154,8 @@ function validateUsername(_rule: any, value: string) {
   return true
 }
 
-const rules: FormRules = {
+// rules 需随 captchaEnabled / inviteRequired 响应式变化（拉配置前均为 false，静态对象无法感知）
+const rules = computed<FormRules>(() => ({
   username: [
     { required: true, message: '请输入用户名', trigger: 'blur' },
     { min: 3, max: 50, message: '用户名长度在 3-50 字符之间', trigger: 'blur' },
@@ -157,10 +176,13 @@ const rules: FormRules = {
   email: [
     { type: 'email', message: '请输入正确的邮箱格式', trigger: 'blur' }
   ],
+  inviteCode: inviteRequired.value
+    ? [{ required: true, message: '请输入邀请码', trigger: 'blur' }]
+    : [],
   captchaCode: captchaEnabled.value
     ? [{ required: true, message: '请输入验证码', trigger: 'blur' }]
     : []
-}
+}))
 
 async function handleCheckUsername() {
   if (!form.username || form.username.length < 3) return

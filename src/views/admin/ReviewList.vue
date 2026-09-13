@@ -83,20 +83,20 @@
           <!-- 选项 -->
           <div v-if="questionOptionList.length" class="rounded-lg border border-neutral-200 p-4 mb-4">
             <div class="text-xs font-semibold text-neutral-400 uppercase tracking-wide mb-2">选项</div>
-            <div v-for="(opt, idx) in questionOptionList" :key="idx" class="flex items-start gap-2 py-1">
+            <div v-for="(opt, idx) in questionOptionList" :key="opt.id" class="flex items-start gap-2 py-1">
               <span
                 class="w-5 h-5 rounded-full bg-primary-50 text-primary-600 text-xs flex items-center justify-center flex-shrink-0 font-medium mt-0.5"
               >
                 {{ String.fromCharCode(65 + idx) }}
               </span>
-              <span class="text-sm text-neutral-700">{{ opt }}</span>
+              <span class="text-sm text-neutral-700">{{ opt.text }}</span>
             </div>
           </div>
 
           <!-- 答案与解析 -->
           <div class="rounded-lg border border-neutral-200 p-4 mb-4">
             <div class="text-xs font-semibold text-neutral-400 uppercase tracking-wide mb-2">参考答案</div>
-            <p class="text-sm text-neutral-800">{{ currentReview?.question?.answer || '无' }}</p>
+            <p class="text-sm text-neutral-800">{{ answerDisplay || '无' }}</p>
           </div>
 
           <div class="rounded-lg border border-neutral-200 p-4 mb-4">
@@ -128,6 +128,8 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import { useMessage } from 'naive-ui'
 import { getReviewList, getReviewDetail, approveReview, rejectReview } from '@/api/review'
 import type { ReviewResponse } from '@/api/review'
+import type { OptionItem } from '@/types'
+import { parseOptionList, answerIdsToLabel } from '@/utils/answer'
 import PageHeader from '@/components/common/PageHeader.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
 import RichText from '@/components/common/RichText.vue'
@@ -170,24 +172,21 @@ function formatTime(time?: string): string {
   return time ? dayjs(time).format('YYYY-MM-DD HH:mm') : '—'
 }
 
-/** 详情接口 options 运行时为 JSON 字符串（类型声明滞后为数组），此处做本地收敛 */
-function parseOptions(raw: unknown): string[] {
-  if (!raw) return []
-  if (Array.isArray(raw)) return raw.filter((o): o is string => typeof o === 'string')
-  if (typeof raw === 'string') {
-    try {
-      const parsed = JSON.parse(raw)
-      return Array.isArray(parsed) ? parsed.filter((o): o is string => typeof o === 'string') : []
-    } catch {
-      return []
-    }
-  }
-  return []
+/** 详情接口 options 收敛为 OptionItem[]（JSON 字符串或对象数组统一处理） */
+function parseOptions(raw: unknown): OptionItem[] {
+  return parseOptionList(raw)
 }
 
-const questionOptionList = computed<string[]>(() =>
+const questionOptionList = computed<OptionItem[]>(() =>
   parseOptions(currentReview.value?.question?.options)
 )
+
+/** 参考答案展示：选择题 id 数组转展示字母（无 type 字段，按 id 数组格式识别）；其余原样 */
+const answerDisplay = computed(() => {
+  const answer = currentReview.value?.question?.answer
+  if (!answer) return ''
+  return answerIdsToLabel(questionOptionList.value, answer) || answer
+})
 
 async function fetchList() {
   loading.value = true

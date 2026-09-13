@@ -1,7 +1,12 @@
 <template>
   <div>
     <!-- 页头：返回 + 标题 + 编辑操作 -->
-    <PageHeader title="题目详情" :subtitle="bankSubtitle" showBack>
+    <PageHeader
+      title="题目详情"
+      :subtitle="bankSubtitle"
+      showBack
+      :back-to="`/banks/${bankId}`"
+    >
       <template #actions>
         <n-button v-if="authStore.isAuthenticated" size="small" @click="openNoteDrawer">
           <template #icon>
@@ -42,11 +47,11 @@
         </div>
 
         <div class="px-6 py-6 space-y-6">
-          <!-- 题干 -->
+          <!-- 题干（填空题：占位符渲染为行内横线段） -->
           <section>
             <h3 class="text-sm font-medium text-neutral-500 mb-2">题干</h3>
             <div class="bg-neutral-50 border border-neutral-200 rounded-lg p-4">
-              <RichText :content="question.content" />
+              <RichText :content="stemContent" fill-blanks />
             </div>
           </section>
 
@@ -56,24 +61,24 @@
             <div class="space-y-2">
               <div
                 v-for="(opt, index) in parsedOptions"
-                :key="index"
+                :key="opt.id"
                 class="flex items-start gap-3 p-4 border rounded-lg transition-colors"
-                :class="isCorrectOption(opt)
+                :class="isCorrectOption(index)
                   ? 'border-success-500 bg-success-50'
                   : 'border-neutral-200 bg-white'"
               >
                 <div
                   class="w-6 h-6 rounded-full flex items-center justify-center text-sm font-semibold flex-shrink-0 mt-0.5"
-                  :class="isCorrectOption(opt)
+                  :class="isCorrectOption(index)
                     ? 'bg-success-500 text-white'
                     : 'bg-neutral-100 text-neutral-600'"
                 >
                   {{ String.fromCharCode(65 + index) }}
                 </div>
                 <div class="flex-1 min-w-0 text-sm text-neutral-900 leading-relaxed pt-0.5">
-                  <RichText :content="opt" />
+                  <RichText :content="opt.text" />
                 </div>
-                <n-icon v-if="isCorrectOption(opt)" color="#22B570" size="18" class="flex-shrink-0 mt-1">
+                <n-icon v-if="isCorrectOption(index)" color="#22B570" size="18" class="flex-shrink-0 mt-1">
                   <CheckmarkOutline />
                 </n-icon>
               </div>
@@ -81,28 +86,31 @@
           </section>
 
           <!-- 判断题答案 -->
-          <section v-if="question.type === 'TRUE_FALSE'">
+          <section v-if="question.type === 'TRUE_FALSE' && question.answer">
             <h3 class="text-sm font-medium text-neutral-500 mb-2">正确答案</h3>
             <div>
-              <n-tag :type="question.answer === 'true' ? 'success' : 'error'" size="medium" round>
-                {{ question.answer === 'true' ? '正确' : '错误' }}
+              <n-tag :type="isTrueFalseTrue ? 'success' : 'error'" size="medium" round>
+                {{ isTrueFalseTrue ? '正确' : '错误' }}
               </n-tag>
             </div>
           </section>
 
-          <!-- 正确答案（非判断题） -->
-          <section v-if="question.answer && question.type !== 'TRUE_FALSE'">
+          <!-- 填空题答案：答案组格式（① color/Color ② #fff ③（开放）） -->
+          <section v-else-if="question.type === 'FILL_BLANK' && question.answer">
             <h3 class="text-sm font-medium text-neutral-500 mb-2">正确答案</h3>
-            <div class="bg-success-50 border border-success-100 rounded-lg p-4">
-              <RichText :content="answerLabel" />
+            <div class="bg-success-50 border border-success-100 rounded-lg p-4 font-medium">
+              {{ fillAnswerLabel }}
+            </div>
+            <div class="text-xs text-neutral-400 mt-1.5">
+              每空任一答案命中即该空正确；（开放）= 开放空，作答交 AI 辅助评估。
             </div>
           </section>
 
-          <!-- 参考答案 -->
-          <section v-if="question.referenceAnswer">
-            <h3 class="text-sm font-medium text-neutral-500 mb-2">参考答案</h3>
-            <div class="bg-neutral-50 border border-neutral-200 rounded-lg p-4">
-              <RichText :content="question.referenceAnswer" />
+          <!-- 正确答案（其他非判断题） -->
+          <section v-else-if="question.answer">
+            <h3 class="text-sm font-medium text-neutral-500 mb-2">正确答案</h3>
+            <div class="bg-success-50 border border-success-100 rounded-lg p-4">
+              <RichText :content="answerLabel" />
             </div>
           </section>
 
@@ -229,10 +237,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import type { QuestionType, Difficulty, Question, QuestionOption } from '@/types'
-import { getQuestionDetail } from '@/api/question'
+import type { QuestionType, Difficulty, Question, OptionItem } from '@/types'
+import { getQuestionDetail, getQuestionNeighbors } from '@/api/question'
+import { parseOptionList, parseAnswerIds, idToIndex, formatFillAnswer, TRUE_FALSE_TRUE_ID } from '@/utils/answer'
 import { getNote, saveNote, deleteNote, NOTE_IMAGE_PATTERN } from '@/api/note'
 import { useAuthStore } from '@/stores/auth'
 import { QUESTION_TYPE_MAP, DIFFICULTY_MAP, QUESTION_STATUS_OPTIONS } from '@/utils/constants'
@@ -248,8 +257,13 @@ const router = useRouter()
 const authStore = useAuthStore()
 const message = useMessage()
 
-const bankId = route.params.bankId as string
+/** 题库 ID：长 URL 从路由取；短 URL（alias /questions/:questionId）路由无此参数，加载详情后回填 */
+const bankId = ref((route.params.bankId as string) || '')
+/** 当前题目 id（路由响应式：上一题/下一题导航在同页切换） */
+const currentQuestionId = computed(() => (route.params.questionId as string) || questionId)
 const questionId = route.params.questionId as string
+/** 同题库相邻题 id（上一题/下一题导航） */
+const neighbors = ref<{ prevId: string | null; nextId: string | null } | null>(null)
 
 // ==================== 题目笔记 ====================
 
@@ -307,10 +321,11 @@ async function handleDeleteNote() {
 const loading = ref(false)
 const loadError = ref('')
 
-/** 后端运行时 options 为 JSON 字符串（Question 类型声明滞后），本地收敛为联合类型 */
-interface QuestionDetailData extends Omit<Question, 'options'> {
-  options?: string | QuestionOption[] | null
-  referenceAnswer?: string | null
+/** 后端运行时（QuestionDetailResponse，option_id 模型）：options 为 OptionItem 数组 */
+interface QuestionDetailData extends Omit<Question, 'options' | 'answer'> {
+  options?: string | OptionItem[] | null
+  /** 选择题=id JSON 数组；填空/简答=文本（简答参考答案并入）；编程=null */
+  answer?: string | null
   /** 编程题配置（type=PROGRAMMING 时存在） */
   programming?: {
     timeLimitMs: number
@@ -382,60 +397,45 @@ const showOptions = computed(
 /** 编程题允许语言列表（空 = 不限制） */
 const programmingLangList = computed<string[]>(() => question.value?.programming?.allowedLanguages || [])
 
-const parsedOptions = computed<string[]>(() => {
-  const raw = question.value?.options
-  if (!raw) return []
-  if (typeof raw === 'string') {
-    try {
-      const parsed = JSON.parse(raw)
-      return Array.isArray(parsed) ? parsed.filter((o): o is string => typeof o === 'string') : []
-    } catch {
-      return []
-    }
-  }
-  if (Array.isArray(raw)) {
-    return raw.map((o) => (typeof o === 'string' ? o : o?.content ?? ''))
-  }
-  return []
-})
+const parsedOptions = computed<OptionItem[]>(() => parseOptionList(question.value?.options))
 
-const isCorrectOption = (opt: string): boolean => {
-  if (!question.value?.answer) return false
-  const answer = question.value.answer
-  const idx = parsedOptions.value.indexOf(opt)
-  if (idx < 0) return false
-  if (question.value.type === 'SINGLE') {
-    // 单选答案如 "A"、"B"
-    return answer === String.fromCharCode(65 + idx)
-  }
-  if (question.value.type === 'MULTIPLE') {
-    return answer.split(',').includes(String.fromCharCode(65 + idx))
-  }
-  return false
+/** 判断题答案是否为"正确"（id=0；无法识别时回退 false） */
+const isTrueFalseTrue = computed(() => parseAnswerIds(question.value?.answer)[0] === TRUE_FALSE_TRUE_ID)
+
+/** 展示位是否命中标准答案（按 option_id 集合比较） */
+const isCorrectOption = (index: number): boolean => {
+  const opt = parsedOptions.value[index]
+  if (!opt || !question.value?.answer) return false
+  return parseAnswerIds(question.value.answer).includes(opt.id)
 }
 
 const answerLabel = computed(() => {
-  if (!question.value?.answer) return ''
-  if (question.value.type === 'SINGLE') {
-    const idx = question.value.answer.charCodeAt(0) - 65
-    if (idx >= 0 && idx < parsedOptions.value.length) {
-      return `${question.value.answer}. ${parsedOptions.value[idx]}`
-    }
-    return question.value.answer
-  }
-  if (question.value.type === 'MULTIPLE') {
-    const answers = question.value.answer.split(',')
-    return answers
-      .map((a: string) => {
-        const idx = a.trim().charCodeAt(0) - 65
-        if (idx >= 0 && idx < parsedOptions.value.length) {
-          return `${a.trim()}. ${parsedOptions.value[idx]}`
-        }
-        return a.trim()
+  const answer = question.value?.answer
+  if (!answer) return ''
+  const type = question.value?.type
+  if (type === 'SINGLE' || type === 'MULTIPLE') {
+    const ids = parseAnswerIds(answer)
+    if (!ids.length) return answer
+    return ids
+      .map((id) => {
+        const idx = idToIndex(parsedOptions.value, id)
+        const marker = idx >= 0 ? String.fromCharCode(65 + idx) : String(id)
+        const text = idx >= 0 ? parsedOptions.value[idx].text : ''
+        return text ? `${marker}. ${text}` : marker
       })
       .join('；')
   }
-  return question.value.answer
+  return answer
+})
+
+/** 填空题干保留【空N】原文，由 RichText fill-blanks 渲染后替换为徽章（方案 C，代码块内生效） */
+const stemContent = computed(() => question.value?.content ?? '')
+
+/** 填空答案组展示：① color/Color ② #fff ③（开放）（三形态容错） */
+const fillAnswerLabel = computed(() => {
+  const answer = question.value?.answer
+  if (!answer) return ''
+  return formatFillAnswer(answer) || answer
 })
 
 function formatTime(time?: string) {
@@ -446,14 +446,42 @@ async function fetchDetail() {
   loading.value = true
   loadError.value = ''
   try {
-    const res = await getQuestionDetail(questionId)
+    const res = await getQuestionDetail(currentQuestionId.value)
     question.value = res.data
+    // 短 URL 形态：bankId 只能从详情接口回填（返回题库/编辑跳转依赖它）
+    if (!bankId.value && res.data?.bankId) {
+      bankId.value = String(res.data.bankId)
+    }
+    // 同题库相邻题（上一题/下一题导航）
+    if (bankId.value) {
+      try {
+        const nb = await getQuestionNeighbors(bankId.value, currentQuestionId.value)
+        neighbors.value = nb.data
+      } catch {
+        neighbors.value = null
+      }
+    }
   } catch (err: any) {
     loadError.value = err?.response?.data?.message || err?.message || '加载题目详情失败'
   } finally {
     loading.value = false
   }
 }
+
+/** 上一题/下一题导航：同页路由切换，watch 触发重新加载 */
+function goNeighbor(id?: string | null) {
+  if (!id) return
+  if (bankId.value) {
+    router.push(`/banks/${bankId.value}/questions/${id}`)
+  } else {
+    router.push(`/questions/${id}`)
+  }
+}
+
+/** 同页路由参数变化（上一题/下一题切换）时重新加载详情与邻居 */
+watch(() => route.params.questionId, (nv, ov) => {
+  if (nv && nv !== ov) fetchDetail()
+})
 
 onMounted(() => {
   fetchDetail()

@@ -83,7 +83,7 @@ a:hover {
 }
 
 .markdown-body pre {
-  background: var(--bg-subtle);
+  background: transparent;
   border: 1px solid var(--border-default);
   border-radius: var(--radius-md);
   padding: 12px;

@@ -9,7 +9,7 @@ export interface LoginParams {
 }
 
 export interface LoginResult {
-  userId: number
+  userId: string
   username: string
   nickname: string
   role: string

@@ -4,6 +4,7 @@
       title="错题详情"
       :subtitle="wrongQuestion ? `${wrongQuestion.bankName || '未知题库'} · 错 ${wrongQuestion.errorCount} 次 · 最近做错于 ${formatTime(wrongQuestion.lastWrongTime)}` : ''"
       showBack
+      back-to="/wrongquestions"
     />
 
     <n-spin v-if="!loadError" :show="loading">
@@ -21,11 +22,11 @@
         </div>
 
         <div class="px-6 py-6 space-y-6">
-          <!-- 题干 -->
+          <!-- 题干（填空题：占位符渲染为行内横线段） -->
           <section>
             <h3 class="text-sm font-medium text-neutral-500 mb-2">题干</h3>
             <div class="bg-neutral-50 border border-neutral-200 rounded-lg p-4">
-              <RichText :content="snapshot?.content" />
+              <RichText :content="stemContent" fill-blanks />
             </div>
           </section>
 
@@ -35,24 +36,24 @@
             <div class="space-y-2">
               <div
                 v-for="(opt, index) in parsedOptions"
-                :key="index"
+                :key="opt.id"
                 class="flex items-start gap-3 p-4 border rounded-lg transition-colors"
-                :class="isCorrectOption(opt)
+                :class="isCorrectOption(index)
                   ? 'border-success-500 bg-success-50'
                   : 'border-neutral-200 bg-white'"
               >
                 <div
                   class="w-6 h-6 rounded-full flex items-center justify-center text-sm font-semibold flex-shrink-0 mt-0.5"
-                  :class="isCorrectOption(opt)
+                  :class="isCorrectOption(index)
                     ? 'bg-success-500 text-white'
                     : 'bg-neutral-100 text-neutral-600'"
                 >
                   {{ String.fromCharCode(65 + index) }}
                 </div>
                 <div class="flex-1 min-w-0 text-sm text-neutral-900 leading-relaxed pt-0.5">
-                  <RichText :content="opt" />
+                  <RichText :content="opt.text" />
                 </div>
-                <n-icon v-if="isCorrectOption(opt)" color="#22B570" size="18" class="flex-shrink-0 mt-1">
+                <n-icon v-if="isCorrectOption(index)" color="#22B570" size="18" class="flex-shrink-0 mt-1">
                   <CheckmarkOutline />
                 </n-icon>
               </div>
@@ -63,14 +64,22 @@
           <section v-if="snapshot?.type === 'TRUE_FALSE' && snapshot?.answer">
             <h3 class="text-sm font-medium text-neutral-500 mb-2">正确答案</h3>
             <div>
-              <n-tag :type="snapshot.answer === 'A' ? 'success' : 'error'" round>
-                {{ snapshot.answer === 'A' ? '正确' : '错误' }}
+              <n-tag :type="isTrueFalseTrue ? 'success' : 'error'" round>
+                {{ isTrueFalseTrue ? '正确' : '错误' }}
               </n-tag>
             </div>
           </section>
 
-          <!-- 正确答案（非判断题） -->
-          <section v-if="snapshot?.answer && snapshot.type !== 'TRUE_FALSE'">
+          <!-- 填空题答案：答案组格式（① color/Color ② #fff ③（开放）） -->
+          <section v-else-if="snapshot?.type === 'FILL_BLANK' && snapshot?.answer">
+            <h3 class="text-sm font-medium text-neutral-500 mb-2">正确答案</h3>
+            <div class="bg-success-50 border border-success-100 rounded-lg p-4 font-medium">
+              {{ fillAnswerLabel }}
+            </div>
+          </section>
+
+          <!-- 正确答案（其他非判断题） -->
+          <section v-else-if="snapshot?.answer">
             <h3 class="text-sm font-medium text-neutral-500 mb-2">正确答案</h3>
             <div class="bg-success-50 border border-success-100 rounded-lg p-4">
               <RichText :content="answerLabel" />
@@ -96,7 +105,8 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useMessage } from 'naive-ui'
 import { getWrongQuestionById } from '@/api/wrongQuestion'
-import type { WrongQuestion, QuestionType, Difficulty } from '@/types'
+import type { WrongQuestion, QuestionType, Difficulty, OptionItem } from '@/types'
+import { parseOptionList, parseAnswerIds, answerIdsToLabel, sortOptionsById, formatFillAnswer, TRUE_FALSE_TRUE_ID } from '@/utils/answer'
 import { QUESTION_TYPE_MAP, DIFFICULTY_MAP } from '@/utils/constants'
 import PageHeader from '@/components/common/PageHeader.vue'
 import RichText from '@/components/common/RichText.vue'
@@ -171,63 +181,38 @@ const showOptions = computed(
   () => snapshot.value?.type === 'SINGLE' || snapshot.value?.type === 'MULTIPLE'
 )
 
-function toOptionText(opt: unknown): string {
-  if (typeof opt === 'string') return opt
-  if (opt && typeof opt === 'object') {
-    const record = opt as Record<string, unknown>
-    const content = record.content ?? record.text ?? record.value
-    return typeof content === 'string' ? content : ''
-  }
-  return ''
-}
+// 全页为解析/回顾态：选项按 id 升序（题库原序），展示字母与解析文本按存库字母
+//（id 0=A）书写的引用对齐；快照里的乱序仅作答时有意义
+const parsedOptions = computed<OptionItem[]>(() => sortOptionsById(parseOptionList(snapshot.value?.options)))
 
-const parsedOptions = computed<string[]>(() => {
-  const raw = snapshot.value?.options
-  if (!raw) return []
-  if (typeof raw === 'string') {
-    try {
-      const parsed: unknown = JSON.parse(raw)
-      if (Array.isArray(parsed)) return parsed.map(toOptionText)
-    } catch {
-      // 非 JSON，忽略
-    }
-    return []
-  }
-  if (Array.isArray(raw)) return raw.map(toOptionText)
-  return []
-})
+/** 判断题答案是否为"正确"（id=0） */
+const isTrueFalseTrue = computed(() => parseAnswerIds(snapshot.value?.answer)[0] === TRUE_FALSE_TRUE_ID)
 
-const isCorrectOption = (opt: string): boolean => {
-  const answer = snapshot.value?.answer
-  const type = snapshot.value?.type
-  if (!answer) return false
-  const idx = parsedOptions.value.indexOf(opt)
-  if (idx < 0) return false
-  const letter = String.fromCharCode(65 + idx)
-  if (type === 'SINGLE') return answer === letter
-  if (type === 'MULTIPLE') return answer.split(',').map((a) => a.trim()).includes(letter)
-  return false
+/** 展示位是否命中标准答案（按 option_id 集合比较） */
+const isCorrectOption = (index: number): boolean => {
+  const opt = parsedOptions.value[index]
+  if (!opt) return false
+  return parseAnswerIds(snapshot.value?.answer).includes(opt.id)
 }
 
 const answerLabel = computed(() => {
   const answer = snapshot.value?.answer
-  const type = snapshot.value?.type
   if (!answer) return ''
-  const format = (letter: string): string => {
-    const idx = letter.trim().charCodeAt(0) - 65
-    if (idx >= 0 && idx < parsedOptions.value.length) {
-      return `${letter.trim()}. ${parsedOptions.value[idx]}`
-    }
-    return letter.trim()
-  }
-  if (type === 'SINGLE') return format(answer)
-  if (type === 'MULTIPLE') {
-    return answer
-      .split(',')
-      .map(format)
-      .join('；')
+  const type = snapshot.value?.type
+  if (type === 'SINGLE' || type === 'MULTIPLE') {
+    return answerIdsToLabel(parsedOptions.value, answer)
   }
   return answer
+})
+
+/** 填空题干保留【空N】原文，由 RichText fill-blanks 渲染后替换为徽章（方案 C） */
+const stemContent = computed(() => snapshot.value?.content ?? '')
+
+/** 填空答案组展示：① color/Color ② #fff ③（开放）（三形态容错） */
+const fillAnswerLabel = computed(() => {
+  const answer = snapshot.value?.answer
+  if (!answer) return ''
+  return formatFillAnswer(answer) || answer
 })
 
 function formatTime(time?: string) {

@@ -23,7 +23,7 @@ export function getUnreadCount() {
   return request.get<ApiResponse<{ count: number }>>('/notifications/unread-count')
 }
 
-export function markRead(id: number) {
+export function markRead(id: string) {
   return request.put<ApiResponse<null>>(`/notifications/${id}/read`)
 }
 
@@ -31,6 +31,6 @@ export function markAllRead() {
   return request.put<ApiResponse<null>>('/notifications/read-all')
 }
 
-export function deleteNotification(id: number) {
+export function deleteNotification(id: string) {
   return request.delete<ApiResponse<null>>(`/notifications/${id}`)
 }

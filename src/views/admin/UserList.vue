@@ -116,8 +116,8 @@ const showCreateAdmin = ref(false)
 const newAdminUserId = ref('')
 const creatingAdmin = ref(false)
 const searchUserKeyword = ref('')
-const searchUserResults = ref<{ label: string; value: number }[]>([])
-const selectedUserId = ref<number | null>(null)
+const searchUserResults = ref<{ label: string; value: string }[]>([])
+const selectedUserId = ref<string | null>(null)
 
 const statusOptions = [
   { label: '正常', value: 'ACTIVE' },
@@ -292,7 +292,7 @@ function handleDeleteUser(row: any) {
 }
 
 async function handleCreateAdmin() {
-  const targetId = selectedUserId.value || Number(newAdminUserId.value)
+  const targetId = selectedUserId.value || newAdminUserId.value
   if (!targetId) {
     message.warning('请选择用户或输入用户ID')
     return

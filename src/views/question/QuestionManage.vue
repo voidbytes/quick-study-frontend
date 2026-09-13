@@ -1,8 +1,9 @@
 <template>
   <div>
     <!-- 页头 -->
-    <PageHeader title="题目" subtitle="跨题库管理所有题目，支持按题型、难度、标签筛选">
+    <PageHeader title="题目管理" subtitle="跨题库管理所有题目（批量导入/导出、删除），浏览与筛选请用题目页">
       <template #actions>
+        <n-button @click="router.push('/questions')">返回浏览</n-button>
         <n-button v-if="authStore.isAdmin" @click="showTagManage = true">标签管理</n-button>
         <n-button v-if="authStore.isAdmin" type="primary" disabled @click="handleCreateHint">
           创建题目
@@ -46,7 +47,7 @@
           @update:value="handleSearch"
         />
         <n-select
-          v-model:value="filter.tagIds"
+          v-model:value="filter.tagNames"
           :options="tagOptions"
           placeholder="标签（可多选）"
           multiple
@@ -63,7 +64,7 @@
         />
         <div class="flex items-center gap-2 ml-auto">
           <n-button
-            v-if="authStore.isAuthenticated"
+            v-if="authStore.isAdmin"
             :disabled="exporting"
             @click="handleExport"
           >
@@ -76,8 +77,8 @@
       </div>
     </div>
 
-    <!-- 批量操作条 -->
-    <div v-if="questionList.length > 0" class="flex items-center gap-2 mb-3 px-1">
+    <!-- 批量操作条（管理员可见：勾选是为导出服务，普通用户不展示） -->
+    <div v-if="authStore.isAdmin && questionList.length > 0" class="flex items-center gap-2 mb-3 px-1">
       <n-checkbox :checked="allCurrentPageSelected" @update:checked="toggleSelectAll">全选本页</n-checkbox>
       <span class="text-xs text-neutral-400">已选 {{ selectedIds.length }} 题</span>
       <span v-if="selectedIds.length === 0" class="text-xs text-neutral-400">
@@ -105,6 +106,7 @@
       >
         <!-- 多选 -->
         <n-checkbox
+          v-if="authStore.isAdmin"
           :checked="selectedIds.includes(q.id)"
           class="mt-1 flex-shrink-0"
           @update:checked="(v: boolean) => toggleSelect(q.id, v)"
@@ -199,7 +201,7 @@ import type { Question, QuestionType, Difficulty } from '@/types'
 import { getAllQuestions, deleteQuestion } from '@/api/question'
 import { getBankList } from '@/api/bank'
 import { getTagList } from '@/api/tag'
-import { buildGroupedTagOptions } from '@/utils/tagOptions'
+import { buildGroupedTagNameOptions } from '@/utils/tagOptions'
 import { exportQuestions } from '@/api/importExport'
 import { triggerBlobDownload, nowStamp } from '@/utils/download'
 import {
@@ -230,7 +232,7 @@ const tagOptions = ref<SelectOption[]>([])
 const showTagManage = ref(false)
 
 /** 勾选（仅当前页范围） */
-const selectedIds = ref<number[]>([])
+const selectedIds = ref<string[]>([])
 const exporting = ref(false)
 const showImportDialog = ref(false)
 const allCurrentPageSelected = computed(() => {
@@ -238,11 +240,12 @@ const allCurrentPageSelected = computed(() => {
 })
 
 const filter = reactive({
-  bankId: null as number | null,
+  bankId: null as string | null,
   type: null as QuestionType | null,
   difficulty: null as Difficulty | null,
   status: null as string | null,
-  tagIds: [] as number[],
+  // 标签按名筛选（跨库列表用全局池，标签库内不重名、跨库可同名，故按名取值避免下拉重名）
+  tagNames: [] as string[],
   keyword: ''
 })
 
@@ -329,7 +332,8 @@ async function fetchBankOptions() {
 async function fetchTagOptions() {
   try {
     const res = await getTagList()
-    tagOptions.value = buildGroupedTagOptions(res.data || [])
+    // 跨库管理：标签下拉用全局标签池（GET /tags），按名去重后以标签名回传
+    tagOptions.value = buildGroupedTagNameOptions(res.data || [])
   } catch {
     // 忽略错误
   }
@@ -345,7 +349,7 @@ async function fetchList() {
       type: filter.type ?? undefined,
       difficulty: filter.difficulty ?? undefined,
       status: filter.status ?? undefined,
-      tagIds: filter.tagIds.length ? filter.tagIds : undefined,
+      tagNames: filter.tagNames.length ? filter.tagNames : undefined,
       keyword: filter.keyword || undefined
     }
     const res = await getAllQuestions(params)
@@ -373,7 +377,7 @@ function handleReset() {
   filter.type = null
   filter.difficulty = null
   filter.status = null
-  filter.tagIds = []
+  filter.tagNames = []
   filter.keyword = ''
   pagination.page = 1
   selectedIds.value = []
@@ -393,7 +397,7 @@ function handlePageSizeChange(pageSize: number) {
   fetchList()
 }
 
-function toggleSelect(id: number, checked: boolean) {
+function toggleSelect(id: string, checked: boolean) {
   if (checked) {
     if (!selectedIds.value.includes(id)) selectedIds.value.push(id)
   } else {
@@ -415,7 +419,7 @@ async function handleExport() {
   const noSelection = selectedIds.value.length === 0
   const noFilter =
     !filter.bankId && !filter.type && !filter.difficulty && !filter.status &&
-    filter.tagIds.length === 0 && !filter.keyword
+    filter.tagNames.length === 0 && !filter.keyword
   if (noSelection && noFilter) {
     message.warning('请先勾选题目，或设置筛选条件（如选择题库）后再批量导出')
     return
@@ -430,7 +434,7 @@ async function handleExport() {
             type: filter.type ?? undefined,
             difficulty: filter.difficulty ?? undefined,
             status: filter.status ?? undefined,
-            tagIds: filter.tagIds.length ? filter.tagIds : undefined,
+            tagNames: filter.tagNames.length ? filter.tagNames : undefined,
             keyword: filter.keyword || undefined
           })
     triggerBlobDownload(blob, `题目导出_${nowStamp()}.json`)

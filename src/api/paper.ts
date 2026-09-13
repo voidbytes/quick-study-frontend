@@ -11,9 +11,10 @@ export interface CreatePaperParams {
   attemptLimit?: number
   attemptType?: string
   multipleChoicePartial?: string
-  fillBlankAutoSplit?: boolean
-  questionItems: { questionId: number; score: number }[]
-  graderId?: number
+  /** 填空题部分命中给分策略（ALL_OR_NOTHING / PER_BLANK，缺省后端按 PER_BLANK） */
+  fillBlankPartial?: string
+  questionItems: { questionId: string; score: number }[]
+  graderId?: string
   shareType: string
   password?: string
   cheatEnabled?: boolean
@@ -30,8 +31,9 @@ export interface UpdatePaperParams {
   attemptLimit?: number
   attemptType?: string
   multipleChoicePartial?: string
-  fillBlankAutoSplit?: boolean
-  graderId?: number
+  /** 填空题部分命中给分策略（ALL_OR_NOTHING / PER_BLANK，缺省后端按 PER_BLANK） */
+  fillBlankPartial?: string
+  graderId?: string
   shareType?: string
   password?: string
   cheatEnabled?: boolean
@@ -94,7 +96,7 @@ export function publish(id: string | number) {
   return request.post<ApiResponse<ExamPaper>>(`/papers/${id}/publish`)
 }
 
-export function updateGrader(id: string | number, graderId: number) {
+export function updateGrader(id: string | number, graderId: string) {
   return request.put<ApiResponse<null>>(`/papers/${id}/grader`, { graderId })
 }
 

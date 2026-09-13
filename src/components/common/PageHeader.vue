@@ -7,7 +7,7 @@
         circle
         size="small"
         class="ph-back"
-        @click="router.back()"
+        @click="handleBack()"
       >
         <template #icon>
           <n-icon><ArrowBackOutline /></n-icon>
@@ -28,16 +28,27 @@
 import { useRouter } from 'vue-router'
 import { ArrowBackOutline } from '@vicons/ionicons5'
 
-withDefaults(
+const props = withDefaults(
   defineProps<{
     title: string
     subtitle?: string
     showBack?: boolean
+    /** 返回目标（可选）：无浏览器历史可退时的兜底路由（如列表页），未传则不跳转 */
+    backTo?: string
   }>(),
   { subtitle: '', showBack: false }
 )
 
 const router = useRouter()
+
+function handleBack() {
+  // 站内历史可退则 back；否则（直接输 URL / 新标签打开 / history 被替换）回退到 backTo
+  if (window.history.length > 1 && window.history.state?.back) {
+    router.back()
+  } else if (props.backTo) {
+    router.push(props.backTo)
+  }
+}
 </script>
 
 <style scoped>

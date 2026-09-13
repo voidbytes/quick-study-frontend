@@ -31,7 +31,7 @@ export interface NoteStats {
 export interface NoteListParams {
   page?: number
   size?: number
-  bankId?: number
+  bankId?: string
   type?: string
   keyword?: string
 }

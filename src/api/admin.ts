@@ -13,7 +13,7 @@ export function getUserList(params?: AdminListUsersParams) {
   return request.get<ApiResponse<PageResult<User>>>('/admin/users', { params })
 }
 
-export function updateUserStatus(id: number, status: string) {
+export function updateUserStatus(id: string, status: string) {
   return request.put<ApiResponse<null>>(`/admin/users/${id}/status`, { status })
 }
 
@@ -21,26 +21,26 @@ export function listUsers(params?: AdminListUsersParams) {
   return request.get<ApiResponse<PageResult<User>>>('/admin/users', { params })
 }
 
-export function getUserDetail(id: number) {
+export function getUserDetail(id: string) {
   return request.get<ApiResponse<User>>(`/admin/users/${id}`)
 }
 
-export function updateStatus(id: number, status: string) {
+export function updateStatus(id: string, status: string) {
   return request.put<ApiResponse<null>>(`/admin/users/${id}/status`, { status })
 }
 
-export function deleteUser(id: number) {
+export function deleteUser(id: string) {
   return request.delete<ApiResponse<null>>(`/admin/users/${id}`)
 }
 
-export function resetPassword(id: number) {
+export function resetPassword(id: string) {
   return request.put<ApiResponse<{ newPassword: string }>>(`/admin/users/${id}/password`)
 }
 
-export function createAdmin(userId: number) {
+export function createAdmin(userId: string) {
   return request.post<ApiResponse<null>>('/admin/admins', { userId })
 }
 
-export function removeAdmin(id: number) {
+export function removeAdmin(id: string) {
   return request.delete<ApiResponse<null>>(`/admin/admins/${id}`)
 }

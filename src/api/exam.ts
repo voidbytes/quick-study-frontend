@@ -1,5 +1,5 @@
 import request from './request'
-import type { ApiResponse, PageResult, MyExamSession } from '@/types'
+import type { ApiResponse, PageResult, MyExamSession, OptionItem } from '@/types'
 
 export interface StartSessionResponse {
   sessionId: string
@@ -8,10 +8,11 @@ export interface StartSessionResponse {
 }
 
 export interface QuestionItem {
-  id: number
+  id: string
   type: string
   content: string
-  options: string | null
+  /** 选项对象数组（成卷快照，乱序后顺序） */
+  options: OptionItem[] | null
   score: number
   sortOrder: number
   /** 编程题配置（答题者视角，脱敏：仅公开样例、无 answerCode） */
@@ -34,17 +35,17 @@ export interface SessionResponse {
 }
 
 export interface AnswerItem {
-  paperQuestionId: number
+  paperQuestionId: string
   userAnswer: string
   /** 编程题作答语言ID（断点恢复时前端据此回显语言选择） */
-  languageId?: number | null
+  languageId?: string | null
 }
 
 export interface SaveAnswerItem {
-  paperQuestionId: number
+  paperQuestionId: string
   answer: string
   /** 编程题作答语言ID（交卷判题时后端据此选择语言） */
-  languageId?: number | null
+  languageId?: string | null
 }
 
 export interface SaveAnswersPayload {
@@ -61,12 +62,19 @@ export interface SessionResultResponse {
 }
 
 export interface QuestionResultItem {
-  paperQuestionId: number
+  paperQuestionId: string
+  /** 原题 id（题库内题目，成绩复核页跳转原题用） */
+  questionId?: string
+  /** 原题所属题库 id（跳转原题用） */
+  bankId?: string
   content: string
   type: string
-  options: string | null
-  yourAnswer: string
-  correctAnswer: string
+  /** 选项对象数组（成卷快照，乱序后顺序） */
+  options: OptionItem[] | null
+  /** 选择题=id JSON 数组字符串；填空/简答=文本；编程=代码 */
+  yourAnswer: string | null
+  /** 同上；未公布/无标准答案为 null */
+  correctAnswer: string | null
   analysis: string
   score: number | null
   isCorrect: boolean | null
@@ -111,6 +119,6 @@ export function getResult(sessionId: string) {
 }
 
 /** 「我的考试记录」：当前用户的历史作答会话分页列表 */
-export function getMyExamSessions(params?: { page?: number; size?: number }) {
+export function getMyExamSessions(params?: { page?: number; size?: number; keyword?: string }) {
   return request.get<ApiResponse<PageResult<MyExamSession>>>('/my/exam-sessions', { params })
 }

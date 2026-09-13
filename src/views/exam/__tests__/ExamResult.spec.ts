@@ -29,7 +29,7 @@ function sessionResult(overrides: Record<string, unknown> = {}) {
     status: 'GRADED',
     questions: [
       {
-        paperQuestionId: 1,
+        paperQuestionId: '1',
         content: '1+1=?',
         type: 'SINGLE',
         options: null,
@@ -69,7 +69,7 @@ describe('ExamResult 考试结果页', () => {
         status: 'SUBMITTED',
         questions: [
           {
-            paperQuestionId: 2,
+            paperQuestionId: '2',
             content: 'CSS 颜色属性______',
             type: 'FILL_BLANK',
             options: null,

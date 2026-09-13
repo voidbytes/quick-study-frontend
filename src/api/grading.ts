@@ -11,9 +11,9 @@ export interface GradingListParams {
 /** 待批改列表行（对应 GradingPendingResponse，sessionId 经 ToStringSerializer 序列化为字符串） */
 export interface GradingPendingItem {
   sessionId: string
-  paperId: number
+  paperId: string
   paperTitle?: string
-  userId: number
+  userId: string
   userNickname?: string
   submitTime?: string
   status?: string
@@ -35,8 +35,8 @@ export interface GradingAnswerDetail {
 /** 批改详情（对应 GradingSessionResponse） */
 export interface GradingSessionDetail {
   sessionId: string
-  user: { id: number; nickname: string | null } | null
-  paper: { id: number; title: string | null } | null
+  user: { id: string; nickname: string | null } | null
+  paper: { id: string; title: string | null } | null
   answers: GradingAnswerDetail[]
 }
 

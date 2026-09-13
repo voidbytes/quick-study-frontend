@@ -41,7 +41,16 @@ const localStorageMock = {
 let request: any
 
 function mockLocation(pathname: string, search = '') {
-  ;(window as any).location = { href: '', pathname, search }
+  ;(window as any).location = {
+    href: '',
+    pathname,
+    search,
+    // request.ts 的 redirectToLogin 现用 location.replace（不往 history 压栈，
+    // 防浏览器返回键退回登录页）；happy-dom 无实现，这里记录调用供断言
+    replace: (url: string) => {
+      ;(window as any).location.href = url
+    }
+  }
 }
 
 function make401Error() {

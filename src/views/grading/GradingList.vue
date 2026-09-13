@@ -97,7 +97,7 @@ function formatTime(time?: string) {
 }
 
 function goDetail(row: GradingPendingItem) {
-  router.push(`/grading/${row.sessionId}`)
+  router.push(`/grading/sessions/${row.sessionId}`)
 }
 
 async function fetchList() {

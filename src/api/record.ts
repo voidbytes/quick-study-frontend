@@ -4,7 +4,9 @@ import type { ApiResponse, PageResult, PracticeRecord } from '@/types'
 export interface RecordListParams {
   page?: number
   size?: number
-  bankId?: number
+  keyword?: string
+  sourceType?: string
+  bankId?: string
   type?: string
   startDate?: string
   endDate?: string
@@ -18,6 +20,6 @@ export function list(params?: RecordListParams) {
   return request.get<ApiResponse<PageResult<PracticeRecord>>>('/records', { params })
 }
 
-export function getById(id: number) {
+export function getById(id: string) {
   return request.get<ApiResponse<PracticeRecord>>(`/records/${id}`)
 }

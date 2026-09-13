@@ -1,6 +1,11 @@
 <template>
   <div class="max-w-5xl mx-auto">
-    <PageHeader :title="isEdit ? '编辑题目' : '创建题目'" :subtitle="isEdit ? '修改已有题目' : '向题库中添加新题目'" showBack />
+    <PageHeader
+      :title="isEdit ? '编辑题目' : '创建题目'"
+      :subtitle="isEdit ? '修改已有题目' : '向题库中添加新题目'"
+      showBack
+      :back-to="`/banks/${route.params.id}`"
+    />
 
     <div class="bg-white border border-neutral-200 rounded-lg p-6">
       <n-spin :show="loading">
@@ -23,10 +28,10 @@
 
           <!-- 题干 -->
           <n-form-item label="题干" path="content">
-            <MarkdownEditor v-model="form.content" />
+            <MarkdownEditor ref="contentEditorRef" v-model="form.content" />
           </n-form-item>
 
-          <!-- 选项（单选 / 多选） -->
+          <!-- 选项（单选 / 多选）：整题替换模型，提交时按展示顺序重编号 id -->
           <template v-if="form.type === 'SINGLE' || form.type === 'MULTIPLE'">
             <n-form-item label="选项">
               <div class="w-full space-y-2">
@@ -58,7 +63,19 @@
                     删除
                   </n-button>
                 </div>
-                <n-button size="small" @click="addOption">添加选项</n-button>
+                <div class="flex items-center gap-4">
+                  <n-button size="small" @click="addOption">添加选项</n-button>
+                  <label class="flex items-center gap-1 text-sm text-neutral-500 cursor-pointer">
+                    <n-switch v-model:value="form.optionsShufflable" size="small" />
+                    选项乱序
+                  </label>
+                </div>
+                <div class="text-xs text-neutral-400">
+                  选项拖拽排序仅调整展示顺序；保存后按当前顺序重新编号，答案引用将自动对齐。
+                </div>
+                <div class="text-xs text-neutral-400">
+                  开启乱序后练习/考试将随机打乱选项展示顺序，关闭则固定按录入顺序展示；选项含「以上都是」「均不正确」等指代其他选项的表述时建议关闭；若「以上」指代题干内容则无需关闭。
+                </div>
               </div>
             </n-form-item>
           </template>
@@ -195,43 +212,108 @@
             <n-divider />
           </template>
 
-          <!-- 正确答案（编程题无此字段） -->
-          <n-form-item v-if="form.type !== 'PROGRAMMING'" label="正确答案" path="answer">
+          <!-- 正确答案（编程题无此字段）：选择题选 option_id，判断题 [0]/[1]，填空=可接受答案组，简答为文本（简答参考答案并入此字段） -->
+          <n-form-item v-if="form.type !== 'PROGRAMMING'" :label="form.type === 'SHORT_ANSWER' ? '参考答案' : '正确答案'" path="answer">
             <template v-if="form.type === 'SINGLE'">
               <n-select
-                v-model:value="form.answer"
+                v-model:value="form.answerIds"
                 :options="answerOptions"
                 placeholder="选择正确答案"
               />
             </template>
             <template v-else-if="form.type === 'MULTIPLE'">
               <n-select
-                v-model:value="form.answer"
+                v-model:value="form.answerIds"
                 :options="answerOptions"
                 multiple
                 placeholder="选择正确答案（可多选）"
               />
             </template>
             <template v-else-if="form.type === 'TRUE_FALSE'">
-              <n-radio-group v-model:value="form.answer">
-                <n-radio value="true">正确</n-radio>
-                <n-radio value="false">错误</n-radio>
+              <n-radio-group v-model:value="form.tfAnswer">
+                <n-radio :value="TRUE_FALSE_TRUE_ID">正确</n-radio>
+                <n-radio :value="TRUE_FALSE_FALSE_ID">错误</n-radio>
               </n-radio-group>
             </template>
             <template v-else>
               <n-input
                 v-model:value="form.answer"
                 type="textarea"
-                placeholder="输入答案"
+                :placeholder="form.type === 'SHORT_ANSWER' ? '输入参考答案（批改时供评分人对照）' : '输入答案'"
                 :rows="6"
               />
             </template>
           </n-form-item>
 
-          <!-- 参考答案（编程题的"参考实现"已在编程题配置内） -->
-          <n-form-item v-if="form.type !== 'PROGRAMMING'" label="参考答案">
-            <MarkdownEditor v-model="form.referenceAnswer" />
-          </n-form-item>
+          <!-- 填空题：题干插入空位 + 每空可接受答案组（嵌入题干表单项下方） -->
+          <template v-if="form.type === 'FILL_BLANK'">
+            <n-form-item label="空位">
+              <div class="w-full space-y-2">
+                <div class="flex items-center gap-2">
+                  <n-button size="small" type="primary" secondary @click="insertFillBlank">
+                    插入空位
+                  </n-button>
+                  <span class="text-xs text-neutral-400">
+                    在题干光标处插入 {{ fillBlankCount < FILL_MAX_BLANKS ? `【空${fillBlankCount + 1}】` : '' }}；上限 {{ FILL_MAX_BLANKS }} 个。要显示字面量「【空1】」时，在前面加 \\ 转义（\\【空1】）。
+                  </span>
+                </div>
+                <div class="text-xs" :class="fillBlankValidation ? 'text-error-500' : 'text-neutral-400'">
+                  <template v-if="fillBlankCount === 0">尚未插入空位（编辑器中先定位光标再点「插入空位」）</template>
+                  <template v-else>已插入 {{ fillBlankCount }} 个空位<span v-if="fillBlankValidation"> · {{ fillBlankValidation }}</span></template>
+                </div>
+              </div>
+            </n-form-item>
+
+            <n-form-item label="每空可接受答案" path="answer">
+              <div class="w-full space-y-3">
+                <div
+                  v-for="(group, gi) in fillAnswerGroups"
+                  :key="gi"
+                  class="border border-neutral-200 rounded-lg p-3 space-y-2"
+                >
+                  <div class="flex items-center gap-2 flex-wrap">
+                    <span class="text-sm font-semibold">空 {{ gi + 1 }}</span>
+                    <n-switch
+                      :value="group.length === 0"
+                      size="small"
+                      @update:value="(v: boolean) => toggleOpenBlank(gi, v)"
+                    />
+                    <span class="text-xs text-neutral-400">开放空（不设标准答案，交 AI 辅助评估）</span>
+                  </div>
+                  <template v-if="group.length > 0">
+                    <div
+                      v-for="(ans, ai) in group"
+                      :key="ai"
+                      class="flex items-center gap-2"
+                    >
+                      <n-input
+                        :value="ans"
+                        size="small"
+                        class="flex-1"
+                        placeholder="可接受答案（任一命中即该空正确）"
+                        @update:value="(v: string) => { fillAnswerGroups[gi][ai] = v }"
+                      />
+                      <n-button
+                        size="tiny"
+                        quaternary
+                        type="error"
+                        :disabled="group.length <= 1"
+                        @click="removeFillAnswer(gi, ai)"
+                      >
+                        删除
+                      </n-button>
+                    </div>
+                    <n-button size="tiny" quaternary type="primary" @click="addFillAnswer(gi)">
+                      添加同义答案（如 color / Color / colour）
+                    </n-button>
+                  </template>
+                </div>
+                <div class="text-xs text-neutral-400">
+                  每空可配置多个可接受答案（同义/变体，任一命中即该空对）；答案按精确匹配判分（大小写敏感，忽略首尾与连续空白差异）。
+                </div>
+              </div>
+            </n-form-item>
+          </template>
 
           <!-- 解析 -->
           <n-form-item label="解析">
@@ -283,21 +365,33 @@
     </div>
 
     <!-- 标签管理（分组设置） -->
-    <TagManageModal v-model:show="showTagManage" @updated="loadTags" />
+    <TagManageModal v-model:show="showTagManage" :bank-id="bankId" @updated="loadTags" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted, nextTick, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useMessage } from 'naive-ui'
 import type { FormInst, FormRules, SelectOption } from 'naive-ui'
-import type { QuestionType, Difficulty, QuestionOption } from '@/types'
+import type { QuestionType, Difficulty, OptionItem } from '@/types'
 import { createQuestion, updateQuestion, getQuestionDetail } from '@/api/question'
 import type { UpdateQuestionParams, ProgrammingQuestionConfig } from '@/api/question'
+import {
+  parseOptionList,
+  parseAnswerIds,
+  formatAnswerIds,
+  TRUE_FALSE_TRUE_ID,
+  TRUE_FALSE_FALSE_ID,
+  parseFillBlanks,
+  parseFillAnswer,
+  formatFillAnswerJson,
+  validateFillQuestion,
+  FILL_MAX_BLANKS
+} from '@/utils/answer'
 import { getProgrammingLanguages } from '@/api/judge'
 import type { ProgrammingLanguage } from '@/api/judge'
-import { getTagList } from '@/api/tag'
+import { getTagListByBankScope } from '@/api/tag'
 import { buildGroupedTagOptions } from '@/utils/tagOptions'
 import { QUESTION_TYPE_OPTIONS, DIFFICULTY_OPTIONS, QUESTION_STATUS_OPTIONS } from '@/utils/constants'
 import PageHeader from '@/components/common/PageHeader.vue'
@@ -328,12 +422,17 @@ const languageMap = ref<Record<string, string>>({})
 const form = reactive({
   type: 'SINGLE' as QuestionType,
   content: '',
+  /** 选项纯文本数组（展示顺序即提交顺序，保存时重编号 id） */
   options: ['', ''] as string[],
+  /** 选择题：已选 option_id（随选项增删自动重映射）；填空/简答：答案文本 */
+  answerIds: [] as number[],
+  /** 判断题：0=正确 / 1=错误 */
+  tfAnswer: TRUE_FALSE_TRUE_ID as number,
+  /** 填空题答案 / 简答题参考答案文本 */
   answer: '',
-  referenceAnswer: '',
   analysis: '',
   difficulty: 'MEDIUM' as Difficulty,
-  tagIds: [] as number[],
+  tagIds: [] as string[],
   status: 'DRAFT',
   /** 选项是否可乱序（仅选择题型；含"以上都是"类位置敏感选项时关闭） */
   optionsShufflable: true,
@@ -343,17 +442,98 @@ const form = reactive({
 
 const isChoiceType = computed(() => form.type === 'SINGLE' || form.type === 'MULTIPLE')
 
+// ==================== 填空题：插入空位 + 可接受答案组 ====================
+
+/** 题干编辑器 ref：插入空位需读写光标位置（v-md-editor 实例） */
+const contentEditorRef = ref<{ textareaEl?: HTMLTextAreaElement } | null>(null)
+
+/** 题干当前空位编号序列 */
+const fillBlankNos = computed(() => parseFillBlanks(form.content).blanks.map((b) => b.no))
+const fillBlankCount = computed(() => fillBlankNos.value.length)
+
+/** 每空可接受答案组（开放空=空数组）；与题干空位数联动 */
+const fillAnswerGroups = ref<string[][]>([])
+
+/** 题干空位与答案组数量/编号是否一致（即时校验提示，null=通过） */
+const fillBlankValidation = computed(() => {
+  if (form.type !== 'FILL_BLANK') return null
+  const nos = fillBlankNos.value
+  if (nos.length === 0) return null // 尚未插入空位不报错（保存时拦）
+  for (let i = 0; i < nos.length; i++) {
+    if (nos[i] !== i + 1) return `空位编号不连续（当前 ${nos.join('、')}，应为 1..${nos.length}）`
+  }
+  if (fillAnswerGroups.value.length !== nos.length) {
+    return `答案组 ${fillAnswerGroups.value.length} 组与空位 ${nos.length} 个不一致`
+  }
+  return null
+})
+
+/**
+ * 光标处插入【空N】（N=已有空位数+1）。
+ * v-md-editor 未暴露 insertText 到模板 ref（Vue3 setup 拿 methods 不可靠），
+ * 直接操作其内部 textarea 的 selectionStart/End，等价于 insert-text-at-cursor。
+ */
+async function insertFillBlank() {
+  if (fillBlankCount.value >= FILL_MAX_BLANKS) {
+    message.error(`空位数不能超过 ${FILL_MAX_BLANKS} 个`)
+    return
+  }
+  const marker = `【空${fillBlankCount.value + 1}】`
+  const ta = contentEditorRef.value?.textareaEl
+  if (!ta) {
+    // 编辑器未就绪（极端兜底）：追加到题干末尾
+    form.content = form.content + marker
+    return
+  }
+  const start = ta.selectionStart ?? form.content.length
+  const end = ta.selectionEnd ?? start
+  form.content = form.content.slice(0, start) + marker + form.content.slice(end)
+  // 等编辑器同步 v-model 后恢复光标到插入标记之后
+  await nextTick()
+  const pos = start + marker.length
+  ta.focus()
+  ta.setSelectionRange(pos, pos)
+}
+
+/** 题干空位变化时同步答案组槽位数（保留已填内容） */
+function syncFillAnswerGroups() {
+  const n = fillBlankCount.value
+  const groups = fillAnswerGroups.value
+  if (groups.length < n) {
+    groups.push(...Array.from({ length: n - groups.length }, () => [''] as string[]))
+  } else if (groups.length > n) {
+    groups.length = n
+  }
+}
+
+watch(fillBlankCount, syncFillAnswerGroups)
+
+function addFillAnswer(gi: number) {
+  fillAnswerGroups.value[gi].push('')
+}
+
+function removeFillAnswer(gi: number, ai: number) {
+  if (fillAnswerGroups.value[gi].length <= 1) return
+  fillAnswerGroups.value[gi].splice(ai, 1)
+}
+
+/** 开放空开关：开=空数组（不设标准答案）；关=恢复一个空答案输入位 */
+function toggleOpenBlank(gi: number, open: boolean) {
+  fillAnswerGroups.value[gi] = open ? [] : ['']
+}
+
 /** 状态枚举由全局字典派生（表单不提供待审核选项） */
 const statusOptions = QUESTION_STATUS_OPTIONS.filter((o) => o.value !== 'PENDING_REVIEW')
 
+/** 答案下拉：value 为 option_id（展示顺序即保存后的 id 编号） */
 const answerOptions = computed(() =>
   form.options.map((opt, i) => ({
     label: `${String.fromCharCode(65 + i)}. ${opt.substring(0, 30)}`,
-    value: String.fromCharCode(65 + i)
+    value: i
   }))
 )
 
-/** 动态校验规则：编程题无 answer 字段，不参与该校验 */
+/** 动态校验规则：编程题无 answer 字段；填空题 answer 为结构化答案组（由 validateFillQuestion 校验），均不参与该文本必填校验 */
 const rules = computed<FormRules>(() => {
   const base: FormRules = {
     type: [{ required: true, message: '请选择题型' }],
@@ -361,7 +541,7 @@ const rules = computed<FormRules>(() => {
     difficulty: [{ required: true, message: '请选择难度' }],
     status: [{ required: true, message: '请选择状态' }]
   }
-  if (form.type !== 'PROGRAMMING') {
+  if (form.type !== 'PROGRAMMING' && form.type !== 'FILL_BLANK') {
     base.answer = [{ required: true, message: '请输入正确答案', trigger: 'blur' }]
   }
   return base
@@ -416,7 +596,15 @@ function handleTypeChange(_value: string) {
   } else {
     form.programming = null
   }
+  form.answerIds = []
+  form.tfAnswer = TRUE_FALSE_TRUE_ID
   form.answer = ''
+  if (form.type === 'FILL_BLANK') {
+    // 切到填空：按当前题干空位数初始化答案组（无空位则空数组，插入空位后自动补槽位）
+    fillAnswerGroups.value = Array.from({ length: fillBlankCount.value }, () => [''] as string[])
+  } else {
+    fillAnswerGroups.value = []
+  }
 }
 
 function addOption() {
@@ -426,6 +614,10 @@ function addOption() {
 function removeOption(index: number) {
   if (form.options.length <= 2) return
   form.options.splice(index, 1)
+  // 整题替换模型：删除选项后重映射答案引用，防止 id 漂移错位
+  form.answerIds = form.answerIds
+    .filter((id) => id !== index)
+    .map((id) => (id > index ? id - 1 : id))
 }
 
 function addTestCase() {
@@ -482,14 +674,15 @@ function loadLanguages() {
 
 async function loadTags() {
   try {
-    const res = await getTagList()
+    // 标签作用域为单题库：只列出当前题库的标签，避免选到其他库的标签（后端会拒绝跨库关联）
+    const res = await getTagListByBankScope(bankId)
     tagOptions.value = buildGroupedTagOptions(res.data || [])
   } catch {
     // ignore
   }
 }
 
-/** 详情接口运行时字段（Question 声明滞后，本地按后端 QuestionDetailResponse 建模） */
+/** 详情接口运行时字段（Question 声明滞后，本地按后端 QuestionDetailResponse 建模，option_id 模型） */
 interface QuestionDetailData {
   id: number
   bankId: number
@@ -497,13 +690,13 @@ interface QuestionDetailData {
   type: QuestionType
   difficulty: Difficulty
   content: string
-  options?: string | QuestionOption[] | null
-  answer: string
-  referenceAnswer?: string | null
+  options?: string | OptionItem[] | null
+  /** 选择题=id JSON 数组；填空/简答=文本；编程=null */
+  answer?: string | null
   analysis?: string | null
   status: string
   tags?: { id: number; name: string }[]
-  tagIds: number[]
+  tagIds: string[]
   /** 选项是否可乱序（后端默认 true） */
   optionsShufflable?: boolean
   createdAt?: string
@@ -526,18 +719,17 @@ interface QuestionDetailData {
   } | null
 }
 
-/** 详情接口 options 运行时为 JSON 字符串（类型声明滞后），此处做本地收敛 */
-function parseOptions(raw: string | QuestionOption[] | null | undefined): string[] {
-  if (!raw) return []
-  if (typeof raw === 'string') {
-    try {
-      const parsed = JSON.parse(raw)
-      return Array.isArray(parsed) ? parsed.filter((o: unknown): o is string => typeof o === 'string') : []
-    } catch {
-      return []
-    }
-  }
-  return raw.map((o) => (typeof o === 'string' ? o : o?.content ?? ''))
+/** 详情 options 收敛为 OptionItem[]（对象数组/JSON 字符串统一处理） */
+function parseOptions(raw: string | OptionItem[] | null | undefined): OptionItem[] {
+  return parseOptionList(raw)
+}
+
+/** 填空答案组回显：以已填组为基础补齐/截断到空位数（保留用户已录入内容） */
+function form_fillRestore(groups: string[][], blankCount: number) {
+  const restored = groups.map((g) => (g.length ? [...g] : ['']))
+  while (restored.length < blankCount) restored.push([''])
+  restored.length = blankCount
+  fillAnswerGroups.value = restored
 }
 
 async function loadQuestion() {
@@ -549,9 +741,32 @@ async function loadQuestion() {
     form.type = q.type
     form.content = q.content
     const parsed = parseOptions(q.options)
-    form.options = parsed.length >= 2 ? parsed : ['', '']
-    form.answer = q.answer
-    form.referenceAnswer = q.referenceAnswer || ''
+    form.options = parsed.length >= 2 ? parsed.map((o) => o.text) : ['', '']
+    // 回显乱序开关（缺省 true 与后端默认一致）
+    form.optionsShufflable = q.optionsShufflable ?? true
+    // 回显答案：选择题按 id 还原选中项；填空/简答为文本；编程无答案
+    if (q.type === 'SINGLE' || q.type === 'MULTIPLE') {
+      form.answerIds = parseAnswerIds(q.answer)
+      form.tfAnswer = TRUE_FALSE_TRUE_ID
+      form.answer = ''
+    } else if (q.type === 'TRUE_FALSE') {
+      form.answerIds = []
+      form.tfAnswer = parseAnswerIds(q.answer)[0] ?? TRUE_FALSE_TRUE_ID
+      form.answer = ''
+    } else if (q.type === 'FILL_BLANK') {
+      form.answerIds = []
+      form.tfAnswer = TRUE_FALSE_TRUE_ID
+      form.answer = ''
+      // 回显每空可接受答案组（旧格式容错由 parseFillAnswer 归一化）；空位不足处补空槽位
+      const groups = parseFillAnswer(q.answer)
+      const blankCount = parseFillBlanks(q.content).blanks.length
+      form_fillRestore(groups, blankCount)
+    } else {
+      // 简答题：参考答案文本回显
+      form.answerIds = []
+      form.tfAnswer = TRUE_FALSE_TRUE_ID
+      form.answer = q.answer || ''
+    }
     form.analysis = q.analysis || ''
     form.difficulty = q.difficulty || 'MEDIUM'
     form.tagIds = q.tagIds || []
@@ -605,16 +820,50 @@ async function handleSave() {
     }
   }
 
+  // 填空题专项校验（与后端 FillAnswerUtil.validate 同门禁，即时反馈）：
+  // 编号 1..N 连续、N≤10、答案组数=空位数、非开放空每组至少一个非空答案
+  if (form.type === 'FILL_BLANK') {
+    const err = validateFillQuestion(form.content, fillAnswerGroups.value)
+    if (err) {
+      message.error(err)
+      return
+    }
+    for (let i = 0; i < fillAnswerGroups.value.length; i++) {
+      const group = fillAnswerGroups.value[i]
+      if (group.length > 0 && group.every((a) => a.trim() === '')) {
+        message.error(`空 ${i + 1} 的可接受答案不能为空（开放空请打开「开放空」开关）`)
+        return
+      }
+    }
+  }
+
   saving.value = true
   try {
+    // 整题替换模型：options 按当前展示顺序重编号 id（0..n-1），answer 与 options 成对原子提交
+    const options = isChoiceType.value
+      ? form.options.map((text, id) => ({ id, text: text.trim() }))
+      : undefined
+    let answer: string | undefined
+    if (form.type === 'SINGLE') {
+      answer = form.answerIds.length ? formatAnswerIds([form.answerIds[0]]) : undefined
+    } else if (form.type === 'MULTIPLE') {
+      answer = form.answerIds.length ? formatAnswerIds(form.answerIds) : undefined
+    } else if (form.type === 'TRUE_FALSE') {
+      answer = formatAnswerIds([form.tfAnswer])
+    } else if (form.type === 'FILL_BLANK') {
+      // 填空：物化为嵌套数组落库（开放空=[]），空位对齐【空N】顺序
+      answer = formatFillAnswerJson(
+        fillAnswerGroups.value.map((g) => g.map((a) => a.trim()).filter((a) => a !== ''))
+      )
+    } else {
+      answer = form.answer || undefined
+    }
+
     const payload: Record<string, unknown> = {
       type: form.type,
       content: form.content,
-      options: form.type === 'SINGLE' || form.type === 'MULTIPLE'
-        ? JSON.stringify(form.options)
-        : undefined,
-      answer: form.type === 'PROGRAMMING' ? undefined : form.answer,
-      referenceAnswer: form.type === 'PROGRAMMING' ? undefined : form.referenceAnswer || undefined,
+      options,
+      answer,
       analysis: form.analysis || undefined,
       difficulty: form.difficulty,
       tagIds: form.tagIds.length > 0 ? form.tagIds : undefined,

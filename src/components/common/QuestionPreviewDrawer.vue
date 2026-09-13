@@ -12,11 +12,11 @@
             <span v-if="detail.bankName" class="ml-auto text-xs text-neutral-400">{{ detail.bankName }}</span>
           </div>
 
-          <!-- 题干 -->
+          <!-- 题干（填空题：占位符渲染为行内横线段） -->
           <section>
             <h3 class="text-sm font-medium text-neutral-500 mb-2">题干</h3>
             <div class="bg-neutral-50 border border-neutral-200 rounded-lg p-4">
-              <RichText :content="detail.content" />
+              <RichText :content="stemContent" fill-blanks />
             </div>
           </section>
 
@@ -26,42 +26,44 @@
             <div class="space-y-2">
               <div
                 v-for="(opt, index) in parsedOptions"
-                :key="index"
+                :key="opt.id"
                 class="flex items-start gap-3 p-3 border rounded-lg transition-colors"
-                :class="isCorrectOption(opt) ? 'border-success-500 bg-success-50' : 'border-neutral-200'"
+                :class="isCorrectOption(index) ? 'border-success-500 bg-success-50' : 'border-neutral-200'"
               >
                 <div
                   class="w-6 h-6 rounded-full flex items-center justify-center text-sm font-semibold flex-shrink-0 mt-0.5"
-                  :class="isCorrectOption(opt) ? 'bg-success-500 text-white' : 'bg-neutral-100 text-neutral-600'"
+                  :class="isCorrectOption(index) ? 'bg-success-500 text-white' : 'bg-neutral-100 text-neutral-600'"
                 >
                   {{ String.fromCharCode(65 + index) }}
                 </div>
                 <div class="flex-1 min-w-0 text-sm text-neutral-900 leading-relaxed pt-0.5">
-                  <RichText :content="opt" />
+                  <RichText :content="opt.text" />
                 </div>
               </div>
             </div>
           </section>
 
-          <!-- 正确答案 -->
+          <!-- 判断题答案 -->
           <section v-if="detail.type === 'TRUE_FALSE' && detail.answer">
             <h3 class="text-sm font-medium text-neutral-500 mb-2">正确答案</h3>
-            <n-tag :type="detail.answer === 'true' ? 'success' : 'error'" round>
-              {{ detail.answer === 'true' ? '正确' : '错误' }}
+            <n-tag :type="isTrueFalseTrue ? 'success' : 'error'" round>
+              {{ isTrueFalseTrue ? '正确' : '错误' }}
             </n-tag>
+          </section>
+          <!-- 填空题答案：答案组格式 ① color/Color ② #fff ③（开放） -->
+          <section v-else-if="detail.type === 'FILL_BLANK' && detail.answer">
+            <h3 class="text-sm font-medium text-neutral-500 mb-2">正确答案</h3>
+            <div class="bg-success-50 border border-success-100 rounded-lg p-4 font-medium">
+              {{ fillAnswerLabel }}
+            </div>
+            <div class="text-xs text-neutral-400 mt-1.5">
+              每空任一答案命中即该空正确；（开放）= 开放空，作答交 AI 辅助评估。
+            </div>
           </section>
           <section v-else-if="detail.answer">
             <h3 class="text-sm font-medium text-neutral-500 mb-2">正确答案</h3>
             <div class="bg-success-50 border border-success-100 rounded-lg p-4 font-medium">
-              <RichText :content="detail.answer" />
-            </div>
-          </section>
-
-          <!-- 参考答案 -->
-          <section v-if="detail.referenceAnswer">
-            <h3 class="text-sm font-medium text-neutral-500 mb-2">参考答案</h3>
-            <div class="bg-neutral-50 border border-neutral-200 rounded-lg p-4">
-              <RichText :content="detail.referenceAnswer" />
+              <RichText :content="answerLabel" />
             </div>
           </section>
 
@@ -84,13 +86,15 @@
  * 传入项缺少答案等字段时（组卷编辑回填场景），组件内部自动拉取题目详情补全。
  */
 export interface PreviewQuestion {
-  id: number
+  /** 题目雪花 id（字符串序列化） */
+  id: string
   type?: string | null
   difficulty?: string | null
   content?: string | null
+  /** OptionItem 对象数组或 JSON 字符串（option_id 模型） */
   options?: unknown
+  /** 选择题=id JSON 数组；填空/简答=文本；编程=null */
   answer?: string | null
-  referenceAnswer?: string | null
   analysis?: string | null
   bankName?: string | null
 }
@@ -100,6 +104,14 @@ export interface PreviewQuestion {
 import { ref, computed, watch } from 'vue'
 import { getQuestionDetail } from '@/api/question'
 import { QUESTION_TYPE_MAP, DIFFICULTY_MAP } from '@/utils/constants'
+import {
+  parseOptionList,
+  parseAnswerIds,
+  answerIdsToLabel,
+  formatFillAnswer,
+  TRUE_FALSE_TRUE_ID
+} from '@/utils/answer'
+import type { OptionItem } from '@/types'
 import type { QuestionType, Difficulty } from '@/types'
 import RichText from '@/components/common/RichText.vue'
 
@@ -155,36 +167,38 @@ function difficultyTagType(difficulty?: string | null): TagColor {
 
 const showOptions = computed(() => detail.value?.type === 'SINGLE' || detail.value?.type === 'MULTIPLE')
 
-const parsedOptions = computed<string[]>(() => {
-  const raw = detail.value?.options
-  if (!raw) return []
-  if (typeof raw === 'string') {
-    try {
-      const parsed = JSON.parse(raw)
-      return Array.isArray(parsed) ? parsed.filter((o): o is string => typeof o === 'string') : []
-    } catch {
-      return []
-    }
+const parsedOptions = computed<OptionItem[]>(() => parseOptionList(detail.value?.options))
+
+/** 判断题答案是否为"正确"（id=0） */
+const isTrueFalseTrue = computed(() => parseAnswerIds(detail.value?.answer)[0] === TRUE_FALSE_TRUE_ID)
+
+/** 展示位是否命中标准答案（按 option_id 集合比较） */
+function isCorrectOption(index: number): boolean {
+  const opt = parsedOptions.value[index]
+  if (!opt) return false
+  return parseAnswerIds(detail.value?.answer).includes(opt.id)
+}
+
+/** 选择题答案 → 展示字母+内容；其余题型原样 */
+const answerLabel = computed(() => {
+  const answer = detail.value?.answer
+  if (!answer) return ''
+  const type = detail.value?.type
+  if (type === 'SINGLE' || type === 'MULTIPLE') {
+    return answerIdsToLabel(parsedOptions.value, answer)
   }
-  if (Array.isArray(raw)) {
-    return raw.map((o) => (typeof o === 'string' ? o : o?.content ?? ''))
-  }
-  return []
+  return answer
 })
 
-function isCorrectOption(opt: string): boolean {
+/** 填空题干保留【空N】原文，由 RichText fill-blanks 渲染后替换为徽章（方案 C） */
+const stemContent = computed(() => detail.value?.content ?? '')
+
+/** 填空答案组展示：① color/Color ② #fff ③（开放）（三形态容错） */
+const fillAnswerLabel = computed(() => {
   const answer = detail.value?.answer
-  if (!answer) return false
-  const idx = parsedOptions.value.indexOf(opt)
-  if (idx < 0) return false
-  if (detail.value?.type === 'SINGLE') {
-    return answer === String.fromCharCode(65 + idx)
-  }
-  if (detail.value?.type === 'MULTIPLE') {
-    return answer.split(',').includes(String.fromCharCode(65 + idx))
-  }
-  return false
-}
+  if (!answer) return ''
+  return formatFillAnswer(answer) || answer
+})
 
 watch(
   () => props.question,

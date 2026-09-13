@@ -13,13 +13,19 @@ export interface PageResult<T = any> {
   pages: number
 }
 
+// ============ 雪花 id 约定 ============
+// 后端主键均为雪花 long，JacksonConfig 全局序列化为字符串；前端全链路用 string 承载，
+// 禁止 Number() 转换（超 2^53 丢精度）。例外：OptionItem.id / 答案数组里的 id 是
+// 选项序号（0 起小整数），恒定 number。
+
 // 用户
 export interface User {
-  id: number
+  id: string
   username: string
   nickname: string
   email?: string
-  avatar?: string
+  /** 头像相对路径（如 /uploads/avatar/xxx.jpg） */
+  avatarUrl?: string
   role: 'USER' | 'ADMIN' | 'SUPER_ADMIN'
   status?: 'active' | 'disabled'
   createdAt?: string
@@ -28,13 +34,15 @@ export interface User {
 
 // 题库
 export interface QuestionBank {
-  id: number
+  id: string
   name: string
   description: string
   cover: string
   /** 创建者ID（后端 BankResponse 字段名） */
-  creatorId?: number
-  userId: number
+  creatorId?: string
+  /** 当前用户在题库中的角色：OWNER/EDITOR/VIEWER，无成员关系为空 */
+  myRole?: 'OWNER' | 'EDITOR' | 'VIEWER' | string | null
+  userId: string
   username: string
   isPublic: boolean
   questionCount: number
@@ -43,17 +51,21 @@ export interface QuestionBank {
   updatedAt: string
 }
 
-/** 题库协作人（与 User 不同：用 userId 而非 id） */
-export interface BankCollaborator {
-  userId: number
-  nickname?: string
-  username?: string
-  role: 'OWNER' | 'EDITOR' | 'REVIEWER' | 'VIEWER' | string
+/** 题库成员（VIEWER=仅查看 / EDITOR=可编辑；OWNER=创建者不落库） */
+export interface BankMember {
+  id: string
+  bankId: string
+  userId: string
+  username?: string | null
+  nickname?: string | null
+  role: 'VIEWER' | 'EDITOR' | string
+  createdAt?: string
 }
 
 // 标签
 export interface Tag {
-  id: number
+  /** 雪花 long：后端 Jackson 序列化为字符串，前端禁止 Number() 转换（超 2^53 丢精度） */
+  id: string
   name: string
   /** 标签分组名（可空，仅展示层聚合导航用，不参与筛选语义） */
   groupName?: string | null
@@ -69,43 +81,49 @@ export type QuestionType = 'SINGLE' | 'MULTIPLE' | 'TRUE_FALSE' | 'FILL_BLANK' |
 export type Difficulty = 'EASY' | 'MEDIUM' | 'HARD'
 
 export interface Question {
-  id: number
-  bankId: number
+  id: string
+  bankId: string
   bankName: string
   type: QuestionType
   difficulty: Difficulty
   content: string
-  options: QuestionOption[]
-  answer: string
+  /** 选项对象数组（id 为稳定标识，从 0 起；answer 引用 id） */
+  options: OptionItem[]
+  /**
+   * 答案（option_id 模型，按题型分治）：
+   * 选择题 = id JSON 数组字符串（"[1]"/"[0,2]"，判断题 "[0]"正确/"[1]"错误）；
+   * 填空/简答 = 文本（简答参考答案并入本字段）；编程题 = null
+   */
+  answer: string | null
   analysis: string
   score: number
   sort: number
   status: string
   tags: Tag[]
-  tagIds: number[]
+  tagIds: string[]
   createdAt: string
   updatedAt: string
 }
 
-export interface QuestionOption {
-  label: string
-  value: string
-  content: string
+/** 选项值对象（与后端 OptionItem 一致）：id 稳定标识（0 起），text 纯文本无字母前缀 */
+export interface OptionItem {
+  /** 选项序号（0=A, 1=B…，小整数非雪花），answer 引用它；保持不变 number */
+  id: number
+  text: string
 }
 
 // ============ 导入导出（题库/题目）============
 
 /**
- * 单题交换结构（与后端 importexport 模块 QuestionExportItem 对应）。
- * options 必须是 JSON 字符串（如 "[{\"key\":\"A\",\"content\":\"...\"}]"），不能是对象数组
- * （后端用 JsonNode 接收，能容忍数组，但导出的规范格式是字符串）。
+ * 单题交换结构（与后端 importexport 模块 QuestionExportItem 对应，option_id 模型）。
+ * options 为 JSON 字符串 "[{"id":0,"text":"..."}]"；answer：选择题=id JSON 数组
+ * （"[1]"/"[0,2]"）、判断题="[0]"/"[1]"、填空=文本、简答=参考答案文本、编程=null。
  */
 export interface QuestionExportItem {
   type: QuestionType
   content: string
   options?: string | null
-  answer: string
-  referenceAnswer?: string | null
+  answer: string | null
   analysis?: string | null
   difficulty: Difficulty
   status: string
@@ -139,7 +157,8 @@ export interface ImportErrorItem {
 }
 
 export interface ImportResult {
-  bankId?: number | string
+  /** 雪花 id 字符串（后端序列化） */
+  bankId?: string
   bankName?: string
   successCount: number
   skipCount: number
@@ -154,10 +173,10 @@ export type PaperStatus = 'DRAFT' | 'PUBLISHED' | 'CLOSED'
 export type PaperShareType = 'PRIVATE' | 'LINK' | 'PASSWORD' | 'PUBLIC'
 
 export interface ExamPaper {
-  id: number
+  id: string
   title: string
   description?: string
-  creatorId?: number
+  creatorId?: string
   creatorName?: string
   status: PaperStatus
   questionCount?: number
@@ -169,10 +188,14 @@ export interface ExamPaper {
   endTime?: string | null
   attemptType?: string
   attemptLimit?: number | null
+  /** 多选题漏选给分策略（HALF/ZERO） */
+  multipleChoicePartial?: string
+  /** 填空题部分命中给分策略（ALL_OR_NOTHING=全对才给分 / PER_BLANK=按空等分累加，默认） */
+  fillBlankPartial?: string
   cheatEnabled?: boolean
   shareType: PaperShareType
   password?: string
-  graderId?: number | null
+  graderId?: string | null
   /** 批改人展示名（nickname 优先，后端填充） */
   graderName?: string | null
   questions?: PaperQuestion[]
@@ -182,12 +205,19 @@ export interface ExamPaper {
 
 /** 试卷内题目快照（paper detail / 组卷回填用） */
 export interface PaperQuestion {
-  id: number
+  /** 题目雪花 id，选中回填时以字符串匹配题单 */
+  id: string
+  /** 原题 id（题库内题目，跳转原题用；详情接口仅创建者可见场景下发） */
+  questionId?: string
+  /** 原题所属题库 id（跳转原题用） */
+  bankId?: string
   content: string
   type: string
   options?: string | null
   difficulty?: string
   analysis?: string
+  /** 参考答案（试卷详情仅创建者可见；游客/非创建者不下发） */
+  answer?: string | null
   score: number
   sortOrder?: number
 }
@@ -196,10 +226,10 @@ export interface PaperQuestion {
 export type SessionStatus = 'IN_PROGRESS' | 'PENDING_REVIEW' | 'COMPLETED' | 'ABANDONED'
 
 export interface ExamSession {
-  id: number
-  paperId: number
+  id: string
+  paperId: string
   paperTitle: string
-  userId: number
+  userId: string
   username: string
   status: SessionStatus
   score: number
@@ -212,7 +242,7 @@ export interface ExamSession {
 }
 
 export interface Answer {
-  questionId: number
+  questionId: string
   answer: string
   score: number
   isCorrect: boolean
@@ -234,18 +264,20 @@ export interface PracticeSession {
 export interface PracticeQuestion {
   index: number
   /** 题目 ID（字符串序列化；笔记等按题引用的功能使用） */
-  id?: number | string
+  id?: string
   type: string
   content: string
-  options: string
-  answer: string
+  /** OptionItem JSON 字符串或对象数组（成卷快照，乱序后顺序） */
+  options: string | OptionItem[] | null
+  /** 选择题=id JSON 数组字符串（"[1]"/"[0,2]"，判断题 "[0]"/"[1]"）；填空/简答=文本；编程=null */
+  answer: string | null
   analysis: string
   difficulty: string
 }
 
 export interface PracticeAnswer {
   questionIndex: number
-  questionId: number
+  questionId: string
   userAnswer: string | null
   isCorrect: boolean | null
 }
@@ -262,6 +294,8 @@ export interface PracticeSessionSummary {
   sessionId: string
   status: string
   totalCount: number
+  /** 会话标题（后端创建时拼装落库；旧数据可能为空，为空时降级前端拼装） */
+  title?: string | null
   /** 命名摘要：题库/标签名称与题型（后端解析 filterParams） */
   bankNames?: string[]
   tagNames?: string[]
@@ -282,9 +316,9 @@ export interface PracticeResult {
 
 // 收藏（等待后端 FavoriteController — 以下为前端约定契约）
 export interface FavoriteItem {
-  id: number
-  questionId: number
-  bankId: number
+  id: string
+  questionId: string
+  bankId: string
   bankName: string
   /** 题目快照 JSON 字符串，展开结构见 QuestionSnapshot */
   questionSnapshot: string
@@ -303,9 +337,9 @@ export interface FavoriteStats {
 
 // 错题（与后端 WrongQuestionResponse 一致）
 export interface WrongQuestion {
-  id: number
-  questionId: number
-  bankId: number
+  id: string
+  questionId: string
+  bankId: string
   bankName: string
   /** 题目快照 JSON 字符串，展开结构见 QuestionSnapshot */
   questionSnapshot: string
@@ -314,40 +348,42 @@ export interface WrongQuestion {
   createdAt: string
 }
 
-/** questionSnapshot / question_snapshot JSON 字符串展开后的结构（后端将原题序列化为 JSON 存储） */
+/** questionSnapshot / question_snapshot JSON 字符串展开后的结构（成卷快照，option_id 模型） */
 export interface QuestionSnapshot {
-  id?: number
-  bankId?: number
+  id?: string
+  bankId?: string
   type?: QuestionType
   content?: string
-  options?: string
-  answer?: string
+  /** OptionItem JSON 字符串或对象数组 */
+  options?: string | OptionItem[] | null
+  /** 选择题=id JSON 数组字符串；填空/简答=文本；编程=null */
+  answer?: string | null
   analysis?: string
   difficulty?: Difficulty
 }
 
 // 做题记录（与后端 RecordResponse 一致）
 export interface PracticeRecord {
-  id: number
-  questionId: number
-  bankId: number
+  id: string
+  questionId: string
+  bankId: string
   bankName: string
   questionSnapshot: string
   userAnswer: string | null
   isCorrect: boolean | null
   sourceType: string
-  sourceId: number | null
+  sourceId: string | null
   createdAt: string
 }
 
 // 通知
 export interface Notification {
-  id: number
+  id: string
   type: 'system' | 'exam' | 'grading' | 'collaborator'
   title: string
   content: string
   isRead: boolean
-  relatedId: number
+  relatedId: string
   /** 前端跳转链接（路由路径），为空表示无可跳转详情 */
   link?: string | null
   createdAt: string
@@ -355,8 +391,8 @@ export interface Notification {
 
 /** 我的考试记录（历史作答会话） */
 export interface MyExamSession {
-  id: number
-  paperId: number
+  id: string
+  paperId: string
   paperTitle?: string | null
   attemptNumber?: number
   status: 'IN_PROGRESS' | 'SUBMITTED' | 'GRADING' | 'GRADED' | 'EXPIRED' | 'AUTO_SUBMITTED' | string
@@ -369,10 +405,10 @@ export interface MyExamSession {
 
 // 批改
 export interface GradingSession {
-  id: number
-  paperId: number
+  id: string
+  paperId: string
   paperTitle: string
-  userId: number
+  userId: string
   username: string
   status: SessionStatus
   score: number
@@ -388,7 +424,7 @@ export interface OverviewStats {
   totalQuestions: number
   correctRate: number
   wrongCount: number
-  bankStats: { bankId: number; bankName: string; count: number; correctRate: number }[]
+  bankStats: { bankId: string; bankName: string; count: number; correctRate: number }[]
 }
 
 export interface QuestionAccuracy {
@@ -399,7 +435,7 @@ export interface QuestionAccuracy {
 }
 
 export interface PaperStatistics {
-  paperId: number
+  paperId: string
   paperTitle: string
   totalSessions: number
   averageScore: number

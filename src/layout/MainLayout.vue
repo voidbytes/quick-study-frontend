@@ -25,10 +25,10 @@
           :title="collapsed ? '展开菜单' : undefined"
           @click="collapsed && toggleCollapsed()"
         >
-          QS
+          爱
         </div>
         <span v-if="!collapsed" class="text-base font-bold text-neutral-900 whitespace-nowrap">
-          Quick Study
+          爱刷题
         </span>
         <div
           v-if="!collapsed"
@@ -133,7 +133,15 @@
           <template v-if="authStore.isAuthenticated">
             <n-dropdown :options="userMenuOptions" @select="handleUserMenuSelect">
               <div class="flex items-center gap-2 cursor-pointer select-none">
+                <img
+                  v-if="avatarSrc"
+                  :src="avatarSrc"
+                  alt="头像"
+                  class="w-8 h-8 rounded-full object-cover flex-shrink-0"
+                  @error="avatarFailed = true"
+                />
                 <div
+                  v-else
                   class="w-8 h-8 rounded-full bg-brand-gradient flex items-center justify-center text-white text-xs font-semibold flex-shrink-0"
                 >
                   {{ avatarText }}
@@ -145,7 +153,7 @@
             </n-dropdown>
           </template>
           <template v-else>
-            <n-button size="small" type="primary" @click="router.push('/login')">登录</n-button>
+            <n-button size="small" type="primary" @click="uiStore.openLoginModal()">登录</n-button>
           </template>
         </div>
       </header>
@@ -159,9 +167,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { useUiStore } from '@/stores/ui'
 import { useMessage } from 'naive-ui'
 import * as notificationApi from '@/api/notification'
 import {
@@ -184,7 +193,8 @@ import {
   ChevronForwardOutline,
   StarOutline,
   BookOutline,
-  TicketOutline
+  TicketOutline,
+  SettingsOutline
 } from '@vicons/ionicons5'
 
 interface MenuItem {
@@ -200,6 +210,7 @@ interface MenuGroup {
 const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
+const uiStore = useUiStore()
 const message = useMessage()
 
 const COLLAPSED_KEY = 'sidebar_collapsed'
@@ -217,6 +228,19 @@ const avatarText = computed(() => {
   const name = authStore.userInfo?.nickname || authStore.userInfo?.username || '?'
   return name.charAt(0).toUpperCase()
 })
+
+// 头像：avatarUrl 为后端相对路径（/uploads/...，与 Markdown 图片同口径原样展示）；加载失败回落生成式占位
+const avatarFailed = ref(false)
+const avatarSrc = computed(() => {
+  const url = authStore.userInfo?.avatarUrl
+  return url && !avatarFailed.value ? url : ''
+})
+watch(
+  () => authStore.userInfo?.avatarUrl,
+  () => {
+    avatarFailed.value = false
+  }
+)
 
 const menuGroups = computed<MenuGroup[]>(() => {
   const groups: MenuGroup[] = [
@@ -241,6 +265,7 @@ const menuGroups = computed<MenuGroup[]>(() => {
         { label: '做题记录', key: '/records', icon: TimeOutline },
         { label: '我的笔记', key: '/notes', icon: BookOutline },
         { label: '考试记录', key: '/exam-records', icon: DocumentTextOutline },
+        { label: '待批改', key: '/grading', icon: CheckmarkDoneOutline },
         { label: '统计', key: '/statistics', icon: BarChartOutline },
         { label: '通知', key: '/notifications', icon: NotificationsOutline },
         { label: '搜索', key: '/search', icon: SearchOutline }
@@ -257,8 +282,11 @@ const menuGroups = computed<MenuGroup[]>(() => {
       label: '管理',
       items: [
         { label: '用户管理', key: '/admin/users', icon: PeopleOutline },
+        { label: '题目管理', key: '/questions/manage', icon: SettingsOutline },
         { label: '审核列表', key: '/admin/reviews', icon: CheckmarkDoneOutline },
-        { label: '邀请码', key: '/admin/invite-codes', icon: TicketOutline }
+        { label: '邀请码', key: '/admin/invite-codes', icon: TicketOutline },
+        { label: '系统配置', key: '/admin/system-config', icon: SettingsOutline },
+        { label: '操作日志', key: '/admin/operation-logs', icon: DocumentTextOutline }
       ]
     })
   }
@@ -274,6 +302,7 @@ const userMenuOptions = computed(() => [
 const MENU_TITLES: Record<string, string> = {
   '/': '首页',
   '/banks': '题库',
+  '/questions/manage': '题目管理',
   '/questions': '题目',
   '/papers': '试卷',
   '/practice': '练习',
@@ -288,6 +317,8 @@ const MENU_TITLES: Record<string, string> = {
   '/admin/users': '用户管理',
   '/admin/reviews': '审核列表',
   '/admin/invite-codes': '邀请码',
+  '/admin/system-config': '系统配置',
+  '/admin/operation-logs': '操作日志',
   '/grading': '批改',
   '/profile': '个人中心'
 }
@@ -324,7 +355,8 @@ function handleHeaderSearch() {
 function handleLogout() {
   authStore.logout()
   message.success('已退出登录')
-  router.push('/login')
+  // 留在当前页并打开全局登录模态框（不再路由跳走）
+  uiStore.openLoginModal()
 }
 
 async function fetchUnreadCount() {

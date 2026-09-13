@@ -11,10 +11,10 @@ export function getStatisticsOverview() {
   return request.get<ApiResponse<OverviewStats>>('/statistics/overview')
 }
 
-export function getQuestionAccuracy(params?: { bankId?: number; startDate?: string; endDate?: string }) {
+export function getQuestionAccuracy(params?: { bankId?: string; startDate?: string; endDate?: string }) {
   return request.get<ApiResponse<QuestionAccuracy[]>>('/statistics/question-accuracy', { params })
 }
 
-export function getPaperStatistics(paperId: number) {
+export function getPaperStatistics(paperId: string) {
   return request.get<ApiResponse<PaperStatistics>>(`/statistics/papers/${paperId}`)
 }

@@ -156,14 +156,14 @@ const props = defineProps<{
   questionIndex?: number
   paperQuestionId?: number | string
   initialCode?: string
-  initialLanguageId?: number
+  initialLanguageId?: string
   /** 已提交/已交卷后锁定编辑 */
   locked?: boolean
 }>()
 
 const emit = defineEmits<{
-  (e: 'change', payload: { code: string; languageId: number | null }): void
-  (e: 'answered', payload: { code: string; languageId: number; submissionId: number }): void
+  (e: 'change', payload: { code: string; languageId: string | null }): void
+  (e: 'answered', payload: { code: string; languageId: string; submissionId: string }): void
 }>()
 
 const message = useMessage()
@@ -361,7 +361,7 @@ async function submitJudge() {
 }
 
 /** 轮询判题状态：最多 30 秒（0.8s 间隔 × ~38 次） */
-function pollSubmission(submissionId: number, attempts = 0): Promise<SubmissionResponseData> {
+function pollSubmission(submissionId: string, attempts = 0): Promise<SubmissionResponseData> {
   return getSubmission(submissionId).then((res) => {
     const sub = res.data
     if (sub.status === 'FINISHED' || sub.status === 'ERROR' || attempts >= 38) {

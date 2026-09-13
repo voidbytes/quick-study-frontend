@@ -89,16 +89,16 @@
 
           <!-- 作答区 -->
           <div>
-            <!-- 单选题 -->
+            <!-- 单选题（按 option_id 选择，字母为展示序号） -->
             <template v-if="currentQuestion && currentQuestion.type === 'SINGLE'">
               <QuestionOption
                 v-for="(opt, idx) in parsedOptions"
-                :key="idx"
-                :marker="String.fromCharCode(65 + idx)"
-                :selected="currentAnswers[currentQuestion.id] === String.fromCharCode(65 + idx)"
-                @select="selectAnswer(String.fromCharCode(65 + idx))"
+                :key="opt.id"
+                :marker="optionMarker(idx)"
+                :selected="currentAnswers[currentQuestion.id] === opt.id"
+                @select="selectAnswer(opt.id)"
               >
-                <RichText :content="opt" />
+                <RichText :content="opt.text" />
               </QuestionOption>
             </template>
 
@@ -106,50 +106,61 @@
             <template v-if="currentQuestion && currentQuestion.type === 'MULTIPLE'">
               <QuestionOption
                 v-for="(opt, idx) in parsedOptions"
-                :key="idx"
-                :marker="String.fromCharCode(65 + idx)"
-                :selected="isMultipleSelected(String.fromCharCode(65 + idx))"
-                @select="toggleMultipleAnswer(String.fromCharCode(65 + idx))"
+                :key="opt.id"
+                :marker="optionMarker(idx)"
+                :selected="isMultipleSelected(opt.id)"
+                @select="toggleMultipleAnswer(opt.id)"
               >
-                <RichText :content="opt" />
+                <RichText :content="opt.text" />
               </QuestionOption>
             </template>
 
-            <!-- 判断题：答案值与题目标准答案(true/false)对齐 -->
+            <!-- 判断题：id 模型 0=正确 / 1=错误 -->
             <template v-if="currentQuestion && currentQuestion.type === 'TRUE_FALSE'">
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-3">
                 <QuestionOption
                   marker="√"
-                  :selected="currentAnswers[currentQuestion.id] === 'true'"
-                  @select="selectAnswer('true')"
+                  :selected="currentAnswers[currentQuestion.id] === TRUE_FALSE_TRUE_ID"
+                  @select="selectAnswer(TRUE_FALSE_TRUE_ID)"
                 >
                   正确
                 </QuestionOption>
                 <QuestionOption
                   marker="×"
-                  :selected="currentAnswers[currentQuestion.id] === 'false'"
-                  @select="selectAnswer('false')"
+                  :selected="currentAnswers[currentQuestion.id] === TRUE_FALSE_FALSE_ID"
+                  @select="selectAnswer(TRUE_FALSE_FALSE_ID)"
                 >
                   错误
                 </QuestionOption>
               </div>
             </template>
 
-            <!-- 填空题 -->
+            <!-- 填空题：题干按空位拆分行内渲染（文本片段与编号输入框交替） -->
             <!-- 注意：naive-ui 输入组件在 value 为 undefined 时会退回非受控内部状态，
                  导致切题后残留上一题的文字（历史 bug）。这里显式给默认值 '' 并按题目 id
                  强制重建组件，保证每题作答区完全隔离。 -->
             <template v-if="currentQuestion && currentQuestion.type === 'FILL_BLANK'">
-              <label class="block text-sm font-medium text-neutral-700 mb-2">请填写答案</label>
-              <n-input
+              <label class="block text-sm font-medium text-neutral-700 mb-2">
+                请填写答案（共 {{ fillSegments.length - 1 }} 空）
+              </label>
+              <div
                 :key="`fill-${currentQuestion.id}`"
-                :value="fillAnswers[currentQuestion.id] || ''"
-                type="textarea"
-                placeholder="请输入答案"
-                :rows="4"
-                @update:value="(v: string) => { fillAnswers[currentQuestion.id] = v }"
-                @blur="saveFillAnswer"
-              />
+                class="fill-inline flex flex-wrap items-center gap-y-1 leading-relaxed"
+              >
+                <template v-for="(seg, si) in fillSegments" :key="si">
+                  <span class="whitespace-pre-wrap">{{ seg }}</span>
+                  <n-input
+                    v-if="si < fillSegments.length - 1"
+                    :value="(fillAnswers[currentQuestion.id] || [])[si] ?? ''"
+                    size="small"
+                    class="fill-inline-input"
+                    :style="{ minWidth: `${fillInputWidth((fillAnswers[currentQuestion.id] || [])[si])}px` }"
+                    :placeholder="`空${si + 1}`"
+                    @update:value="(v: string) => updateFillBlank(currentQuestion.id, si, v)"
+                    @blur="saveFillAnswer"
+                  />
+                </template>
+              </div>
             </template>
 
             <!-- 简答题：富媒体作答（富文本 + 图片，与题目创建侧同款编辑器） -->
@@ -159,7 +170,7 @@
               </label>
               <MarkdownEditor
                 :key="`short-${currentQuestion.id}`"
-                :model-value="fillAnswers[currentQuestion.id] || ''"
+                :model-value="shortAnswers[currentQuestion.id] || ''"
                 mode="edit"
                 height="280px"
                 placeholder="输入文字作答，可通过工具栏插入图片（最多 9 张）"
@@ -208,6 +219,16 @@ import { useRoute, useRouter } from 'vue-router'
 import { useMessage } from 'naive-ui'
 import { startSession, getSession, saveAnswers, submitSession, reportCheat } from '@/api/exam'
 import type { QuestionItem, AnswerItem } from '@/api/exam'
+import type { OptionItem } from '@/types'
+import {
+  parseOptionList,
+  parseAnswerIds,
+  formatAnswerIds,
+  optionMarker,
+  parseFillBlanks,
+  TRUE_FALSE_TRUE_ID,
+  TRUE_FALSE_FALSE_ID
+} from '@/utils/answer'
 import { QUESTION_TYPE_MAP } from '@/utils/constants'
 import { useConfirm } from '@/composables/useConfirm'
 import type { QuestionNavStatus } from '@/components/common/questionNav'
@@ -233,13 +254,15 @@ interface ExamQuestion extends QuestionItem {
 /** 编程题答案（id → 代码 + 语言），语言为 null 表示尚未选择/不可用 */
 interface ProgAnswer {
   code: string
-  languageId: number | null
+  languageId: string | null
 }
 const questions = ref<ExamQuestion[]>([])
 const currentIndex = ref(0)
-const currentAnswers = reactive<Record<number, string>>({})
-const fillAnswers = reactive<Record<number, string>>({})
-const progAnswers = reactive<Record<number, ProgAnswer>>({})
+/** 填空题答案（id → 逐空数组，与【空N】顺序对齐，未填的空存 ''）；简答题仍存单串（富文本） */
+const fillAnswers = reactive<Record<string, string[]>>({})
+/** 简答题答案（id → 富文本串） */
+const shortAnswers = reactive<Record<string, string>>({})
+const progAnswers = reactive<Record<string, ProgAnswer>>({})
 const markedForReview = ref<Set<number>>(new Set())
 const timeRemaining = ref(0)
 const timerHandle = ref<ReturnType<typeof setInterval> | null>(null)
@@ -248,20 +271,16 @@ const cheatCount = ref(0)
 
 const difficultyLabels: Record<string, string> = { EASY: '简单', MEDIUM: '中等', HARD: '困难' }
 
+/** 作答状态：客观题存 option_id（单选/判断）或 id 数组（多选），提交时统一序列化 */
+const currentAnswers = reactive<Record<string, number | number[]>>({})
+
 const currentQuestion = computed(() => questions.value[currentIndex.value] || null)
 
-/** 解析 options JSON 字符串为数组 */
-const parsedOptions = computed<string[]>(() => {
+/** options 已由后端下发为 OptionItem 对象数组（成卷快照，乱序后顺序） */
+const parsedOptions = computed<OptionItem[]>(() => {
   const q = currentQuestion.value
   if (!q || !q.options) return []
-  const options = q.options
-  if (Array.isArray(options)) return (options as unknown as string[]).map((o) => String(o))
-  try {
-    const parsed: unknown = JSON.parse(options)
-    return Array.isArray(parsed) ? parsed.map((o: unknown) => String(o)) : []
-  } catch {
-    return []
-  }
+  return parseOptionList(q.options)
 })
 
 /** 解析 content JSON 字符串，提取 content 字段 */
@@ -275,6 +294,37 @@ const parsedContent = computed(() => {
     return q.content
   }
 })
+
+/** 填空题题干拆分：片段与空位交替（parts.length = 空位数 + 1） */
+const fillSegments = computed(() => parseFillBlanks(parsedContent.value).parts)
+
+/** 行内输入框提示性宽度：按当前答案长度自适应（min-width，答案长则撑开） */
+function fillInputWidth(value: string | undefined): number {
+  const len = value ? [...value].length : 0
+  return Math.max(96, Math.min(320, len * 14 + 40))
+}
+
+/** 更新第 bi 空的作答（数组逐位对齐空位，未填空保留 ''） */
+function updateFillBlank(qid: string, bi: number, value: string) {
+  const arr = fillAnswers[qid] ? [...fillAnswers[qid]] : []
+  arr[bi] = value
+  fillAnswers[qid] = arr
+  saveToLocal()
+}
+
+/** 恢复作答：userAnswer（JSON 字符串数组）→ string[]；旧格式纯文本按单空容错 */
+function parseFillUserAnswer(raw: string | null | undefined): string[] {
+  if (!raw) return []
+  try {
+    const parsed: unknown = JSON.parse(raw)
+    if (Array.isArray(parsed)) {
+      return parsed.map((v) => (typeof v === 'string' ? v : ''))
+    }
+  } catch {
+    // 旧格式纯文本按单空
+  }
+  return [raw]
+}
 
 const answeredCount = computed(() => {
   let count = 0
@@ -304,16 +354,17 @@ const formattedTime = computed(() => {
 
 function hasAnswer(q: ExamQuestion): boolean {
   if (q.type === 'PROGRAMMING') return !!progAnswers[q.id]?.code?.trim()
-  if (q.type === 'MULTIPLE') return !!currentAnswers[q.id]?.length
-  if (q.type === 'FILL_BLANK') return !!fillAnswers[q.id]?.trim()
+  if (q.type === 'MULTIPLE') return ((currentAnswers[q.id] as number[] | undefined)?.length ?? 0) > 0
+  if (q.type === 'FILL_BLANK') return (fillAnswers[q.id] || []).some((v) => v.trim() !== '')
   if (q.type === 'SHORT_ANSWER') {
-    const ans = fillAnswers[q.id]
+    const ans = shortAnswers[q.id]
     if (!ans) return false
     // 富文本答案：含图片即算已答；纯文字需 strip 标签后非空
     if (ans.includes('<img')) return true
     return !!ans.replace(/<[^>]+>/g, '').trim()
   }
-  return !!currentAnswers[q.id]
+  // 单选/判断：option_id（0 是合法值，不能真值判断）
+  return currentAnswers[q.id] != null
 }
 
 function typeLabel(type?: string): string {
@@ -338,30 +389,28 @@ function goToQuestion(index: number) {
   currentIndex.value = index
 }
 
-function selectAnswer(value: string) {
+function selectAnswer(id: number) {
   const q = currentQuestion.value
   if (!q) return
-  currentAnswers[q.id] = value
+  currentAnswers[q.id] = id
   saveToLocal()
   autoSave()
 }
 
-function isMultipleSelected(value: string) {
+function isMultipleSelected(id: number) {
   const q = currentQuestion.value
   if (!q) return false
-  const ans = currentAnswers[q.id] || ''
-  return ans.split(',').includes(value)
+  return ((currentAnswers[q.id] as number[] | undefined) || []).includes(id)
 }
 
-function toggleMultipleAnswer(value: string) {
+function toggleMultipleAnswer(id: number) {
   const q = currentQuestion.value
   if (!q) return
-  const ans = currentAnswers[q.id] || ''
-  const arr = ans ? ans.split(',') : []
-  const idx = arr.indexOf(value)
+  const arr = (currentAnswers[q.id] as number[] | undefined) || []
+  const idx = arr.indexOf(id)
   if (idx >= 0) arr.splice(idx, 1)
-  else arr.push(value)
-  currentAnswers[q.id] = arr.join(',')
+  else arr.push(id)
+  currentAnswers[q.id] = arr
   saveToLocal()
   autoSave()
 }
@@ -380,7 +429,7 @@ let shortAnswerSaveTimer: ReturnType<typeof setTimeout> | null = null
 function handleShortAnswerChange(v: string) {
   const q = currentQuestion.value
   if (!q) return
-  fillAnswers[q.id] = v
+  shortAnswers[q.id] = v
   saveToLocal()
   if (shortAnswerSaveTimer) clearTimeout(shortAnswerSaveTimer)
   shortAnswerSaveTimer = setTimeout(() => {
@@ -393,7 +442,7 @@ function handleShortAnswerChange(v: string) {
 let progSaveTimer: ReturnType<typeof setTimeout> | null = null
 
 /** 编程题编辑：同步内存态 + 本地草稿，防抖自动保存（含语言ID，交卷判题用） */
-function onProgrammingChange(payload: { code: string; languageId: number | null }) {
+function onProgrammingChange(payload: { code: string; languageId: string | null }) {
   const q = currentQuestion.value
   if (!q) return
   progAnswers[q.id] = { code: payload.code, languageId: payload.languageId }
@@ -445,11 +494,22 @@ function buildAnswerPayload() {
         languageId: prog?.languageId ?? null
       }
     }
-    const answer = hasAnswer(q)
-      ? (q.type === 'MULTIPLE' || q.type === 'FILL_BLANK' || q.type === 'SHORT_ANSWER'
-          ? fillAnswers[q.id] || currentAnswers[q.id] || ''
-          : currentAnswers[q.id] || '')
-      : ''
+    let answer = ''
+    if (hasAnswer(q)) {
+      if (q.type === 'MULTIPLE') {
+        // 多选：id 数组升序 JSON（与后端落库归一格式一致）
+        answer = formatAnswerIds((currentAnswers[q.id] as number[]) || [])
+      } else if (q.type === 'SINGLE' || q.type === 'TRUE_FALSE') {
+        // 单选/判断：单 id JSON 数组（判断题 [0]=正确 / [1]=错误）
+        answer = formatAnswerIds([currentAnswers[q.id] as number])
+      } else if (q.type === 'FILL_BLANK') {
+        // 填空：JSON 字符串数组，逐位对齐【空N】（未填的空存 ''）
+        answer = JSON.stringify(fillAnswers[q.id] || [])
+      } else {
+        // 简答：富文本
+        answer = shortAnswers[q.id] || ''
+      }
+    }
     return { paperQuestionId: q.id, answer }
   })
 }
@@ -458,7 +518,8 @@ function saveToLocal() {
   const key = `exam_${sessionId.value}`
   localStorage.setItem(key, JSON.stringify({
     answers: { ...currentAnswers },
-    fillAnswers: { ...fillAnswers },
+    fillAnswers: JSON.parse(JSON.stringify(fillAnswers)),
+    shortAnswers: { ...shortAnswers },
     progAnswers: { ...progAnswers },
     currentIndex: currentIndex.value,
     markedForReview: Array.from(markedForReview.value)
@@ -470,7 +531,13 @@ function loadFromLocal() {
   try {
     const data = JSON.parse(localStorage.getItem(key) || '{}')
     if (data.answers) Object.assign(currentAnswers, data.answers)
-    if (data.fillAnswers) Object.assign(fillAnswers, data.fillAnswers)
+    if (data.fillAnswers) {
+      // 兼容历史草稿：fillAnswers 值可能为旧格式单串（string），归一化为 string[]
+      Object.entries(data.fillAnswers as Record<string, unknown>).forEach(([qid, v]) => {
+        fillAnswers[qid] = typeof v === 'string' ? parseFillUserAnswer(v) : (v as string[])
+      })
+    }
+    if (data.shortAnswers) Object.assign(shortAnswers, data.shortAnswers)
     if (data.progAnswers) Object.assign(progAnswers, data.progAnswers)
     if (data.currentIndex !== undefined) currentIndex.value = data.currentIndex
     if (data.markedForReview) markedForReview.value = new Set(data.markedForReview)
@@ -573,10 +640,15 @@ async function restoreSession() {
         if (q) {
           if (q.type === 'PROGRAMMING') {
             progAnswers[q.id] = { code: a.userAnswer || '', languageId: a.languageId ?? null }
-          } else if (q.type === 'FILL_BLANK' || q.type === 'SHORT_ANSWER') {
-            fillAnswers[q.id] = a.userAnswer
+          } else if (q.type === 'FILL_BLANK') {
+            // 填空：userAnswer 为 JSON 字符串数组（逐位对齐空位）；旧格式纯文本按单空容错
+            fillAnswers[q.id] = parseFillUserAnswer(a.userAnswer)
+          } else if (q.type === 'SHORT_ANSWER') {
+            shortAnswers[q.id] = a.userAnswer
           } else {
-            currentAnswers[q.id] = a.userAnswer
+            // 客观题：后端返回的 userAnswer 为 id JSON 数组字符串，还原内存态
+            const ids = parseAnswerIds(a.userAnswer)
+            currentAnswers[q.id] = q.type === 'MULTIPLE' ? ids : (ids[0] ?? null)
           }
         }
       })
@@ -609,5 +681,15 @@ onUnmounted(() => {
   line-height: var(--leading-relaxed);
   color: var(--text-primary);
   font-weight: var(--font-medium);
+}
+/* 填空行内输入框：与题干文本基线对齐，宽度由内联 min-width 按答案长度提示 */
+.fill-inline {
+  font-size: 17px;
+  color: var(--text-primary);
+  font-weight: var(--font-medium);
+}
+.fill-inline-input {
+  margin: 0 4px;
+  flex: 0 1 auto;
 }
 </style>

@@ -12,6 +12,14 @@
     <template v-if="activeTab === 'practice'">
       <!-- 筛选 -->
       <FilterBar>
+        <n-input
+          v-model:value="filterKeyword"
+          placeholder="搜索题目内容"
+          clearable
+          style="width: 220px"
+          @keyup.enter="handleSearch"
+          @clear="handleSearch"
+        />
         <n-select
           v-model:value="filterBankId"
           :options="bankOptions"
@@ -115,6 +123,16 @@
 
     <!-- ==================== 考试记录 ==================== -->
     <template v-else>
+      <FilterBar>
+        <n-input
+          v-model:value="examKeyword"
+          placeholder="搜索试卷标题"
+          clearable
+          style="width: 240px"
+          @keyup.enter="fetchExamList"
+          @clear="fetchExamList"
+        />
+      </FilterBar>
       <SkeletonList v-if="examLoading && examList.length === 0" :count="3" :cols="1" />
 
       <template v-else-if="examList.length > 0">
@@ -192,7 +210,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useMessage } from 'naive-ui'
 import {
   CheckmarkDoneOutline,
@@ -217,17 +235,20 @@ import SkeletonList from '@/components/common/SkeletonList.vue'
 import dayjs from 'dayjs'
 
 const router = useRouter()
+const route = useRoute()
 const message = useMessage()
 
 const activeTab = ref<'practice' | 'exam'>('practice')
 
 /* ---------- 练习记录（原有逻辑） ---------- */
 const loading = ref(false)
-const filterBankId = ref<number | null>(null)
+const filterBankId = ref<string | null>(null)
 const filterSourceType = ref<string | null>(null)
+const filterKeyword = ref('')
+const examKeyword = ref('')
 const dateRange = ref<[number, number] | null>(null)
 const recordList = ref<RecordRow[]>([])
-const bankOptions = ref<{ label: string; value: number }[]>([])
+const bankOptions = ref<{ label: string; value: string }[]>([])
 
 const sourceTypeOptions = [
   { label: '练习', value: 'PRACTICE_SESSION' },
@@ -364,8 +385,9 @@ async function fetchList() {
     const res = await getRecordList({
       page: pagination.page,
       size: pagination.pageSize,
+      keyword: filterKeyword.value.trim() || undefined,
       bankId: filterBankId.value ?? undefined,
-      type: filterSourceType.value || undefined,
+      sourceType: filterSourceType.value || undefined,
       startDate: dateRange.value ? dayjs(dateRange.value[0]).format('YYYY-MM-DD') : undefined,
       endDate: dateRange.value ? dayjs(dateRange.value[1]).format('YYYY-MM-DD') : undefined
     })
@@ -383,7 +405,8 @@ async function fetchExamList() {
   try {
     const res = await getMyExamSessions({
       page: examPagination.page,
-      size: examPagination.pageSize
+      size: examPagination.pageSize,
+      keyword: examKeyword.value.trim() || undefined
     })
     examList.value = res.data.records || []
     examPagination.itemCount = res.data.total || 0
@@ -425,6 +448,11 @@ function handleExamPageChange(page: number) {
 }
 
 onMounted(() => {
+  // 支持 /records?bankId=xx 直达筛选(题库详情页「答卷记录」入口)
+  const qBankId = route.query.bankId
+  if (qBankId && typeof qBankId === 'string') {
+    filterBankId.value = qBankId
+  }
   loadOptions()
   fetchList()
 })
