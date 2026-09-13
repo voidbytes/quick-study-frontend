@@ -292,7 +292,7 @@ console.log(greet("Quick Study"));`
 const SAMPLES: Record<string, string> = {
   js: DEFAULT_SAMPLE_JS,
   py3: '# Python 示例\nname = input("请输入姓名: ")\nprint(f"Hello, {name}!")\n\n# 读写 stdin 示例\nnums = input().split()\nprint("输入了", len(nums), "个数字")',
-  py2: '# Python 2.7 示例\nname = raw_input("请输入姓名: ")\nprint "Hello, %s!" % name',
+  py2: '# -*- coding: utf-8 -*-\n# Python 2.7 示例（py2 源码默认 ASCII，含中文必须声明编码）\nname = raw_input("请输入姓名: ")\nprint "Hello, %s!" % name',
   c: '// C 示例\n#include <stdio.h>\n\nint main() {\n    char name[64];\n    scanf("%63s", name);\n    printf("Hello, %s!\\n", name);\n    return 0;\n}',
   java: '// Java 示例\nimport java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        String name = sc.nextLine();\n        System.out.println("Hello, " + name + "!");\n    }\n}',
   ts: '// TypeScript 示例\nfunction greet(name: string): string {\n  return `Hello, ${name}!`;\n}\n\nconsole.log(greet("Quick Study"));',
