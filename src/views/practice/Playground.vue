@@ -214,6 +214,12 @@ import 'codemirror/mode/javascript/javascript.js'
 import 'codemirror/mode/python/python.js'
 import 'codemirror/mode/clike/clike.js'
 import 'codemirror/mode/go/go.js'
+import 'codemirror/mode/dart/dart.js'
+import 'codemirror/mode/php/php.js'
+import 'codemirror/mode/htmlmixed/htmlmixed.js' // php mode 依赖 htmlmixed（连带 xml/css/javascript）
+import 'codemirror/mode/ruby/ruby.js'
+import 'codemirror/mode/rust/rust.js'
+import 'codemirror/mode/swift/swift.js'
 import {
   FlashOutline,
   SparklesOutline,
@@ -252,14 +258,24 @@ const result = ref<PlaygroundRunResponse | null>(null)
 const compileError = ref('')
 const status = ref<'idle' | 'running' | 'success' | 'timedout' | 'error'>('idle')
 
-/** 语言 → CodeMirror mode（JavaScript 覆盖 TS；clike 覆盖 Java/C++） */
+/** 语言 → CodeMirror mode（clike 覆盖 C/Java/C++/Kotlin/Scala/C#；dart/php/ruby/rust/swift 独立 mode） */
 const CM_MODES: Record<string, string> = {
   js: 'javascript',
-  py: 'python',
+  py3: 'python',
+  py2: 'python',
+  c: 'text/x-csrc',
   java: 'text/x-java',
   ts: 'text/typescript',
   cpp: 'text/x-c++src',
-  go: 'go'
+  go: 'go',
+  kotlin: 'text/x-kotlin',
+  scala: 'text/x-scala',
+  csharp: 'text/x-csharp',
+  dart: 'dart',
+  rust: 'rust',
+  swift: 'swift',
+  ruby: 'ruby',
+  php: 'application/x-httpd-php'
 }
 
 /** 默认示例代码（进入页面默认展示 JS 示例，避免空白编辑器） */
@@ -275,19 +291,37 @@ console.log(greet("Quick Study"));`
 /** 示例代码（code）与配套默认标准输入（stdin）：读 stdin 的示例带默认输入，开箱即用不阻塞 */
 const SAMPLES: Record<string, string> = {
   js: DEFAULT_SAMPLE_JS,
-  py: '# Python 示例\nname = input("请输入姓名: ")\nprint(f"Hello, {name}!")\n\n# 读写 stdin 示例\nnums = input().split()\nprint("输入了", len(nums), "个数字")',
+  py3: '# Python 示例\nname = input("请输入姓名: ")\nprint(f"Hello, {name}!")\n\n# 读写 stdin 示例\nnums = input().split()\nprint("输入了", len(nums), "个数字")',
+  py2: '# Python 2.7 示例\nname = raw_input("请输入姓名: ")\nprint "Hello, %s!" % name',
+  c: '// C 示例\n#include <stdio.h>\n\nint main() {\n    char name[64];\n    scanf("%63s", name);\n    printf("Hello, %s!\\n", name);\n    return 0;\n}',
   java: '// Java 示例\nimport java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        String name = sc.nextLine();\n        System.out.println("Hello, " + name + "!");\n    }\n}',
   ts: '// TypeScript 示例\nfunction greet(name: string): string {\n  return `Hello, ${name}!`;\n}\n\nconsole.log(greet("Quick Study"));',
   cpp: '// C++ 示例\n#include <iostream>\n#include <string>\nusing namespace std;\n\nint main() {\n    string name;\n    getline(cin, name);\n    cout << "Hello, " << name << "!" << endl;\n    return 0;\n}',
-  go: '// Go 示例\npackage main\n\nimport (\n    "fmt"\n)\n\nfunc main() {\n    var name string\n    fmt.Scanln(&name)\n    fmt.Printf("Hello, %s!", name)\n}'
+  go: '// Go 示例\npackage main\n\nimport (\n    "fmt"\n)\n\nfunc main() {\n    var name string\n    fmt.Scanln(&name)\n    fmt.Printf("Hello, %s!", name)\n}',
+  kotlin: '// Kotlin 示例\nfun main() {\n    val name = readLine() ?: "Quick Study"\n    println("Hello, $name!")\n}',
+  scala: '// Scala 3 示例（scala 3.6 脚本模式，顶层语句直接执行）\nprintln("Hello, Quick Study!")',
+  rust: '// Rust 示例\nuse std::io;\n\nfn main() {\n    let mut name = String::new();\n    io::stdin().read_line(&mut name).expect("read failed");\n    let name = name.trim();\n    if name.is_empty() {\n        println!("Hello, Quick Study!");\n    } else {\n        println!("Hello, {}!", name);\n    }\n}',
+  swift: '// Swift 示例\nlet name = readLine() ?? "Quick Study"\nprint("Hello, \\(name)!")',
+  dart: "// Dart 示例\nimport 'dart:io';\n\nvoid main() {\n  final name = stdin.readLineSync() ?? 'Quick Study';\n  print('Hello, $name!');\n}",
+  csharp: '// C# 示例（.NET 10 file-based apps，顶层语句直跑）\nvar name = Console.ReadLine() ?? "Quick Study";\nConsole.WriteLine($"Hello, {name}!");',
+  ruby: '# Ruby 示例\nname = gets.chomp\nputs "Hello, #{name}!"',
+  php: '<?php\n$name = trim(fgets(STDIN));\necho "Hello, {$name}!\\n";'
 }
 
 /** 各示例配套的默认标准输入（仅读 stdin 的语言需要；第一行为单词，各语言示例输出一致） */
 const SAMPLE_STDIN: Record<string, string> = {
-  py: 'Quick\n10 20 30',
+  py3: 'Quick\n10 20 30',
+  c: 'Quick\n',
   java: 'Quick\n',
   cpp: 'Quick\n',
-  go: 'Quick\n'
+  go: 'Quick\n',
+  kotlin: 'Quick\n',
+  rust: 'Quick\n',
+  swift: 'Quick\n',
+  dart: 'Quick\n',
+  csharp: 'Quick\n',
+  ruby: 'Quick\n',
+  php: 'Quick\n'
 }
 
 const langOptions = computed(() =>
