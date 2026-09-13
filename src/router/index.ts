@@ -202,6 +202,11 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/views/profile/Profile.vue')
       },
       {
+        path: 'open-api',
+        name: 'OpenApiSettings',
+        component: () => import('@/views/profile/OpenApiSettings.vue')
+      },
+      {
         path: 'notes',
         name: 'NoteList',
         component: () => import('@/views/note/NoteList.vue')

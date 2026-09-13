@@ -134,7 +134,7 @@
                     :loading="savingKey === item.configKey"
                     @update:value="(v: boolean) => saveSingle(item, v ? 'true' : 'false')"
                   />
-                  <template v-else-if="item.valueType === 'INT'">
+                  <template v-else-if="item.valueType === 'INT' || item.valueType === 'LONG'">
                     <n-input-number
                       :value="draftInt(item)"
                       size="small"
@@ -565,7 +565,8 @@ const configGroups = computed<ConfigGroup[]>(() => {
 const GROUP_LABELS: Record<string, string> = {
   captcha: '验证码',
   'invite-code': '邀请码',
-  'rate-limit': '限流限额'
+  'rate-limit': '限流限额',
+  sandbox: '沙箱与开放API'
 }
 
 function groupLabel(name: string) {
