@@ -311,6 +311,7 @@ const SAMPLES: Record<string, string> = {
 /** 各示例配套的默认标准输入（仅读 stdin 的语言需要；第一行为单词，各语言示例输出一致） */
 const SAMPLE_STDIN: Record<string, string> = {
   py3: 'Quick\n10 20 30',
+  py2: 'Quick\n',
   c: 'Quick\n',
   java: 'Quick\n',
   cpp: 'Quick\n',
