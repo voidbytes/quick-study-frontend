@@ -24,7 +24,8 @@ export interface User {
   username: string
   nickname: string
   email?: string
-  avatar?: string
+  /** 头像相对路径（如 /uploads/avatar/xxx.jpg） */
+  avatarUrl?: string
   role: 'USER' | 'ADMIN' | 'SUPER_ADMIN'
   status?: 'active' | 'disabled'
   createdAt?: string

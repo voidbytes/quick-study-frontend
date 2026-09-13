@@ -37,6 +37,12 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  /** 局部更新本地用户信息（如个人中心改昵称/头像后同步导航栏展示），并持久化 */
+  function patchUserInfo(partial: Partial<User>) {
+    if (!userInfo.value) return
+    saveUserInfo({ ...userInfo.value, ...partial })
+  }
+
   const isAuthenticated = computed(() => !!token.value)
   const isAdmin = computed(() => userInfo.value?.role === 'ADMIN' || userInfo.value?.role === 'SUPER_ADMIN')
   const isSuperAdmin = computed(() => userInfo.value?.role === 'SUPER_ADMIN')
@@ -106,6 +112,7 @@ export const useAuthStore = defineStore('auth', () => {
     login,
     register,
     logout,
-    doRefreshToken
+    doRefreshToken,
+    patchUserInfo
   }
 })

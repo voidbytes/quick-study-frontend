@@ -202,9 +202,9 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/views/profile/Profile.vue')
       },
       {
+        // 书签兼容：开放 API 已移入个人中心「开放 API」Tab，旧链接重定向保参
         path: 'open-api',
-        name: 'OpenApiSettings',
-        component: () => import('@/views/profile/OpenApiSettings.vue')
+        redirect: { path: '/profile', query: { tab: 'open-api' } }
       },
       {
         path: 'notes',

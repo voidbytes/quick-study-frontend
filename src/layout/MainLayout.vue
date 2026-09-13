@@ -133,7 +133,15 @@
           <template v-if="authStore.isAuthenticated">
             <n-dropdown :options="userMenuOptions" @select="handleUserMenuSelect">
               <div class="flex items-center gap-2 cursor-pointer select-none">
+                <img
+                  v-if="avatarSrc"
+                  :src="avatarSrc"
+                  alt="头像"
+                  class="w-8 h-8 rounded-full object-cover flex-shrink-0"
+                  @error="avatarFailed = true"
+                />
                 <div
+                  v-else
                   class="w-8 h-8 rounded-full bg-brand-gradient flex items-center justify-center text-white text-xs font-semibold flex-shrink-0"
                 >
                   {{ avatarText }}
@@ -159,7 +167,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useUiStore } from '@/stores/ui'
@@ -172,7 +180,6 @@ import {
   FileTrayFullOutline,
   GameControllerOutline,
   CodeSlashOutline,
-  KeyOutline,
   CloseCircleOutline,
   TimeOutline,
   SearchOutline,
@@ -222,6 +229,19 @@ const avatarText = computed(() => {
   return name.charAt(0).toUpperCase()
 })
 
+// 头像：avatarUrl 为后端相对路径（/uploads/...，与 Markdown 图片同口径原样展示）；加载失败回落生成式占位
+const avatarFailed = ref(false)
+const avatarSrc = computed(() => {
+  const url = authStore.userInfo?.avatarUrl
+  return url && !avatarFailed.value ? url : ''
+})
+watch(
+  () => authStore.userInfo?.avatarUrl,
+  () => {
+    avatarFailed.value = false
+  }
+)
+
 const menuGroups = computed<MenuGroup[]>(() => {
   const groups: MenuGroup[] = [
     {
@@ -240,7 +260,6 @@ const menuGroups = computed<MenuGroup[]>(() => {
       items: [
         { label: '练习', key: '/practice', icon: GameControllerOutline },
         { label: '代码运行台', key: '/playground', icon: CodeSlashOutline },
-        { label: '开放API', key: '/open-api', icon: KeyOutline },
         { label: '错题本', key: '/wrong-questions', icon: CloseCircleOutline },
         { label: '收藏题目', key: '/favorites', icon: StarOutline },
         { label: '做题记录', key: '/records', icon: TimeOutline },
@@ -288,7 +307,6 @@ const MENU_TITLES: Record<string, string> = {
   '/papers': '试卷',
   '/practice': '练习',
   '/playground': '代码运行台',
-  '/open-api': '开放API',
   '/wrong-questions': '错题本',
   '/favorites': '收藏题目',
   '/records': '做题记录',

@@ -1,7 +1,5 @@
 <template>
   <div>
-    <PageHeader title="开放 API" subtitle="生成 AK/SK 凭证，通过开放接口调用沙箱执行代码" />
-
     <!-- 配额用量 -->
     <div class="bg-white border border-neutral-200 rounded-xl p-5 mb-6">
       <div class="flex items-center justify-between mb-3">
@@ -24,7 +22,7 @@
           <div class="text-xs text-neutral-400">
             单次执行 ≤ {{ Math.round(Number(quota.timeoutMs) / 1000) }}s · 内存 ≤ {{ quota.memoryMb }}MB ·
             输出 ≤ {{ quota.outputKb }}KB · 开放 API 频率
-            {{ quota.minuteLimit > 0 ? `${quota.minuteLimit} 次/分钟` : '不限' }}
+            {{ Number(quota.minuteLimit) > 0 ? `${quota.minuteLimit} 次/分钟` : '不限' }}
           </div>
         </template>
         <div v-else class="text-sm text-neutral-400">加载中…</div>
@@ -96,7 +94,6 @@
 import { ref, computed, onMounted, h } from 'vue'
 import { useMessage } from 'naive-ui'
 import type { DataTableColumn } from 'naive-ui'
-import PageHeader from '@/components/common/PageHeader.vue'
 import dayjs from 'dayjs'
 import { API_BASE_URL } from '@/utils/constants'
 import {

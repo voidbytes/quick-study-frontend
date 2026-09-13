@@ -32,6 +32,11 @@ export default defineConfig({
         // 后端地址可用环境变量覆盖（如连远端后端：VITE_PROXY_TARGET=http://example.com:8080 npm run dev）
         target: process.env.VITE_PROXY_TARGET || 'http://localhost:8080',
         changeOrigin: true
+      },
+      // 上传文件（头像等）后端返回相对路径 /uploads/...，与 /api 同口径代理到后端
+      '/uploads': {
+        target: process.env.VITE_PROXY_TARGET || 'http://localhost:8080',
+        changeOrigin: true
       }
     }
   }

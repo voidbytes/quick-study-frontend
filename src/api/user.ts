@@ -4,7 +4,9 @@ import type { ApiResponse, User } from '@/types'
 export interface UpdateProfileParams {
   nickname?: string
   email?: string
-  avatar?: string
+  /** 头像相对路径（如 /uploads/avatar/xxx.jpg），由 POST /files/avatar 上传接口返回 */
+  avatarUrl?: string
+  bio?: string
 }
 
 export interface ChangePasswordParams {
